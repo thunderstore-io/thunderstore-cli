@@ -25,6 +25,11 @@ namespace ThunderstoreCLI.Config
             return null;
         }
 
+        public AuthConfig GetAuthConfig()
+        {
+            return null;
+        }
+
         public static string GetFilepath()
         {
             return Path.GetFullPath("./thunderstore.toml");
@@ -52,7 +57,7 @@ namespace ThunderstoreCLI.Config
                 {
                     Tables =
                     {
-                        new TableSyntax("tcli")
+                        new TableSyntax("config")
                         {
                             Items =
                             {

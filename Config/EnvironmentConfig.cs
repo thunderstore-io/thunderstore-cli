@@ -22,5 +22,10 @@ namespace ThunderstoreCLI.Config
         {
             return null;
         }
+
+        public AuthConfig GetAuthConfig()
+        {
+            return null;
+        }
     }
 }

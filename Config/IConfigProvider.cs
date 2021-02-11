@@ -10,5 +10,6 @@ namespace ThunderstoreCLI.Config
         PackageMeta GetPackageMeta();
         BuildConfig GetBuildConfig();
         PublishConfig GetPublishConfig();
+        AuthConfig GetAuthConfig();
     }
 }

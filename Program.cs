@@ -20,6 +20,7 @@ namespace ThunderstoreCLI
 
         static void Main(string[] args)
         {
+            var config = GetConfig();
             Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions>(args)
                 .WithParsed<InitOptions>(o => Init(o))
                 .WithParsed<BuildOptions>(o => Build(o))
@@ -39,6 +40,7 @@ namespace ThunderstoreCLI
 
         static void Init(InitOptions options)
         {
+            Console.WriteLine("Init");
         }
 
         static void Build(BuildOptions options)

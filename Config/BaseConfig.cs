@@ -42,9 +42,13 @@ namespace ThunderstoreCLI.Config
         {
             return new PublishConfig()
             {
-                AuthToken = null,
                 Repository = "https://thunderstore.io"
             };
+        }
+
+        public AuthConfig GetAuthConfig()
+        {
+            return null;
         }
     }
 }
