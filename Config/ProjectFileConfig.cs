@@ -11,7 +11,7 @@ namespace ThunderstoreCLI.Config
     {
         public static TomlTable Read(Config config)
         {
-            var configPath = Paths.GetProjectConfigPath(config);
+            var configPath = config.GetProjectConfigPath();
             if (!File.Exists(configPath))
             {
                 throw new CommandException($"Unable to find project configuration file. Looked from {configPath}");

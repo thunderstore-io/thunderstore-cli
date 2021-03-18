@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace ThunderstoreCLI.Config
@@ -16,6 +17,21 @@ namespace ThunderstoreCLI.Config
             PackageMeta = packageMeta;
             BuildConfig = buildConfig;
             PublishConfig = publishConfig;
+        }
+
+        public string GetPackageIconPath()
+        {
+            return Path.GetFullPath(BuildConfig.IconPath);
+        }
+
+        public string GetPackageReadmePath()
+        {
+            return Path.GetFullPath(BuildConfig.ReadmePath);
+        }
+
+        public string GetProjectConfigPath()
+        {
+            return Path.GetFullPath("./thunderstore.toml");
         }
 
         public static Config Parse(params IConfigProvider[] configProviders)
