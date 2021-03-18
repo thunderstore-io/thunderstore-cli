@@ -14,7 +14,13 @@ namespace ThunderstoreCLI.Commands
         {
             var path = config.GetProjectConfigPath();
             var projectDir = Path.GetDirectoryName(path);
-            Console.WriteLine($"Initializing a new project to {projectDir}");
+            if (!Directory.Exists(projectDir))
+            {
+                Console.WriteLine($"Creating directory {projectDir}");
+                Directory.CreateDirectory(projectDir);
+            }
+
+            Console.WriteLine($"Creating a new project configuration to {projectDir}");
             if (File.Exists(path) && !options.Overwrite)
             {
                 Console.WriteLine($"Project configuration already exists, stopping");

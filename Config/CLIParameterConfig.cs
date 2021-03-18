@@ -20,6 +20,14 @@ namespace ThunderstoreCLI.Config
     {
         public CLIInitCommandConfig(InitOptions options) : base(options) { }
 
+        public override GeneralConfig GetGeneralConfig()
+        {
+            return new GeneralConfig()
+            {
+                ProjectConfigPath = options.ConfigPath
+            };
+        }
+
         public override PackageMeta GetPackageMeta()
         {
             if (options == null) return null;
@@ -35,6 +43,14 @@ namespace ThunderstoreCLI.Config
     public class CLIBuildCommandConfig : CLIParameterConfig<BuildOptions>
     {
         public CLIBuildCommandConfig(BuildOptions options) : base(options) { }
+
+        public override GeneralConfig GetGeneralConfig()
+        {
+            return new GeneralConfig()
+            {
+                ProjectConfigPath = options.ConfigPath
+            };
+        }
 
         public override PackageMeta GetPackageMeta()
         {

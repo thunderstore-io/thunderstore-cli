@@ -8,6 +8,9 @@ namespace ThunderstoreCLI
 {
     public class PackageOptions
     {
+        [Option("config-path", Required = false, Default = "./thunderstore.toml", HelpText = "Path for the project configuration file")]
+        public string ConfigPath { get; set; }
+
         [Option("package-name", Required = false, HelpText = "Name for the package")]
         public string Name { get; set; }
 

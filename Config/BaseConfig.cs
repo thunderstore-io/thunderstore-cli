@@ -4,11 +4,16 @@ using System.Text;
 
 namespace ThunderstoreCLI.Config
 {
-    class BaseConfig : IConfigProvider
+    class BaseConfig : EmptyConfig
     {
-        public void Parse(Config currentConfig) { }
-
-        public BuildConfig GetBuildConfig()
+        public override GeneralConfig GetGeneralConfig()
+        {
+            return new GeneralConfig()
+            {
+                ProjectConfigPath = "./thunderstore.toml"
+            };
+        }
+        public override BuildConfig GetBuildConfig()
         {
             return new BuildConfig()
             {
@@ -22,7 +27,7 @@ namespace ThunderstoreCLI.Config
             };
         }
 
-        public PackageMeta GetPackageMeta()
+        public override PackageMeta GetPackageMeta()
         {
             return new PackageMeta()
             {
@@ -38,17 +43,12 @@ namespace ThunderstoreCLI.Config
             };
         }
 
-        public PublishConfig GetPublishConfig()
+        public override PublishConfig GetPublishConfig()
         {
             return new PublishConfig()
             {
                 Repository = "https://thunderstore.io"
             };
-        }
-
-        public AuthConfig GetAuthConfig()
-        {
-            return null;
         }
     }
 }

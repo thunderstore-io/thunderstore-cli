@@ -7,43 +7,53 @@ namespace ThunderstoreCLI.Config
 {
     public class Config
     {
+        public GeneralConfig GeneralConfig { get; private set; }
         public PackageMeta PackageMeta { get; private set; }
         public BuildConfig BuildConfig { get; private set; }
         public PublishConfig PublishConfig { get; private set; }
         public AuthConfig AuthConfig { get; private set; }
 
-        private Config(PackageMeta packageMeta, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
+        private Config(GeneralConfig generalConfig, PackageMeta packageMeta, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
         {
+            GeneralConfig = generalConfig;
             PackageMeta = packageMeta;
             BuildConfig = buildConfig;
             PublishConfig = publishConfig;
+            AuthConfig = authConfig;
+        }
+
+        public string GetProjectPath()
+        {
+            return Path.GetDirectoryName(GetProjectConfigPath());
         }
 
         public string GetPackageIconPath()
         {
-            return Path.GetFullPath(BuildConfig.IconPath);
+            return Path.GetFullPath(Path.Join(GetProjectPath(), BuildConfig.IconPath));
         }
 
         public string GetPackageReadmePath()
         {
-            return Path.GetFullPath(BuildConfig.ReadmePath);
+            return Path.GetFullPath(Path.Join(GetProjectPath(), BuildConfig.ReadmePath));
         }
 
         public string GetProjectConfigPath()
         {
-            return Path.GetFullPath("./thunderstore.toml");
+            return Path.GetFullPath(GeneralConfig.ProjectConfigPath);
         }
 
         public static Config Parse(params IConfigProvider[] configProviders)
         {
+            var generalConfig = new GeneralConfig();
             var packageMeta = new PackageMeta();
             var buildConfig = new BuildConfig();
             var publishConfig = new PublishConfig();
             var authConfig = new AuthConfig();
-            var result = new Config(packageMeta, buildConfig, publishConfig, authConfig);
+            var result = new Config(generalConfig, packageMeta, buildConfig, publishConfig, authConfig);
             foreach (var provider in configProviders)
             {
                 provider.Parse(result);
+                Merge(generalConfig, provider.GetGeneralConfig(), false);
                 Merge(packageMeta, provider.GetPackageMeta(), false);
                 Merge(buildConfig, provider.GetBuildConfig(), false);
                 Merge(publishConfig, provider.GetPublishConfig(), false);
@@ -71,6 +81,11 @@ namespace ThunderstoreCLI.Config
                 }
             }
         }
+    }
+
+    public class GeneralConfig
+    {
+        public string ProjectConfigPath { get; set; }
     }
 
     public class PackageMeta
