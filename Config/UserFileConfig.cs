@@ -9,7 +9,7 @@ namespace ThunderstoreCLI.Config
     {
         private AuthConfig authConfig;
 
-        public void Parse(Config currentConfig)
+        public override void Parse(Config currentConfig)
         {
             //var confdir = Path.Combine(
             //    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

@@ -22,24 +22,34 @@ namespace ThunderstoreCLI.Config
             AuthConfig = authConfig;
         }
 
-        public string GetProjectPath()
+        public string GetProjectBasePath()
         {
             return Path.GetDirectoryName(GetProjectConfigPath());
         }
 
+        public string GetProjectRelativePath(string path)
+        {
+            return Path.GetFullPath(Path.Join(GetProjectBasePath(), path));
+        }
+
         public string GetPackageIconPath()
         {
-            return Path.GetFullPath(Path.Join(GetProjectPath(), BuildConfig.IconPath));
+            return GetProjectRelativePath(BuildConfig.IconPath);
         }
 
         public string GetPackageReadmePath()
         {
-            return Path.GetFullPath(Path.Join(GetProjectPath(), BuildConfig.ReadmePath));
+            return GetProjectRelativePath(BuildConfig.ReadmePath);
         }
 
         public string GetProjectConfigPath()
         {
             return Path.GetFullPath(GeneralConfig.ProjectConfigPath);
+        }
+
+        public string GetBuildOutputDir()
+        {
+            return GetProjectRelativePath(BuildConfig.OutDir);
         }
 
         public static Config Parse(params IConfigProvider[] configProviders)
