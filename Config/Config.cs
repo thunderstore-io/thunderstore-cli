@@ -24,15 +24,16 @@ namespace ThunderstoreCLI.Config
             var buildConfig = new BuildConfig();
             var publishConfig = new PublishConfig();
             var authConfig = new AuthConfig();
+            var result = new Config(packageMeta, buildConfig, publishConfig, authConfig);
             foreach (var provider in configProviders)
             {
-                provider.Parse();
+                provider.Parse(result);
                 Merge(packageMeta, provider.GetPackageMeta(), false);
                 Merge(buildConfig, provider.GetBuildConfig(), false);
                 Merge(publishConfig, provider.GetPublishConfig(), false);
                 Merge(authConfig, provider.GetAuthConfig(), false);
             }
-            return new Config(packageMeta, buildConfig, publishConfig, authConfig);
+            return result;
         }
 
         public static void Merge<T>(T target, T source, bool overwrite)
@@ -58,7 +59,7 @@ namespace ThunderstoreCLI.Config
 
     public class PackageMeta
     {
-        public string Author { get; set; }
+        public string Namespace { get; set; }
         public string Name { get; set; }
         public string VersionNumber { get; set; }
         public string Description { get; set; }

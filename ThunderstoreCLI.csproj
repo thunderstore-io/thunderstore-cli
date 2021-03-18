@@ -14,14 +14,14 @@
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <PublishSingleFile>true</PublishSingleFile>
         <PublishTrimmed>true</PublishTrimmed>
-        <SelfContained >true</SelfContained>
+        <SelfContained>true</SelfContained>
         <PublishReadyToRun>true</PublishReadyToRun>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.8.0" />
-        <PackageReference Include="Tomlyn" Version="0.1.2" />
+        <PackageReference Include="Tommy" Version="2.0.0" />
     </ItemGroup>
 
     <ItemGroup>

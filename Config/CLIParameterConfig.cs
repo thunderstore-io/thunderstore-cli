@@ -1,31 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ThunderstoreCLI.Config
 {
-    public class CLIParameterConfig : IConfigProvider
+    public abstract class CLIParameterConfig<T> : EmptyConfig
     {
-        public void Parse() { }
+        protected T options;
 
-        public PackageMeta GetPackageMeta()
+        public CLIParameterConfig(T options)
         {
-            return null;
+            this.options = options;
         }
+    }
 
-        public BuildConfig GetBuildConfig()
-        {
-            return null;
-        }
+    public class CLIInitCommandConfig : CLIParameterConfig<InitOptions>
+    {
+        public CLIInitCommandConfig(InitOptions options) : base(options) { }
 
-        public PublishConfig GetPublishConfig()
+        public override PackageMeta GetPackageMeta()
         {
-            return null;
+            if (options == null) return null;
+            return new PackageMeta()
+            {
+                Namespace = options.Namespace,
+                Name = options.Name,
+                VersionNumber = options.VersionNumber
+            };
         }
+    }
 
-        public AuthConfig GetAuthConfig()
+    public class CLIBuildCommandConfig : CLIParameterConfig<BuildOptions>
+    {
+        public CLIBuildCommandConfig(BuildOptions options) : base(options) { }
+
+        public override PackageMeta GetPackageMeta()
         {
-            return null;
+            if (options == null) return null;
+            return new PackageMeta()
+            {
+                Namespace = options.Namespace,
+                Name = options.Name,
+                VersionNumber = options.VersionNumber
+            };
         }
+    }
+
+    public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
+    {
+        public CLIPublishCommandConfig(PublishOptions options) : base(options) { }
     }
 }

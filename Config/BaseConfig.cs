@@ -6,7 +6,7 @@ namespace ThunderstoreCLI.Config
 {
     class BaseConfig : IConfigProvider
     {
-        public void Parse() { }
+        public void Parse(Config currentConfig) { }
 
         public BuildConfig GetBuildConfig()
         {
@@ -26,7 +26,7 @@ namespace ThunderstoreCLI.Config
         {
             return new PackageMeta()
             {
-                Author = "AuthorName",
+                Namespace = "AuthorName",
                 Name = "PackageName",
                 VersionNumber = "0.0.1",
                 Description = "Example mod description",

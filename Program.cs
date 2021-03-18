@@ -2,35 +2,54 @@
 using System.Collections.Generic;
 using System.IO;
 using CommandLine;
-using Tomlyn.Syntax;
+using ThunderstoreCLI.Commands;
 
 namespace ThunderstoreCLI
 {
+    public class PackageOptions
+    {
+        [Option("package-name", Required = false, HelpText = "Name for the package")]
+        public string Name { get; set; }
+
+        [Option("package-namespace", Required = false, HelpText = "Namespace for the package")]
+        public string Namespace { get; set; }
+
+        [Option("package-version", Required = false, HelpText = "Verson number for the package")]
+        public string VersionNumber { get; set; }
+    }
+
+    [Verb("init", HelpText = "Initialize a new project")]
+    public class InitOptions : PackageOptions
+    {
+        public const string OVERWRITE_FLAG = "overwrite";
+
+        [Option(OVERWRITE_FLAG, Required = false, Default = false, HelpText = "If present, overwrite current configuration")]
+        public bool Overwrite { get; set; }
+    }
+
+    [Verb("build", HelpText = "Build a package")]
+    public class BuildOptions : PackageOptions { }
+
+    [Verb("publish", HelpText = "Publish a package")]
+    public class PublishOptions { }
+
     class Program
     {
-
-        [Verb("init", HelpText = "Initialize a new project")]
-        class InitOptions { }
-
-        [Verb("build", HelpText = "Build a package")]
-        class BuildOptions { }
-
-        [Verb("publish", HelpText = "Publish a package")]
-        class PublishOptions { }
-
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            var config = GetConfig();
-            Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions>(args)
-                .WithParsed<InitOptions>(o => Init(o))
-                .WithParsed<BuildOptions>(o => Build(o))
-                .WithParsed<PublishOptions>(o => Publish(o));
+            return Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions>(args)
+                .MapResult(
+                    (InitOptions o) => Init(o),
+                    (BuildOptions o) => Build(o),
+                    (PublishOptions o) => Publish(o),
+                    errs => HandleError(errs)
+                );
         }
 
-        static Config.Config GetConfig()
+        static Config.Config GetConfig(Config.IConfigProvider cliConfig)
         {
             return Config.Config.Parse(
-                new Config.CLIParameterConfig(),
+                cliConfig,
                 new Config.EnvironmentConfig(),
                 new Config.ProjectFileConfig(),
                 new Config.UserFileConfig(),
@@ -38,19 +57,24 @@ namespace ThunderstoreCLI
             );
         }
 
-        static void Init(InitOptions options)
+        static int HandleError(IEnumerable<Error> errors)
         {
-            Console.WriteLine("Init");
+            return 1;
         }
 
-        static void Build(BuildOptions options)
+        static int Init(InitOptions options)
         {
-            Console.WriteLine("Build");
+            return InitCommand.Run(options, GetConfig(new Config.CLIInitCommandConfig(options)));
         }
 
-        static void Publish(PublishOptions options)
+        static int Build(BuildOptions options)
         {
-            Console.WriteLine("Publish");
+            return BuildCommand.Run(options, GetConfig(new Config.CLIBuildCommandConfig(options)));
+        }
+
+        static int Publish(PublishOptions options)
+        {
+            return PublishCommand.Run(options, GetConfig(new Config.CLIPublishCommandConfig(options)));
         }
     }
 
