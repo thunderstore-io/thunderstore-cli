@@ -15,20 +15,36 @@ namespace ThunderstoreCLI.Commands
         {
             public Config.Config Config { get; protected set; }
             public bool HasWarnings { get; protected set; }
+            public bool HasErrors { get; protected set; }
 
             protected Dictionary<string, Func<byte[]>> plan;
             protected Dictionary<string, string> duplicateMap;
+            protected HashSet<string> directories;
+            protected HashSet<string> files;
 
             public ArchivePlan(Config.Config config)
             {
                 Config = config;
                 plan = new();
                 duplicateMap = new();
+                directories = new();
+                files = new();
             }
 
             public void AddPlan(string path, Func<byte[]> dataGetter)
             {
                 var key = path.ToLowerInvariant();
+
+                var directoryKeys = new HashSet<string>();
+                var pathParts = key;
+                var lastSeparatorIndex = pathParts.LastIndexOf("/");
+                while (lastSeparatorIndex > 0)
+                {
+                    pathParts = pathParts.Substring(0, lastSeparatorIndex);
+                    directoryKeys.Add(pathParts);
+                    lastSeparatorIndex = pathParts.LastIndexOf("/");
+                }
+
                 if (duplicateMap.ContainsKey(key))
                 {
                     var duplicatePath = duplicateMap[key];
@@ -36,19 +52,42 @@ namespace ThunderstoreCLI.Commands
                     {
                         Console.WriteLine(Red("ERROR: Case mismatch!"));
                         Console.WriteLine(Red($"A file target was added twice to the build with different casing, which is not allowed!"));
-                        Console.WriteLine(Red($"Previously: {duplicatePath}"));
-                        Console.WriteLine(Red($"Now: {path}"));
-                        throw new CommandException("Duplicate file name in build with mismatching casing.");
+                        Console.WriteLine(Red($"Previously: {White(Dim(duplicatePath))}"));
+                        Console.WriteLine(Red($"Now: {White(Dim(path))}"));
+                        HasErrors = true;
+                        return;
                     }
                     Console.WriteLine(Yellow($"WARNING: {path} was added multiple times to the build and will be overwritten"));
-                    Console.WriteLine(Yellow($"Re-Planned for /{path}"));
+                    Console.WriteLine(Yellow(Dim($"Re-Planned for /{path}")));
                     plan[path] = dataGetter;
                     HasWarnings = true;
+                }
+                else if (directories.Contains(key))
+                {
+                    Console.WriteLine(Red("ERROR: Filepath conflict"));
+                    Console.WriteLine(Red("A directory already exists in the location where a file was to be placed"));
+                    Console.WriteLine(Red($"Path in question: {White(Dim(path))}"));
+                    HasErrors = true;
+                    return;
+                }
+                else if (directoryKeys.Any(x => files.Contains(x)))
+                {
+                    Console.WriteLine(Red("ERROR: Directory path conflict"));
+                    Console.WriteLine(Red("A file already exists in the location where a directory was to be created"));
+                    Console.WriteLine(Red($"Path in question: {White(Dim(path))}"));
+                    HasErrors = true;
+                    return;
                 }
                 else
                 {
                     plan[path] = dataGetter;
                     duplicateMap[key] = path;
+
+                    files.Add(key);
+                    foreach (var entry in directoryKeys)
+                    {
+                        directories.Add(entry);
+                    }
                     Console.WriteLine(Dim($"Planned for /{path}"));
                 }
             }
@@ -104,7 +143,20 @@ namespace ThunderstoreCLI.Commands
 
             foreach (var pathMap in config.BuildConfig.CopyPaths)
             {
+                Console.WriteLine();
+                Console.WriteLine($"Mapping {Dim(pathMap.From)} to {Dim(pathMap.To)}");
+                //Console.WriteLine($"Source: {pathMap.From}");
+                //Console.WriteLine($"Target: {pathMap.To}");
                 encounteredIssues |= !AddPathToArchivePlan(plan, pathMap.From, pathMap.To);
+            }
+
+            if (plan.HasErrors)
+            {
+                Console.WriteLine();
+                Console.WriteLine(Red("ERROR: Build was aborted due to errors identified in planning phase"));
+                Console.WriteLine(Red("Adjust your configuration so no issues are present"));
+                Console.WriteLine(Red("Exiting"));
+                return 1;
             }
 
             Console.WriteLine();
@@ -131,7 +183,7 @@ namespace ThunderstoreCLI.Commands
 
             if (encounteredIssues || plan.HasWarnings)
             {
-                Console.WriteLine(Yellow("Some issues were encountered when building, see log for more details"));
+                Console.WriteLine(Yellow("Some issues were encountered when building, see output for more details"));
                 return 1;
             }
             else

@@ -147,7 +147,7 @@ namespace ThunderstoreCLI.Config
                 Console.WriteLine(Yellow($"Looked from {Dim(configPath)}"));
                 return null;
             }
-            using StreamReader reader = new StreamReader(File.OpenRead(configPath));
+            using var reader = new StreamReader(File.OpenRead(configPath));
             return TOML.Parse(reader);
         }
 
