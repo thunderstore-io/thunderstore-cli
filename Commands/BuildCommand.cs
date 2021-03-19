@@ -41,8 +41,8 @@ namespace ThunderstoreCLI.Commands
                         Console.WriteLine(Red($"ERROR: Now: {path}"));
                         throw new CommandException("Duplicate file name in build with mismatching casing.");
                     }
-                    Console.WriteLine(Yellow($"WARN: {path} was added multiple times to the build and will be overwritten"));
-                    Console.WriteLine(Dim($"Re-Planned for /{path}"));
+                    Console.WriteLine(Yellow($"WARNING: {path} was added multiple times to the build and will be overwritten"));
+                    Console.WriteLine(Yellow($"Re-Planned for /{path}"));
                     plan[path] = dataGetter;
                     HasWarnings = true;
                 }
@@ -63,7 +63,7 @@ namespace ThunderstoreCLI.Commands
         public static int Run(BuildOptions options, Config.Config config)
         {
             var packageId = $"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}-{config.PackageMeta.VersionNumber}";
-            Console.WriteLine($"Building {packageId}");
+            Console.WriteLine($"Building {Cyan(packageId)}");
             Console.WriteLine();
 
             var readmePath = config.GetPackageReadmePath();
@@ -87,8 +87,10 @@ namespace ThunderstoreCLI.Commands
             {
                 Directory.CreateDirectory(outDir);
             }
-
             var filename = Path.GetFullPath(Path.Join(outDir, $"{packageId}.zip"));
+
+            Console.WriteLine($"Output path: {Dim(filename)}");
+            Console.WriteLine();
 
             var encounteredIssues = false;
 
@@ -130,13 +132,12 @@ namespace ThunderstoreCLI.Commands
 
             if (encounteredIssues || plan.HasWarnings)
             {
-                Console.WriteLine($"Built {filename}");
-                Console.WriteLine(Yellow("Some issues were encountered when building, see output for more details"));
+                Console.WriteLine(Yellow("Some issues were encountered when building, see log for more details"));
                 return 1;
             }
             else
             {
-                Console.WriteLine(Green($"Successfully built {filename}"));
+                Console.WriteLine(Green($"Successfully built {Cyan(packageId)}"));
                 return 0;
             }
         }
@@ -175,7 +176,7 @@ namespace ThunderstoreCLI.Commands
             }
             else
             {
-                Console.WriteLine($"WARN: Nothing found at {sourcePath}, looked from {basePath}");
+                Console.WriteLine($"WARNING: Nothing found at {sourcePath}, looked from {basePath}");
                 return false;
             }
         }
