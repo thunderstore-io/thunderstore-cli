@@ -5,7 +5,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands
@@ -36,9 +35,9 @@ namespace ThunderstoreCLI.Commands
                     if (duplicatePath != path)
                     {
                         Console.WriteLine(Red("ERROR: Case mismatch!"));
-                        Console.WriteLine(Red($"ERROR: A file target was added twice to the build with different casing, which is not allowed!"));
-                        Console.WriteLine(Red($"ERROR: Previously: {duplicatePath}"));
-                        Console.WriteLine(Red($"ERROR: Now: {path}"));
+                        Console.WriteLine(Red($"A file target was added twice to the build with different casing, which is not allowed!"));
+                        Console.WriteLine(Red($"Previously: {duplicatePath}"));
+                        Console.WriteLine(Red($"Now: {path}"));
                         throw new CommandException("Duplicate file name in build with mismatching casing.");
                     }
                     Console.WriteLine(Yellow($"WARNING: {path} was added multiple times to the build and will be overwritten"));
@@ -103,9 +102,9 @@ namespace ThunderstoreCLI.Commands
             plan.AddPlan("README.md", () => File.ReadAllBytes(readmePath));
             plan.AddPlan("manifest.json", () => Encoding.UTF8.GetBytes(SerializeManifest(config)));
 
-            foreach (var pathConfig in config.BuildConfig.CopyPaths)
+            foreach (var pathMap in config.BuildConfig.CopyPaths)
             {
-                encounteredIssues |= !AddPathToArchivePlan(plan, pathConfig.Key, pathConfig.Value);
+                encounteredIssues |= !AddPathToArchivePlan(plan, pathMap.From, pathMap.To);
             }
 
             Console.WriteLine();
@@ -120,7 +119,7 @@ namespace ThunderstoreCLI.Commands
                     {
                         Console.WriteLine(Dim($"Writing /{entry.Key}"));
                         var archiveEntry = archive.CreateEntry(entry.Key, CompressionLevel.Optimal);
-                        using (var writer = new StreamWriter(archiveEntry.Open()))
+                        using (var writer = new BinaryWriter(archiveEntry.Open()))
                         {
                             writer.Write(entry.Value());
                         }
@@ -176,7 +175,7 @@ namespace ThunderstoreCLI.Commands
             }
             else
             {
-                Console.WriteLine($"WARNING: Nothing found at {sourcePath}, looked from {basePath}");
+                Console.WriteLine(Yellow($"WARNING: Nothing found at {sourcePath}, looked from {basePath}"));
                 return false;
             }
         }

@@ -21,7 +21,7 @@ namespace ThunderstoreCLI
         public string VersionNumber { get; set; }
     }
 
-    [Verb("init", HelpText = "Initialize a new project")]
+    [Verb("init", HelpText = "Initialize a new project configuration")]
     public class InitOptions : PackageOptions
     {
         public const string OVERWRITE_FLAG = "overwrite";

@@ -108,12 +108,24 @@ namespace ThunderstoreCLI.Config
         public Dictionary<string, string> Dependencies { get; set; }
     }
 
+    public struct CopyPathMap
+    {
+        public readonly string From;
+        public readonly string To;
+
+        public CopyPathMap(string from, string to)
+        {
+            From = from;
+            To = to;
+        }
+    }
+
     public class BuildConfig
     {
         public string IconPath { get; set; }
         public string ReadmePath { get; set; }
         public string OutDir { get; set; }
-        public Dictionary<string, string> CopyPaths { get; set; }
+        public List<CopyPathMap> CopyPaths { get; set; }
     }
 
     public class PublishConfig

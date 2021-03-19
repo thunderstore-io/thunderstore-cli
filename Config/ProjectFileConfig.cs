@@ -4,22 +4,151 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Tommy;
+using static Crayon.Output;
 
 namespace ThunderstoreCLI.Config
 {
     class ProjectFileConfig : EmptyConfig
     {
+
+        private PackageMeta PackageMeta { get; set; }
+
+        private BuildConfig BuildConfig { get; set; }
+
+        private PublishConfig PublishConfig { get; set; }
+
+        public override void Parse(Config currentConfig)
+        {
+            var tomlData = Read(currentConfig);
+            if (tomlData == null)
+                return;
+
+            if (!tomlData.HasKey("config") || !tomlData["config"].HasKey("schemaVersion"))
+            {
+                Console.WriteLine(Yellow("WARNING: Project configuration is lacking schema version"));
+                Console.WriteLine(Yellow("Might not be able to parse configuration as expected."));
+            }
+            if (tomlData["config"]["schemaVersion"] != "0.0.1")
+            {
+                Console.WriteLine(Yellow("WARNING: Unknown project configuration schema version"));
+                Console.WriteLine(Yellow("Might not be able to parse configuration as expected."));
+            }
+
+            PackageMeta = ParsePackageMeta(tomlData);
+            BuildConfig = ParseBuildConfig(tomlData);
+            PublishConfig = ParsePublishConfig(tomlData);
+        }
+
+        protected static PackageMeta ParsePackageMeta(TomlTable tomlData)
+        {
+            if (!tomlData.HasKey("package"))
+                return null;
+
+            var packageMeta = tomlData["package"];
+
+            var result = new PackageMeta
+            {
+                Namespace = TomlUtils.SafegetValue(packageMeta, "namespace", null),
+                Name = TomlUtils.SafegetValue(packageMeta, "name", null),
+                VersionNumber = TomlUtils.SafegetValue(packageMeta, "versionNumber", null),
+                Description = TomlUtils.SafegetValue(packageMeta, "description", null),
+                WebsiteUrl = TomlUtils.SafegetValue(packageMeta, "websiteUrl", null),
+                Dependencies = new()
+            };
+
+            if (packageMeta.HasKey("dependencies"))
+            {
+                var packageDependencies = packageMeta["dependencies"];
+                foreach (var packageName in packageDependencies.Keys)
+                {
+                    // TODO: Validate both are strings if needed?
+                    result.Dependencies[packageName] = packageDependencies[packageName];
+                }
+            }
+
+            return result;
+        }
+
+        protected static BuildConfig ParseBuildConfig(TomlTable tomlData)
+        {
+            if (!tomlData.HasKey("build"))
+                return null;
+
+            var buildConfig = tomlData["build"];
+
+            var result = new BuildConfig
+            {
+                IconPath = TomlUtils.SafegetValue(buildConfig, "icon", null),
+                ReadmePath = TomlUtils.SafegetValue(buildConfig, "readme", null),
+                OutDir = TomlUtils.SafegetValue(buildConfig, "outdir", null),
+                CopyPaths = new()
+            };
+
+            if (buildConfig.HasKey("copy"))
+            {
+                var pathSets = buildConfig["copy"];
+                foreach (var entry in pathSets)
+                {
+                    if (!(entry is TomlNode))
+                    {
+                        Console.WriteLine(Yellow($"WARNING: Unable to properly parse build config: {entry}"));
+                        Console.WriteLine(Yellow("Skipping entry"));
+                        continue;
+                    }
+
+                    var node = (TomlNode)entry;
+                    if (!node.HasKey("source") || !node.HasKey("target"))
+                    {
+                        Console.WriteLine(Yellow($"WARNING: Build config instruction is missing parameters: {node}"));
+                        Console.WriteLine(Yellow($"Make sure both 'source' and 'target' are defined"));
+                        Console.WriteLine(Yellow("Skipping entry"));
+                        continue;
+                    }
+
+                    result.CopyPaths.Add(new CopyPathMap(node["source"], node["target"]));
+                }
+            }
+            return result;
+        }
+
+        protected static PublishConfig ParsePublishConfig(TomlTable tomlData)
+        {
+            if (!tomlData.HasKey("publish"))
+                return null;
+
+            var publishConfig = tomlData["publish"];
+            return new PublishConfig
+            {
+                Repository = TomlUtils.SafegetValue(publishConfig, "repository", null)
+            };
+        }
+
+        public override PackageMeta GetPackageMeta()
+        {
+            return PackageMeta;
+        }
+
+        public override BuildConfig GetBuildConfig()
+        {
+            return BuildConfig;
+        }
+
+        public override PublishConfig GetPublishConfig()
+        {
+            return PublishConfig;
+        }
+
         public static TomlTable Read(Config config)
         {
             var configPath = config.GetProjectConfigPath();
             if (!File.Exists(configPath))
             {
-                throw new CommandException($"Unable to find project configuration file. Looked from {configPath}");
+                Console.WriteLine(Yellow($"WARNING: Unable to find project configuration file."));
+                Console.WriteLine(Yellow($"Looked from {Dim(configPath)}"));
+                return null;
             }
-            using (StreamReader reader = new StreamReader(File.OpenRead(configPath)))
-            {
-                return TOML.Parse(reader);
-            }
+            using StreamReader reader = new StreamReader(File.OpenRead(configPath));
+            return TOML.Parse(reader);
         }
 
         public static void Write(Config config, string path)
@@ -40,7 +169,7 @@ namespace ThunderstoreCLI.Config
                     ["websiteUrl"] = config.PackageMeta.WebsiteUrl
                 },
 
-                ["package.dependencies"] = TomlUtils.DictToToml(config.PackageMeta.Dependencies),
+                ["package.dependencies"] = TomlUtils.DictToTomlTable(config.PackageMeta.Dependencies),
 
                 ["build"] = new FormattedTomlTable
                 {
@@ -49,7 +178,7 @@ namespace ThunderstoreCLI.Config
                     ["outdir"] = config.BuildConfig.OutDir
                 },
 
-                ["build.copy"] = TomlUtils.DictToToml(config.BuildConfig.CopyPaths),
+                ["build.copy"] = TomlUtils.BuildCopyPathTable(config.BuildConfig.CopyPaths),
 
                 ["publish"] = new FormattedTomlTable
                 {

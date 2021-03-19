@@ -22,7 +22,7 @@ namespace ThunderstoreCLI.Config
                 OutDir = "./build",
                 CopyPaths = new()
                 {
-                    { "./dist", "./" }
+                    { new("./dist", "") }
                 }
             };
         }
