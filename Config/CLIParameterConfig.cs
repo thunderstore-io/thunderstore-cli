@@ -67,5 +67,24 @@ namespace ThunderstoreCLI.Config
     public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
     {
         public CLIPublishCommandConfig(PublishOptions options) : base(options) { }
+
+        public override GeneralConfig GetGeneralConfig()
+        {
+            return new GeneralConfig()
+            {
+                ProjectConfigPath = options.ConfigPath
+            };
+        }
+
+        public override PackageMeta GetPackageMeta()
+        {
+            if (options == null) return null;
+            return new PackageMeta()
+            {
+                Namespace = options.Namespace,
+                Name = options.Name,
+                VersionNumber = options.VersionNumber
+            };
+        }
     }
 }

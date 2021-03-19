@@ -46,13 +46,15 @@ namespace ThunderstoreCLI.Config
 
             var packageMeta = tomlData["package"];
 
-            var result = new PackageMeta
+            // TODO: Add warnings on missing values
+            var result = new PackageMeta()
             {
-                Namespace = TomlUtils.SafegetValue(packageMeta, "namespace", null),
-                Name = TomlUtils.SafegetValue(packageMeta, "name", null),
-                VersionNumber = TomlUtils.SafegetValue(packageMeta, "versionNumber", null),
-                Description = TomlUtils.SafegetValue(packageMeta, "description", null),
-                WebsiteUrl = TomlUtils.SafegetValue(packageMeta, "websiteUrl", null),
+                Namespace = TomlUtils.SafegetString(packageMeta, "namespace"),
+                Name = TomlUtils.SafegetString(packageMeta, "name"),
+                VersionNumber = TomlUtils.SafegetString(packageMeta, "versionNumber"),
+                Description = TomlUtils.SafegetString(packageMeta, "description"),
+                WebsiteUrl = TomlUtils.SafegetString(packageMeta, "websiteUrl"),
+                ContainsNsfwContent = TomlUtils.SafegetBool(packageMeta, "containsNsfwContent"),
                 Dependencies = new()
             };
 
@@ -78,9 +80,9 @@ namespace ThunderstoreCLI.Config
 
             var result = new BuildConfig
             {
-                IconPath = TomlUtils.SafegetValue(buildConfig, "icon", null),
-                ReadmePath = TomlUtils.SafegetValue(buildConfig, "readme", null),
-                OutDir = TomlUtils.SafegetValue(buildConfig, "outdir", null),
+                IconPath = TomlUtils.SafegetString(buildConfig, "icon"),
+                ReadmePath = TomlUtils.SafegetString(buildConfig, "readme"),
+                OutDir = TomlUtils.SafegetString(buildConfig, "outdir"),
                 CopyPaths = new()
             };
 
@@ -119,7 +121,7 @@ namespace ThunderstoreCLI.Config
             var publishConfig = tomlData["publish"];
             return new PublishConfig
             {
-                Repository = TomlUtils.SafegetValue(publishConfig, "repository", null)
+                Repository = TomlUtils.SafegetString(publishConfig, "repository")
             };
         }
 
@@ -166,7 +168,8 @@ namespace ThunderstoreCLI.Config
                     ["name"] = config.PackageMeta.Name,
                     ["versionNumber"] = config.PackageMeta.VersionNumber,
                     ["description"] = config.PackageMeta.Description,
-                    ["websiteUrl"] = config.PackageMeta.WebsiteUrl
+                    ["websiteUrl"] = config.PackageMeta.WebsiteUrl,
+                    ["containsNsfwContent"] = config.PackageMeta.ContainsNsfwContent
                 },
 
                 ["package.dependencies"] = TomlUtils.DictToTomlTable(config.PackageMeta.Dependencies),

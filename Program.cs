@@ -8,16 +8,16 @@ namespace ThunderstoreCLI
 {
     public class PackageOptions
     {
-        [Option("config-path", Required = false, Default = "./thunderstore.toml", HelpText = "Path for the project configuration file")]
+        [Option("config-path", Required = false, Default = Defaults.PROJECT_CONFIG_PATH, HelpText = "Path for the project configuration file")]
         public string ConfigPath { get; set; }
 
-        [Option("package-name", Required = false, HelpText = "Name for the package")]
+        [Option("package-name", SetName = "build", Required = false, HelpText = "Name for the package")]
         public string Name { get; set; }
 
-        [Option("package-namespace", Required = false, HelpText = "Namespace for the package")]
+        [Option("package-namespace", SetName = "build", Required = false, HelpText = "Namespace for the package")]
         public string Namespace { get; set; }
 
-        [Option("package-version", Required = false, HelpText = "Verson number for the package")]
+        [Option("package-version", SetName = "build", Required = false, HelpText = "Verson number for the package")]
         public string VersionNumber { get; set; }
     }
 
@@ -33,8 +33,18 @@ namespace ThunderstoreCLI
     [Verb("build", HelpText = "Build a package")]
     public class BuildOptions : PackageOptions { }
 
-    [Verb("publish", HelpText = "Publish a package")]
-    public class PublishOptions { }
+    [Verb("publish", HelpText = "Publish a package. By default will also build the project.")]
+    public class PublishOptions : PackageOptions
+    {
+        [Option("file", SetName = "select", Required = false, HelpText = "If provided, defined file instead of building.")]
+        public string File { get; set; }
+
+        [Option("token", Required = false, HelpText = "Authentication token to use for publishing.")]
+        public string Token { get; set; }
+
+        [Option("repository", Required = false, HelpText = "URL of the repository where to publish.")]
+        public string Repository { get; set; }
+    }
 
     class Program
     {

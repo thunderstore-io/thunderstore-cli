@@ -10,7 +10,7 @@ namespace ThunderstoreCLI.Config
         {
             return new GeneralConfig()
             {
-                ProjectConfigPath = "./thunderstore.toml"
+                ProjectConfigPath = Defaults.PROJECT_CONFIG_PATH
             };
         }
         public override BuildConfig GetBuildConfig()
@@ -36,6 +36,7 @@ namespace ThunderstoreCLI.Config
                 VersionNumber = "0.0.1",
                 Description = "Example mod description",
                 WebsiteUrl = "",
+                ContainsNsfwContent = false,
                 Dependencies = new()
                 {
                     { "Example-Dependency", "1.0.0" }
@@ -47,7 +48,7 @@ namespace ThunderstoreCLI.Config
         {
             return new PublishConfig()
             {
-                Repository = "https://thunderstore.io"
+                Repository = Defaults.REPOSITORY_URL
             };
         }
     }

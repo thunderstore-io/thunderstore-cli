@@ -1,7 +1,8 @@
 {
   "profiles": {
     "ThunderstoreCLI": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "publish --config-path test/thunderstore.toml"
     }
   }
 }

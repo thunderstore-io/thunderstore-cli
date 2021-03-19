@@ -52,6 +52,21 @@ namespace ThunderstoreCLI.Config
             return GetProjectRelativePath(BuildConfig.OutDir);
         }
 
+        public string GetPackageId()
+        {
+            return $"{PackageMeta.Namespace}-{PackageMeta.Name}-{PackageMeta.VersionNumber}";
+        }
+
+        public string GetBuildOutputFile()
+        {
+            return Path.GetFullPath(Path.Join(GetBuildOutputDir(), $"{GetPackageId()}.zip"));
+        }
+
+        public string GetPackageUploadUrl()
+        {
+            return $"{PublishConfig.Repository}/api/experimental/package/upload/";
+        }
+
         public static Config Parse(params IConfigProvider[] configProviders)
         {
             var generalConfig = new GeneralConfig();
@@ -105,6 +120,7 @@ namespace ThunderstoreCLI.Config
         public string VersionNumber { get; set; }
         public string Description { get; set; }
         public string WebsiteUrl { get; set; }
+        public bool? ContainsNsfwContent { get; set; }
         public Dictionary<string, string> Dependencies { get; set; }
     }
 

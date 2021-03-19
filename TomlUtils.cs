@@ -44,13 +44,28 @@ namespace ThunderstoreCLI
             }
         }
 
-        public static TomlNode SafegetValue(TomlNode node, string key, TomlNode fallback)
+        public static string SafegetString(TomlNode node, string key)
         {
-            var success = node.TryGetNode(key, out TomlNode result);
-            if (success)
-                return result;
-            else
-                return fallback;
+            try
+            {
+                return node[key];
+            }
+            catch (NullReferenceException)
+            {
+                return null;
+            }
+        }
+
+        public static bool? SafegetBool(TomlNode node, string key)
+        {
+            try
+            {
+                return node[key];
+            }
+            catch (NullReferenceException)
+            {
+                return null;
+            }
         }
     }
 }

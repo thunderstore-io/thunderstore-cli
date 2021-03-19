@@ -100,6 +100,11 @@ namespace ThunderstoreCLI.Commands
 
         public static int Run(BuildOptions options, Config.Config config)
         {
+            return DoBuild(config);
+        }
+
+        public static int DoBuild(Config.Config config)
+        {
             var configPath = config.GetProjectConfigPath();
             if (!File.Exists(configPath))
             {
@@ -109,7 +114,7 @@ namespace ThunderstoreCLI.Commands
                 Console.WriteLine(Red("Exiting"));
                 return 1;
             }
-            var packageId = $"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}-{config.PackageMeta.VersionNumber}";
+            var packageId = config.GetPackageId();
             Console.WriteLine($"Building {Cyan(packageId)}");
             Console.WriteLine();
 
@@ -134,7 +139,7 @@ namespace ThunderstoreCLI.Commands
             {
                 Directory.CreateDirectory(outDir);
             }
-            var filename = Path.GetFullPath(Path.Join(outDir, $"{packageId}.zip"));
+            var filename = config.GetBuildOutputFile();
 
             Console.WriteLine($"Output path: {Dim(filename)}");
             Console.WriteLine();
