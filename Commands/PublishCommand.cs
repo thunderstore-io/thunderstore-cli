@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -65,50 +66,187 @@ namespace ThunderstoreCLI.Commands
                 Console.WriteLine(Red("Exiting"));
                 return 1;
             }
+            
             using var client = new HttpClient();
 
-
-            var requestContent = new MultipartFormDataContent();
-
-            using var fileStream = File.Open(filepath, FileMode.Open);
-            requestContent.Add(new StreamContent(fileStream), "file", "file");
-
-            using var metaStream = new MemoryStream(Encoding.UTF8.GetBytes(SerializeUploadMeta(config)));
-            requestContent.Add(new StreamContent(metaStream), "metadata", "metadata");
-
-            var request = new HttpRequestMessage(HttpMethod.Post, config.GetPackageUploadUrl())
+            var uploadRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/initiate-upload/")
             {
-                Content = requestContent,
+                Content = new StringContent(SerializeFileData(filepath), Encoding.UTF8, "application/json")
             };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", config.AuthConfig.DefaultToken);
+            uploadRequest.Headers.Authorization = config.GetAuthHeader();
 
-            var response = client.Send(request);
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            var uploadResponse = client.Send(uploadRequest);
+            using var uploadReader = new StreamReader(uploadResponse.Content.ReadAsStream());
+            if (uploadResponse.StatusCode != HttpStatusCode.Created)
             {
+                Console.WriteLine(Red("ERROR: Failed to start usermedia upload"));
+                Console.WriteLine(Red("Details:"));
+                Console.WriteLine($"Status code: {uploadResponse.StatusCode:D} {uploadResponse.StatusCode}");
+                Console.WriteLine(Dim(uploadReader.ReadToEnd()));
+                return 1;
+            }
 
+            var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(uploadReader.ReadToEnd());
+
+            async Task<(bool completed, CompletedPartData data)> UploadChunk(UploadInitiateData.UploadPartData part)
+            {
+                try
+                {
+                    await using var stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    stream.Seek(part.Offset, SeekOrigin.Begin);
+                    var partRequest = new HttpRequestMessage(HttpMethod.Put, part.Url)
+                    {
+                        Content = new StreamContent(stream, part.Length)
+                    };
+                    
+                    // ReSharper disable once AccessToDisposedClosure
+                    // These tasks won't ever run past the client instance's lifetime
+                    using var response = await client.SendAsync(partRequest);
+
+                    response.EnsureSuccessStatusCode();
+
+                    return (true, new CompletedPartData()
+                    {
+                        ETag = response.Headers.ETag.Tag,
+                        PartNumber = part.PartNumber
+                    });
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(Red("Exception occured while uploading file chunk:"));
+                    Console.WriteLine(Red(e.ToString()));
+
+                    return (false, null);
+                }
+            }
+
+            var uploadTasks = uploadData.UploadUrls.Select(UploadChunk).ToArray();
+            Task.WaitAll(uploadTasks);
+            if (uploadTasks.Any(x => !x.Result.completed))
+            {
+                var abortRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/{uploadData.Metadata.UUID}/abort-upload/");
+                abortRequest.Headers.Authorization = config.GetAuthHeader();
+                client.Send(abortRequest);
+                return 1;
+            }
+
+            var uploadedParts = uploadTasks.Select(x => x.Result.data).ToArray();
+
+            var finishRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/{uploadData.Metadata.UUID}/finish-upload/");
+            finishRequest.Headers.Authorization = config.GetAuthHeader();
+            finishRequest.Content = new StringContent(JsonSerializer.Serialize(new CompletedUpload()
+            {
+                Parts = uploadedParts
+            }), Encoding.UTF8, "application/json");
+            client.Send(finishRequest);
+
+            var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/submission/submit");
+            publishPackageRequest.Headers.Authorization = config.GetAuthHeader();
+            publishPackageRequest.Content = new StringContent(SerializeUploadMeta(config, uploadData.Metadata.UUID), Encoding.UTF8, "application/json");
+            var publishResponse = client.Send(publishPackageRequest);
+            
+            if (publishResponse.StatusCode == System.Net.HttpStatusCode.OK)
+            {
                 return 0;
             }
             else
             {
                 Console.WriteLine(Red($"ERROR: Unexpected response from the server"));
-                using var responseReader = new StreamReader(response.Content.ReadAsStream());
+                using var responseReader = new StreamReader(publishResponse.Content.ReadAsStream());
                 Console.WriteLine(Red($"Details:"));
-                Console.WriteLine($"Status code: {response.StatusCode:D} {response.StatusCode}");
+                Console.WriteLine($"Status code: {publishResponse.StatusCode:D} {publishResponse.StatusCode}");
                 Console.WriteLine(Dim(responseReader.ReadToEnd()));
                 return 1;
             }
         }
 
-        public static string SerializeUploadMeta(Config.Config config)
+        public static string SerializeUploadMeta(Config.Config config, string fileUuid)
         {
             var meta = new PackageUploadMetadata()
             {
                 AuthorName = config.PackageMeta.Namespace,
                 Categories = Array.Empty<string>(), // TODO: Add
                 Communities = Array.Empty<string>(), // TODO: Add
-                HasNsfwContent = config.PackageMeta.ContainsNsfwContent == true
+                HasNsfwContent = config.PackageMeta.ContainsNsfwContent == true,
+                UploadUUID = fileUuid
             };
             return JsonSerializer.Serialize(meta);
+        }
+
+        public static string SerializeFileData(string filePath)
+        {
+            return JsonSerializer.Serialize(new FileData()
+            {
+                Filename = Path.GetFileName(filePath),
+                Filesize = new FileInfo(filePath).Length
+            });
+        }
+
+        public class FileData
+        {
+            [JsonPropertyName("filename")]
+            public string Filename { get; set; }
+            
+            [JsonPropertyName("file_size_bytes")]
+            public long Filesize { get; set; }
+        }
+
+        public class CompletedUpload
+        {
+            [JsonPropertyName("parts")]
+            public CompletedPartData[] Parts { get; set; }
+        }
+        public class CompletedPartData
+        {
+            [JsonPropertyName("ETag")]
+            public string ETag { get; set; }
+            
+            [JsonPropertyName("PartNumber")]
+            public int PartNumber { get; set; }
+        }
+        
+        public class UploadInitiateData
+        {
+            public class UserMediaData
+            {
+                [JsonPropertyName("uuid")]
+                public string UUID { get; set; }
+                
+                [JsonPropertyName("filename")]
+                public string Filename { get; set; }
+                
+                [JsonPropertyName("size")]
+                public long Size { get; set; }
+                
+                [JsonPropertyName("datetime_created")]
+                public DateTime TimeCreated { get; set; }
+                
+                [JsonPropertyName("expiry")]
+                public DateTime? ExpireTime { get; set; }
+                
+                [JsonPropertyName("status")]
+                public string Status { get; set; }
+            }
+            public class UploadPartData
+            {
+                [JsonPropertyName("part_number")]
+                public int PartNumber { get; set; }
+                
+                [JsonPropertyName("url")]
+                public string Url { get; set; }
+                
+                [JsonPropertyName("offset")]
+                public long Offset { get; set; }
+                
+                [JsonPropertyName("length")]
+                public int Length { get; set; }
+            }
+            
+            [JsonPropertyName("user_media")]
+            public UserMediaData Metadata { get; set; }
+            
+            [JsonPropertyName("upload_urls")]
+            public UploadPartData[] UploadUrls { get; set; }
         }
 
         public class PackageUploadMetadata
@@ -124,6 +262,9 @@ namespace ThunderstoreCLI.Commands
 
             [JsonPropertyName("has_nsfw_content")]
             public bool HasNsfwContent { get; set; }
+            
+            [JsonPropertyName("upload_uuid")]
+            public string UploadUUID { get; set; }
         }
     }
 }
