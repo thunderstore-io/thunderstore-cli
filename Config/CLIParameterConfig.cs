@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static Crayon.Output;
 
 namespace ThunderstoreCLI.Config
 {
@@ -84,6 +81,27 @@ namespace ThunderstoreCLI.Config
                 Namespace = options.Namespace,
                 Name = options.Name,
                 VersionNumber = options.VersionNumber
+            };
+        }
+
+        public override PublishConfig GetPublishConfig()
+        {
+            return new PublishConfig()
+            {
+                Repository = options.Repository
+            };
+        }
+
+        public override AuthConfig GetAuthConfig()
+        {
+            if (options.UseSessionAuth ?? false)
+            {
+                Console.WriteLine(Yellow("The usage of session auth WILL be deprecated in the future, possibly without warning!"));
+            }
+            return new AuthConfig()
+            {
+                DefaultToken = options.Token,
+                UseSessionAuth = options.UseSessionAuth
             };
         }
     }
