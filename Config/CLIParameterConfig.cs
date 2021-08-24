@@ -94,7 +94,7 @@ namespace ThunderstoreCLI.Config
 
         public override AuthConfig GetAuthConfig()
         {
-            if (options.UseSessionAuth ?? false)
+            if (options.UseSessionAuth)
             {
                 Console.WriteLine(Yellow("The usage of session auth WILL be deprecated in the future, possibly without warning!"));
             }
