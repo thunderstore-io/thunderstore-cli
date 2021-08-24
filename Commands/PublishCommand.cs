@@ -68,12 +68,12 @@ namespace ThunderstoreCLI.Commands
             }
             
             using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = config.GetAuthHeader();
 
             var uploadRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/initiate-upload/")
             {
                 Content = new StringContent(SerializeFileData(filepath), Encoding.UTF8, "application/json")
             };
-            uploadRequest.Headers.Authorization = config.GetAuthHeader();
 
             var uploadResponse = client.Send(uploadRequest);
             using var uploadReader = new StreamReader(uploadResponse.Content.ReadAsStream());
@@ -88,6 +88,21 @@ namespace ThunderstoreCLI.Commands
 
             var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(uploadReader.ReadToEnd());
 
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int suffixIndex = 0;
+            long size = uploadData.Metadata.Size;
+            while (size >= 1024 && suffixIndex < suffixes.Length)
+            {
+                size /= 1024;
+                suffixIndex++;
+            }
+            
+            Console.WriteLine(Cyan($"Uploading {uploadData.Metadata.Filename} ({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks..."));
+            Console.WriteLine();
+
+            using var partClient = new HttpClient();
+            partClient.Timeout = new TimeSpan(72, 0, 0);
+            
             async Task<(bool completed, CompletedPartData data)> UploadChunk(UploadInitiateData.UploadPartData part)
             {
                 try
@@ -101,9 +116,17 @@ namespace ThunderstoreCLI.Commands
                     
                     // ReSharper disable once AccessToDisposedClosure
                     // These tasks won't ever run past the client instance's lifetime
-                    using var response = await client.SendAsync(partRequest);
+                    using var response = await partClient.SendAsync(partRequest);
 
-                    response.EnsureSuccessStatusCode();
+                    try
+                    {
+                        response.EnsureSuccessStatusCode();
+                    }
+                    catch
+                    {
+                        Console.WriteLine(Red(await response.Content.ReadAsStringAsync()));
+                        throw;
+                    }
 
                     return (true, new CompletedPartData()
                     {
@@ -121,8 +144,35 @@ namespace ThunderstoreCLI.Commands
             }
 
             var uploadTasks = uploadData.UploadUrls.Select(UploadChunk).ToArray();
-            Task.WaitAll(uploadTasks);
-            if (uploadTasks.Any(x => !x.Result.completed))
+            
+            static async Task<bool> ProgressBar(Task<(bool, CompletedPartData)>[] tasks)
+            {
+                ushort spinIndex = 0;
+                string[] spinChars = { "|", "/", "-", "\\", "|", "/", "-", "\\" };
+                while (true)
+                {
+                    if (tasks.Any(x => x.IsCompleted && !x.Result.Item1))
+                    {
+                        Console.WriteLine();
+                        return false;
+                    }
+                    
+                    var completed = tasks.Count(static x => x.IsCompleted);
+                    
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded...{spinChars[spinIndex++ % spinChars.Length]}"));
+                    
+                    if (completed == tasks.Length)
+                    {
+                        Console.WriteLine();
+                        return true;
+                    }
+
+                    await Task.Delay(200);
+                }
+            }
+
+            if (!ProgressBar(uploadTasks).Result)
             {
                 var abortRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/{uploadData.Metadata.UUID}/abort-upload/");
                 abortRequest.Headers.Authorization = config.GetAuthHeader();
@@ -133,20 +183,19 @@ namespace ThunderstoreCLI.Commands
             var uploadedParts = uploadTasks.Select(x => x.Result.data).ToArray();
 
             var finishRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/{uploadData.Metadata.UUID}/finish-upload/");
-            finishRequest.Headers.Authorization = config.GetAuthHeader();
             finishRequest.Content = new StringContent(JsonSerializer.Serialize(new CompletedUpload()
             {
                 Parts = uploadedParts
             }), Encoding.UTF8, "application/json");
             client.Send(finishRequest);
 
-            var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/submission/submit");
-            publishPackageRequest.Headers.Authorization = config.GetAuthHeader();
+            var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/submission/submit/");
             publishPackageRequest.Content = new StringContent(SerializeUploadMeta(config, uploadData.Metadata.UUID), Encoding.UTF8, "application/json");
             var publishResponse = client.Send(publishPackageRequest);
             
-            if (publishResponse.StatusCode == System.Net.HttpStatusCode.OK)
+            if (publishResponse.StatusCode == HttpStatusCode.OK)
             {
+                Console.WriteLine(Blue($"Successfully published {config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
                 return 0;
             }
             else
@@ -165,8 +214,8 @@ namespace ThunderstoreCLI.Commands
             var meta = new PackageUploadMetadata()
             {
                 AuthorName = config.PackageMeta.Namespace,
-                Categories = Array.Empty<string>(), // TODO: Add
-                Communities = Array.Empty<string>(), // TODO: Add
+                Categories = config.PublishConfig.Categories,
+                Communities = config.PublishConfig.Communities,
                 HasNsfwContent = config.PackageMeta.ContainsNsfwContent == true,
                 UploadUUID = fileUuid
             };

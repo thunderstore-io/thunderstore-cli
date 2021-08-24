@@ -121,7 +121,9 @@ namespace ThunderstoreCLI.Config
             var publishConfig = tomlData["publish"];
             return new PublishConfig
             {
-                Repository = TomlUtils.SafegetString(publishConfig, "repository")
+                Repository = TomlUtils.SafegetString(publishConfig, "repository"),
+                Communities = TomlUtils.SafeGetArray(publishConfig, "communities"),
+                Categories = TomlUtils.SafeGetArray(publishConfig, "categories")
             };
         }
 
@@ -185,7 +187,9 @@ namespace ThunderstoreCLI.Config
 
                 ["publish"] = new FormattedTomlTable
                 {
-                    ["repository"] = config.PublishConfig.Repository
+                    ["repository"] = config.PublishConfig.Repository,
+                    ["communites"] = TomlUtils.FromArray(config.PublishConfig.Communities),
+                    ["categories"] = TomlUtils.FromArray(config.PublishConfig.Categories)
                 }
             };
             File.WriteAllText(path, TomlUtils.FormatToml(toml));
