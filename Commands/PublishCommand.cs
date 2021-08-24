@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -109,10 +108,32 @@ namespace ThunderstoreCLI.Commands
                 {
                     await using var stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
                     stream.Seek(part.Offset, SeekOrigin.Begin);
+
+                    byte[] hash;
+                    using (var reader = new BinaryReader(stream, Encoding.Default, true))
+                    {
+                        using (var md5 = MD5.Create())
+                        {
+                            md5.Initialize();
+                            var length = part.Length;
+                            while (length > md5.InputBlockSize)
+                            {
+                                length -= md5.InputBlockSize;
+                                md5.TransformBlock(reader.ReadBytes(md5.InputBlockSize), 0, md5.InputBlockSize, null, 0);
+                            }
+                            md5.TransformFinalBlock(reader.ReadBytes(length), 0, length);
+                            hash = md5.Hash;
+                        }
+                    }
+
+                    stream.Seek(part.Offset, SeekOrigin.Begin);
+
                     var partRequest = new HttpRequestMessage(HttpMethod.Put, part.Url)
                     {
                         Content = new StreamContent(stream, part.Length)
                     };
+
+                    partRequest.Content.Headers.ContentMD5 = hash;
                     
                     // ReSharper disable once AccessToDisposedClosure
                     // These tasks won't ever run past the client instance's lifetime
