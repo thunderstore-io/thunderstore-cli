@@ -45,8 +45,8 @@ namespace ThunderstoreCLI
         [Option("repository", Required = false, HelpText = "URL of the repository where to publish.")]
         public string Repository { get; set; }
         
-        [Option("use-session-auth", Required = false, HelpText = "Use session auth instead of bearer auth. !!THIS WILL BE DEPRECATED!!")]
-        public bool? UseSessionAuth { get; set; }
+        [Option("use-session-auth", Default = false, Required = false, HelpText = "Use session auth instead of bearer auth. !!THIS WILL BE DEPRECATED!!")]
+        public bool UseSessionAuth { get; set; }
     }
 
     class Program
