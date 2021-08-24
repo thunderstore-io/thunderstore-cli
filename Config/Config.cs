@@ -148,6 +148,8 @@ namespace ThunderstoreCLI.Config
     public class PublishConfig
     {
         public string Repository { get; set; }
+        public string[] Communities { get; set; }
+        public string[] Categories { get; set; }
     }
 
     public class AuthConfig
