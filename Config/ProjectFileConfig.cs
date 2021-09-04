@@ -188,7 +188,7 @@ namespace ThunderstoreCLI.Config
                 ["publish"] = new FormattedTomlTable
                 {
                     ["repository"] = config.PublishConfig.Repository,
-                    ["communites"] = TomlUtils.FromArray(config.PublishConfig.Communities),
+                    ["communities"] = TomlUtils.FromArray(config.PublishConfig.Communities),
                     ["categories"] = TomlUtils.FromArray(config.PublishConfig.Categories)
                 }
             };
