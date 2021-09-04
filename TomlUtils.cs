@@ -84,6 +84,8 @@ namespace ThunderstoreCLI
         public static TomlArray FromArray(string[] array)
         {
             var ret = new TomlArray();
+            if (array == null)
+                return ret;
             foreach (var val in array)
                 ret.Add(val);
             return ret;
