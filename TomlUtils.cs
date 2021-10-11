@@ -68,7 +68,8 @@ namespace ThunderstoreCLI
             }
         }
 
-        public static string[] SafeGetArray(TomlNode node, string key)
+        #nullable enable
+        public static string[]? SafegetArray(TomlNode node, string key, string[]? defaultValue = null)
         {
             try
             {
@@ -76,9 +77,10 @@ namespace ThunderstoreCLI
             }
             catch (NullReferenceException)
             {
-                return Array.Empty<string>();
+                return defaultValue;
             }
         }
+        #nullable disable
 
         public static TomlArray FromArray(string[] array)
         {
