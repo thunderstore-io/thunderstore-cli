@@ -61,6 +61,32 @@ namespace ThunderstoreCLI.Config
             return Path.GetFullPath(Path.Join(GetBuildOutputDir(), $"{GetPackageId()}.zip"));
         }
 
+        public string GetRepositoryBaseUrl()
+        {
+            var repo = PublishConfig.Repository.TrimEnd('/');
+            return $"{repo}/api/experimental/";
+        }
+
+        public string GetPackageSubmitUrl()
+        {
+            return $"{this.GetRepositoryBaseUrl()}submission/submit/";
+        }
+
+        public string GetUserMediaUploadInitiateUrl()
+        {
+            return $"{this.GetRepositoryBaseUrl()}usermedia/initiate-upload/";
+        }
+
+        public string GetUserMediaUploadAbortUrl(string uploadUuid)
+        {
+            return $"{this.GetRepositoryBaseUrl()}usermedia/{uploadUuid}/abort-upload/";
+        }
+
+        public string GetUserMediaUploadFinishUrl(string uploadUuid)
+        {
+            return $"{this.GetRepositoryBaseUrl()}usermedia/{uploadUuid}/finish-upload/";
+        }
+
         public AuthenticationHeaderValue GetAuthHeader()
         {
             return new AuthenticationHeaderValue(AuthConfig.UseSessionAuth ?? false ? "Session" : "Bearer", AuthConfig.DefaultToken);
