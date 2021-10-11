@@ -65,7 +65,7 @@ namespace ThunderstoreCLI.Commands
                 Console.WriteLine(Red("Exiting"));
                 return 1;
             }
-            
+
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = config.GetAuthHeader();
 
@@ -95,13 +95,13 @@ namespace ThunderstoreCLI.Commands
                 size /= 1024;
                 suffixIndex++;
             }
-            
+
             Console.WriteLine(Cyan($"Uploading {uploadData.Metadata.Filename} ({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks..."));
             Console.WriteLine();
 
             using var partClient = new HttpClient();
             partClient.Timeout = new TimeSpan(72, 0, 0);
-            
+
             async Task<(bool completed, CompletedPartData data)> UploadChunk(UploadInitiateData.UploadPartData part)
             {
                 try
@@ -134,7 +134,7 @@ namespace ThunderstoreCLI.Commands
                     };
 
                     partRequest.Content.Headers.ContentMD5 = hash;
-                    
+
                     // ReSharper disable once AccessToDisposedClosure
                     // These tasks won't ever run past the client instance's lifetime
                     using var response = await partClient.SendAsync(partRequest);
@@ -165,7 +165,7 @@ namespace ThunderstoreCLI.Commands
             }
 
             var uploadTasks = uploadData.UploadUrls.Select(UploadChunk).ToArray();
-            
+
             static async Task<bool> ProgressBar(Task<(bool, CompletedPartData)>[] tasks)
             {
                 ushort spinIndex = 0;
@@ -177,12 +177,12 @@ namespace ThunderstoreCLI.Commands
                         Console.WriteLine();
                         return false;
                     }
-                    
+
                     var completed = tasks.Count(static x => x.IsCompleted);
-                    
+
                     Console.SetCursorPosition(0, Console.CursorTop);
                     Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded...{spinChars[spinIndex++ % spinChars.Length]}"));
-                    
+
                     if (completed == tasks.Length)
                     {
                         Console.WriteLine();
@@ -213,7 +213,7 @@ namespace ThunderstoreCLI.Commands
             var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/submission/submit/");
             publishPackageRequest.Content = new StringContent(SerializeUploadMeta(config, uploadData.Metadata.UUID), Encoding.UTF8, "application/json");
             var publishResponse = client.Send(publishPackageRequest);
-            
+
             if (publishResponse.StatusCode == HttpStatusCode.OK)
             {
                 Console.WriteLine(Blue($"Successfully published {config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
@@ -256,7 +256,7 @@ namespace ThunderstoreCLI.Commands
         {
             [JsonPropertyName("filename")]
             public string Filename { get; set; }
-            
+
             [JsonPropertyName("file_size_bytes")]
             public long Filesize { get; set; }
         }
@@ -270,30 +270,30 @@ namespace ThunderstoreCLI.Commands
         {
             [JsonPropertyName("ETag")]
             public string ETag { get; set; }
-            
+
             [JsonPropertyName("PartNumber")]
             public int PartNumber { get; set; }
         }
-        
+
         public class UploadInitiateData
         {
             public class UserMediaData
             {
                 [JsonPropertyName("uuid")]
                 public string UUID { get; set; }
-                
+
                 [JsonPropertyName("filename")]
                 public string Filename { get; set; }
-                
+
                 [JsonPropertyName("size")]
                 public long Size { get; set; }
-                
+
                 [JsonPropertyName("datetime_created")]
                 public DateTime TimeCreated { get; set; }
-                
+
                 [JsonPropertyName("expiry")]
                 public DateTime? ExpireTime { get; set; }
-                
+
                 [JsonPropertyName("status")]
                 public string Status { get; set; }
             }
@@ -301,20 +301,20 @@ namespace ThunderstoreCLI.Commands
             {
                 [JsonPropertyName("part_number")]
                 public int PartNumber { get; set; }
-                
+
                 [JsonPropertyName("url")]
                 public string Url { get; set; }
-                
+
                 [JsonPropertyName("offset")]
                 public long Offset { get; set; }
-                
+
                 [JsonPropertyName("length")]
                 public int Length { get; set; }
             }
-            
+
             [JsonPropertyName("user_media")]
             public UserMediaData Metadata { get; set; }
-            
+
             [JsonPropertyName("upload_urls")]
             public UploadPartData[] UploadUrls { get; set; }
         }
@@ -332,7 +332,7 @@ namespace ThunderstoreCLI.Commands
 
             [JsonPropertyName("has_nsfw_content")]
             public bool HasNsfwContent { get; set; }
-            
+
             [JsonPropertyName("upload_uuid")]
             public string UploadUUID { get; set; }
         }

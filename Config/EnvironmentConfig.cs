@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ThunderstoreCLI.Config
+﻿namespace ThunderstoreCLI.Config
 {
     class EnvironmentConfig : EmptyConfig
     {
