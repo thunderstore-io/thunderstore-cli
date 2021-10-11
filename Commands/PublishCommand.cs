@@ -69,7 +69,7 @@ namespace ThunderstoreCLI.Commands
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = config.GetAuthHeader();
 
-            var uploadRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/initiate-upload/")
+            var uploadRequest = new HttpRequestMessage(HttpMethod.Post, config.GetUserMediaUploadInitiateUrl())
             {
                 Content = new StringContent(SerializeFileData(filepath), Encoding.UTF8, "application/json")
             };
@@ -195,7 +195,7 @@ namespace ThunderstoreCLI.Commands
 
             if (!ProgressBar(uploadTasks).Result)
             {
-                var abortRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/{uploadData.Metadata.UUID}/abort-upload/");
+                var abortRequest = new HttpRequestMessage(HttpMethod.Post, config.GetUserMediaUploadAbortUrl(uploadData.Metadata.UUID));
                 abortRequest.Headers.Authorization = config.GetAuthHeader();
                 client.Send(abortRequest);
                 return 1;
@@ -203,14 +203,14 @@ namespace ThunderstoreCLI.Commands
 
             var uploadedParts = uploadTasks.Select(x => x.Result.data).ToArray();
 
-            var finishRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/usermedia/{uploadData.Metadata.UUID}/finish-upload/");
+            var finishRequest = new HttpRequestMessage(HttpMethod.Post, config.GetUserMediaUploadFinishUrl(uploadData.Metadata.UUID));
             finishRequest.Content = new StringContent(JsonSerializer.Serialize(new CompletedUpload()
             {
                 Parts = uploadedParts
             }), Encoding.UTF8, "application/json");
             client.Send(finishRequest);
 
-            var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, $"{config.PublishConfig.Repository}/api/experimental/submission/submit/");
+            var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, config.GetPackageSubmitUrl());
             publishPackageRequest.Content = new StringContent(SerializeUploadMeta(config, uploadData.Metadata.UUID), Encoding.UTF8, "application/json");
             var publishResponse = client.Send(publishPackageRequest);
 
