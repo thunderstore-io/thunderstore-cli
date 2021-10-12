@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -213,19 +214,22 @@ namespace ThunderstoreCLI.Commands
             var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, config.GetPackageSubmitUrl());
             publishPackageRequest.Content = new StringContent(SerializeUploadMeta(config, uploadData.Metadata.UUID), Encoding.UTF8, "application/json");
             var publishResponse = client.Send(publishPackageRequest);
+            var responseReader = new StreamReader(publishResponse.Content.ReadAsStream());
+            var publishResponseContent = responseReader.ReadToEnd();
 
             if (publishResponse.StatusCode == HttpStatusCode.OK)
             {
+                var jsonData = JsonSerializer.Deserialize<PublishData>(publishResponseContent);
                 Console.WriteLine(Blue($"Successfully published {config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
+                Console.WriteLine(Blue($"It's available at: {jsonData.PackageVersion.DownloadUrl}"));
                 return 0;
             }
             else
             {
                 Console.WriteLine(Red($"ERROR: Unexpected response from the server"));
-                using var responseReader = new StreamReader(publishResponse.Content.ReadAsStream());
                 Console.WriteLine(Red($"Details:"));
                 Console.WriteLine($"Status code: {publishResponse.StatusCode:D} {publishResponse.StatusCode}");
-                Console.WriteLine(Dim(responseReader.ReadToEnd()));
+                Console.WriteLine(Dim(publishResponseContent));
                 return 1;
             }
         }
@@ -335,6 +339,88 @@ namespace ThunderstoreCLI.Commands
 
             [JsonPropertyName("upload_uuid")]
             public string UploadUUID { get; set; }
+        }
+
+        // JSON response structure for publish package request.
+        public class PublishData
+        {
+            public class AvailableCommunityData
+            {
+                public class CommunityData
+                {
+                    [JsonPropertyName("identifier")]
+                    public string Identifier { get; set; }
+
+                    [JsonPropertyName("name")]
+                    public string Name { get; set; }
+
+                    # nullable enable
+                    [JsonPropertyName("discord_url")]
+                    public string? DiscordUrl { get; set; }
+
+                    [JsonPropertyName("wiki_url")]
+                    public object? WikiUrl { get; set; }
+                    # nullable disable
+
+                    [JsonPropertyName("require_package_listing_approval")]
+                    public bool RequirePackageListingApproval { get; set; }
+                }
+
+                [JsonPropertyName("community")]
+                public CommunityData Community { get; set; }
+
+                [JsonPropertyName("categories")]
+                public List<string> Categories { get; set; }
+
+                [JsonPropertyName("url")]
+                public string Url { get; set; }
+            }
+
+            public class PackageVersionData
+            {
+                [JsonPropertyName("namespace")]
+                public string Namespace { get; set; }
+
+                [JsonPropertyName("name")]
+                public string Name { get; set; }
+
+                [JsonPropertyName("version_number")]
+                public string VersionNumber { get; set; }
+
+                [JsonPropertyName("full_name")]
+                public string FullName { get; set; }
+
+                [JsonPropertyName("description")]
+                public string Description { get; set; }
+
+                [JsonPropertyName("icon")]
+                public string Icon { get; set; }
+
+                [JsonPropertyName("dependencies")]
+                public List<string> Dependencies { get; set; }
+
+                [JsonPropertyName("download_url")]
+                public string DownloadUrl { get; set; }
+
+                [JsonPropertyName("downloads")]
+                public int Downloads { get; set; }
+
+                [JsonPropertyName("date_created")]
+                public DateTime DateCreated { get; set; }
+
+                [JsonPropertyName("website_url")]
+                public string WebsiteUrl { get; set; }
+
+                [JsonPropertyName("is_active")]
+                public bool IsActive { get; set; }
+            }
+
+            [JsonPropertyName("available_communities")]
+            public List<AvailableCommunityData> AvailableCommunities { get; set; }
+
+            [JsonPropertyName("package_version")]
+            public PackageVersionData PackageVersion { get; set; }
+
         }
     }
 }
