@@ -69,36 +69,16 @@ namespace ThunderstoreCLI.Commands
 
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = config.GetAuthHeader();
+            UploadInitiateData uploadData;
 
-            var uploadRequest = new HttpRequestMessage(HttpMethod.Post, config.GetUserMediaUploadInitiateUrl())
+            try
             {
-                Content = new StringContent(SerializeFileData(filepath), Encoding.UTF8, "application/json")
-            };
-
-            var uploadResponse = client.Send(uploadRequest);
-            using var uploadReader = new StreamReader(uploadResponse.Content.ReadAsStream());
-            if (uploadResponse.StatusCode != HttpStatusCode.Created)
+                uploadData = InitiateUploadRequest(client, config, filepath);
+            }
+            catch (PublishCommandException)
             {
-                Console.WriteLine(Red("ERROR: Failed to start usermedia upload"));
-                Console.WriteLine(Red("Details:"));
-                Console.WriteLine($"Status code: {uploadResponse.StatusCode:D} {uploadResponse.StatusCode}");
-                Console.WriteLine(Dim(uploadReader.ReadToEnd()));
                 return 1;
             }
-
-            var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(uploadReader.ReadToEnd());
-
-            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
-            int suffixIndex = 0;
-            long size = uploadData.Metadata.Size;
-            while (size >= 1024 && suffixIndex < suffixes.Length)
-            {
-                size /= 1024;
-                suffixIndex++;
-            }
-
-            Console.WriteLine(Cyan($"Uploading {uploadData.Metadata.Filename} ({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks..."));
-            Console.WriteLine();
 
             using var partClient = new HttpClient();
             partClient.Timeout = new TimeSpan(72, 0, 0);
@@ -232,6 +212,52 @@ namespace ThunderstoreCLI.Commands
                 Console.WriteLine(Dim(publishResponseContent));
                 return 1;
             }
+        }
+
+        private static UploadInitiateData InitiateUploadRequest(HttpClient client, Config.Config config, string filepath)
+        {
+            var url = config.GetUserMediaUploadInitiateUrl();
+            var request = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = new StringContent(SerializeFileData(filepath), Encoding.UTF8, "application/json")
+            };
+            var response = client.Send(request);
+
+            HandleRequestError("initializing the upload", response, HttpStatusCode.Created);
+
+            using var responseReader = new StreamReader(response.Content.ReadAsStream());
+            var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(responseReader.ReadToEnd());
+
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int suffixIndex = 0;
+            long size = uploadData.Metadata.Size;
+            while (size >= 1024 && suffixIndex < suffixes.Length)
+            {
+                size /= 1024;
+                suffixIndex++;
+            }
+
+            Console.WriteLine(Cyan($"Uploading {uploadData.Metadata.Filename} ({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks..."));
+            Console.WriteLine();
+
+            return uploadData;
+        }
+
+        private static void HandleRequestError(
+            string step,
+            HttpResponseMessage response,
+            HttpStatusCode expectedStatus = HttpStatusCode.OK
+        )
+        {
+            if (response.StatusCode == expectedStatus) {
+                return;
+            }
+
+            using var responseReader = new StreamReader(response.Content.ReadAsStream());
+            Console.WriteLine(Red($"ERROR: Unexpected response from the server while {step}:"));
+            Console.WriteLine($"Status code: {response.StatusCode:D} {response.StatusCode}");
+            Console.WriteLine(Dim(responseReader.ReadToEnd()));
+            throw new PublishCommandException();
         }
 
         public static string SerializeUploadMeta(Config.Config config, string fileUuid)
@@ -421,6 +447,24 @@ namespace ThunderstoreCLI.Commands
             [JsonPropertyName("package_version")]
             public PackageVersionData PackageVersion { get; set; }
 
+        }
+    }
+
+    [Serializable]
+    public class PublishCommandException : Exception
+    {
+        public PublishCommandException()
+        {
+        }
+
+        public PublishCommandException(string message)
+            : base(message)
+        {
+        }
+
+        public PublishCommandException(string message, Exception inner)
+            : base(message, inner)
+        {
         }
     }
 }
