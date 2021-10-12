@@ -82,70 +82,18 @@ namespace ThunderstoreCLI.Commands
 
             using var partClient = new HttpClient();
             partClient.Timeout = new TimeSpan(72, 0, 0);
+            Task<(bool completed, CompletedPartData data)>[] uploadTasks;
 
-            async Task<(bool completed, CompletedPartData data)> UploadChunk(UploadInitiateData.UploadPartData part)
+            try
             {
-                try
-                {
-                    await using var stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    stream.Seek(part.Offset, SeekOrigin.Begin);
-
-                    byte[] hash;
-                    using (var reader = new BinaryReader(stream, Encoding.Default, true))
-                    {
-                        using (var md5 = MD5.Create())
-                        {
-                            md5.Initialize();
-                            var length = part.Length;
-                            while (length > md5.InputBlockSize)
-                            {
-                                length -= md5.InputBlockSize;
-                                md5.TransformBlock(reader.ReadBytes(md5.InputBlockSize), 0, md5.InputBlockSize, null, 0);
-                            }
-                            md5.TransformFinalBlock(reader.ReadBytes(length), 0, length);
-                            hash = md5.Hash;
-                        }
-                    }
-
-                    stream.Seek(part.Offset, SeekOrigin.Begin);
-
-                    var partRequest = new HttpRequestMessage(HttpMethod.Put, part.Url)
-                    {
-                        Content = new StreamContent(stream, part.Length)
-                    };
-
-                    partRequest.Content.Headers.ContentMD5 = hash;
-
-                    // ReSharper disable once AccessToDisposedClosure
-                    // These tasks won't ever run past the client instance's lifetime
-                    using var response = await partClient.SendAsync(partRequest);
-
-                    try
-                    {
-                        response.EnsureSuccessStatusCode();
-                    }
-                    catch
-                    {
-                        Console.WriteLine(Red(await response.Content.ReadAsStringAsync()));
-                        throw;
-                    }
-
-                    return (true, new CompletedPartData()
-                    {
-                        ETag = response.Headers.ETag.Tag,
-                        PartNumber = part.PartNumber
-                    });
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(Red("Exception occured while uploading file chunk:"));
-                    Console.WriteLine(Red(e.ToString()));
-
-                    return (false, null);
-                }
+                uploadTasks = uploadData.UploadUrls.Select(
+                    partData => UploadChunk(partClient, partData, filepath)
+                ).ToArray();
             }
-
-            var uploadTasks = uploadData.UploadUrls.Select(UploadChunk).ToArray();
+            catch (PublishCommandException)
+            {
+                return 1;
+            }
 
             static async Task<bool> ProgressBar(Task<(bool, CompletedPartData)>[] tasks)
             {
@@ -241,6 +189,73 @@ namespace ThunderstoreCLI.Commands
             Console.WriteLine();
 
             return uploadData;
+        }
+
+        private static async Task<(bool completed, CompletedPartData data)> UploadChunk(
+            HttpClient client,
+            UploadInitiateData.UploadPartData part,
+            string filepath
+        )
+        {
+            try
+            {
+                await using var stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                stream.Seek(part.Offset, SeekOrigin.Begin);
+
+                byte[] hash;
+                using (var reader = new BinaryReader(stream, Encoding.Default, true))
+                {
+                    using (var md5 = MD5.Create())
+                    {
+                        md5.Initialize();
+                        var length = part.Length;
+                        while (length > md5.InputBlockSize)
+                        {
+                            length -= md5.InputBlockSize;
+                            md5.TransformBlock(reader.ReadBytes(md5.InputBlockSize), 0, md5.InputBlockSize, null, 0);
+                        }
+                        md5.TransformFinalBlock(reader.ReadBytes(length), 0, length);
+                        hash = md5.Hash;
+                    }
+                }
+
+                stream.Seek(part.Offset, SeekOrigin.Begin);
+
+                var partRequest = new HttpRequestMessage(HttpMethod.Put, part.Url)
+                {
+                    Content = new StreamContent(stream, part.Length)
+                };
+
+                partRequest.Content.Headers.ContentMD5 = hash;
+
+                // ReSharper disable once AccessToDisposedClosure
+                // These tasks won't ever run past the client instance's lifetime
+                using var response = await client.SendAsync(partRequest);
+
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                }
+                catch
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(Red(await response.Content.ReadAsStringAsync()));
+                    throw new PublishCommandException();
+                }
+
+                return (true, new CompletedPartData()
+                {
+                    ETag = response.Headers.ETag.Tag,
+                    PartNumber = part.PartNumber
+                });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(Red("Exception occured while uploading file chunk:"));
+                Console.WriteLine(Red(e.ToString()));
+
+                return (false, null);
+            }
         }
 
         private static void HandleRequestError(
