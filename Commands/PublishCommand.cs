@@ -150,7 +150,7 @@ namespace ThunderstoreCLI.Commands
                 suffixIndex++;
             }
 
-            Console.WriteLine(Cyan($"Uploading {uploadData.Metadata.Filename} ({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks..."));
+            Console.WriteLine($"Uploading {Cyan(uploadData.Metadata.Filename)} ({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks...");
             Console.WriteLine();
 
             return uploadData;
@@ -182,7 +182,7 @@ namespace ThunderstoreCLI.Commands
 
             HandleRequestError("finishing the upload", response);
 
-            Console.WriteLine(Blue("Finished upload process"));
+            Console.WriteLine(Green("Successfully finalized the upload"));
         }
 
         private static void PublishPackageRequest(HttpClient client, Config.Config config, string uploadUuid)
@@ -198,8 +198,8 @@ namespace ThunderstoreCLI.Commands
             using var responseReader = new StreamReader(response.Content.ReadAsStream());
             var responseContent = responseReader.ReadToEnd();
             var jsonData = JsonSerializer.Deserialize<PublishData>(responseContent);
-            Console.WriteLine(Blue($"Successfully published {config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
-            Console.WriteLine(Blue($"It's available at: {jsonData.PackageVersion.DownloadUrl}"));
+            Console.WriteLine(Green("Successfully published ") + Cyan($"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
+            Console.WriteLine($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
         }
 
         private static async Task<(bool completed, CompletedPartData data)> UploadChunk(

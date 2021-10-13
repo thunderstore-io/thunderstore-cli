@@ -149,7 +149,7 @@ namespace ThunderstoreCLI.Commands
             }
             var filename = config.GetBuildOutputFile();
 
-            Console.WriteLine($"Output path: {Dim(filename)}");
+            Console.WriteLine($"Output path {Cyan(filename)}");
             Console.WriteLine();
 
             var encounteredIssues = false;
