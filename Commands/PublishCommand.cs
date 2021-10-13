@@ -116,27 +116,15 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, config.GetPackageSubmitUrl());
-            publishPackageRequest.Content = new StringContent(SerializeUploadMeta(config, uploadData.Metadata.UUID), Encoding.UTF8, "application/json");
-            var publishResponse = client.Send(publishPackageRequest);
-            var responseReader = new StreamReader(publishResponse.Content.ReadAsStream());
-            var publishResponseContent = responseReader.ReadToEnd();
-
-            if (publishResponse.StatusCode == HttpStatusCode.OK)
-            {
-                var jsonData = JsonSerializer.Deserialize<PublishData>(publishResponseContent);
-                Console.WriteLine(Blue($"Successfully published {config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
-                Console.WriteLine(Blue($"It's available at: {jsonData.PackageVersion.DownloadUrl}"));
-                return 0;
+            try {
+                PublishPackageRequest(client, config, uploadUuid);
             }
-            else
+            catch (PublishCommandException)
             {
-                Console.WriteLine(Red($"ERROR: Unexpected response from the server"));
-                Console.WriteLine(Red($"Details:"));
-                Console.WriteLine($"Status code: {publishResponse.StatusCode:D} {publishResponse.StatusCode}");
-                Console.WriteLine(Dim(publishResponseContent));
                 return 1;
             }
+
+            return 0;
         }
 
         private static UploadInitiateData InitiateUploadRequest(HttpClient client, Config.Config config, string filepath)
@@ -195,6 +183,23 @@ namespace ThunderstoreCLI.Commands
             HandleRequestError("finishing the upload", response);
 
             Console.WriteLine(Blue("Finished upload process"));
+        }
+
+        private static void PublishPackageRequest(HttpClient client, Config.Config config, string uploadUuid)
+        {
+            var url = config.GetPackageSubmitUrl();
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            var requestContent = SerializeUploadMeta(config, uploadUuid);
+            request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
+            var response = client.Send(request);
+
+            HandleRequestError("publishing package", response);
+
+            using var responseReader = new StreamReader(response.Content.ReadAsStream());
+            var responseContent = responseReader.ReadToEnd();
+            var jsonData = JsonSerializer.Deserialize<PublishData>(responseContent);
+            Console.WriteLine(Blue($"Successfully published {config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
+            Console.WriteLine(Blue($"It's available at: {jsonData.PackageVersion.DownloadUrl}"));
         }
 
         private static async Task<(bool completed, CompletedPartData data)> UploadChunk(
