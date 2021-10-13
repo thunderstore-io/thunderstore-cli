@@ -108,12 +108,13 @@ namespace ThunderstoreCLI.Commands
 
             var uploadedParts = uploadTasks.Select(x => x.Result.data).ToArray();
 
-            var finishRequest = new HttpRequestMessage(HttpMethod.Post, config.GetUserMediaUploadFinishUrl(uploadData.Metadata.UUID));
-            finishRequest.Content = new StringContent(JsonSerializer.Serialize(new CompletedUpload()
+            try {
+                FinishUploadRequest(client, config, uploadUuid, uploadedParts);
+            }
+            catch (PublishCommandException)
             {
-                Parts = uploadedParts
-            }), Encoding.UTF8, "application/json");
-            client.Send(finishRequest);
+                return 1;
+            }
 
             var publishPackageRequest = new HttpRequestMessage(HttpMethod.Post, config.GetPackageSubmitUrl());
             publishPackageRequest.Content = new StringContent(SerializeUploadMeta(config, uploadData.Metadata.UUID), Encoding.UTF8, "application/json");
@@ -173,6 +174,27 @@ namespace ThunderstoreCLI.Commands
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Authorization = config.GetAuthHeader();
             client.Send(request);
+        }
+
+        private static void FinishUploadRequest(
+            HttpClient client,
+            Config.Config config,
+            string uploadUuid,
+            CompletedPartData[] uploadedParts
+        )
+        {
+            var url = config.GetUserMediaUploadFinishUrl(uploadUuid);
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            var requestContent = JsonSerializer.Serialize(new CompletedUpload()
+            {
+                Parts = uploadedParts
+            });
+            request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
+            var response = client.Send(request);
+
+            HandleRequestError("finishing the upload", response);
+
+            Console.WriteLine(Blue("Finished upload process"));
         }
 
         private static async Task<(bool completed, CompletedPartData data)> UploadChunk(
