@@ -95,38 +95,14 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            static async Task<bool> ProgressBar(Task<(bool, CompletedPartData)>[] tasks)
-            {
-                ushort spinIndex = 0;
-                string[] spinChars = { "|", "/", "-", "\\", "|", "/", "-", "\\" };
-                while (true)
-                {
-                    if (tasks.Any(x => x.IsCompleted && !x.Result.Item1))
-                    {
-                        Console.WriteLine();
-                        return false;
-                    }
+            var uploadUuid = uploadData.Metadata.UUID;
 
-                    var completed = tasks.Count(static x => x.IsCompleted);
-
-                    Console.SetCursorPosition(0, Console.CursorTop);
-                    Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded...{spinChars[spinIndex++ % spinChars.Length]}"));
-
-                    if (completed == tasks.Length)
-                    {
-                        Console.WriteLine();
-                        return true;
-                    }
-
-                    await Task.Delay(200);
-                }
+            try {
+                ShowProgressBar(uploadTasks).GetAwaiter().GetResult();
             }
-
-            if (!ProgressBar(uploadTasks).Result)
+            catch (PublishCommandException)
             {
-                var abortRequest = new HttpRequestMessage(HttpMethod.Post, config.GetUserMediaUploadAbortUrl(uploadData.Metadata.UUID));
-                abortRequest.Headers.Authorization = config.GetAuthHeader();
-                client.Send(abortRequest);
+                AbortUploadRequest(client, config, uploadUuid);
                 return 1;
             }
 
@@ -189,6 +165,14 @@ namespace ThunderstoreCLI.Commands
             Console.WriteLine();
 
             return uploadData;
+        }
+
+        private static void AbortUploadRequest(HttpClient client, Config.Config config, string uploadUuid)
+        {
+            var url = config.GetUserMediaUploadAbortUrl(uploadUuid);
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Authorization = config.GetAuthHeader();
+            client.Send(request);
         }
 
         private static async Task<(bool completed, CompletedPartData data)> UploadChunk(
@@ -255,6 +239,33 @@ namespace ThunderstoreCLI.Commands
                 Console.WriteLine(Red(e.ToString()));
 
                 return (false, null);
+            }
+        }
+
+        private static async Task ShowProgressBar(Task<(bool, CompletedPartData)>[] tasks)
+        {
+            ushort spinIndex = 0;
+            string[] spinChars = { "|", "/", "-", "\\", "|", "/", "-", "\\" };
+            while (true)
+            {
+                if (tasks.Any(x => x.IsCompleted && !x.Result.Item1))
+                {
+                    Console.WriteLine();
+                    throw new PublishCommandException();
+                }
+
+                var completed = tasks.Count(static x => x.IsCompleted);
+
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded...{spinChars[spinIndex++ % spinChars.Length]}"));
+
+                if (completed == tasks.Length)
+                {
+                    Console.WriteLine();
+                    return;
+                }
+
+                await Task.Delay(200);
             }
         }
 
