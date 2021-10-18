@@ -215,16 +215,18 @@ namespace ThunderstoreCLI.Commands
                 stream.Seek(part.Offset, SeekOrigin.Begin);
 
                 byte[] hash;
+                var blocksize = 65536;
+
                 using (var reader = new BinaryReader(stream, Encoding.Default, true))
                 {
                     using (var md5 = MD5.Create())
                     {
                         md5.Initialize();
                         var length = part.Length;
-                        while (length > md5.InputBlockSize)
+                        while (length > blocksize)
                         {
-                            length -= md5.InputBlockSize;
-                            md5.TransformBlock(reader.ReadBytes(md5.InputBlockSize), 0, md5.InputBlockSize, null, 0);
+                            length -= blocksize;
+                            md5.TransformBlock(reader.ReadBytes(blocksize), 0, blocksize, null, 0);
                         }
                         md5.TransformFinalBlock(reader.ReadBytes(length), 0, length);
                         hash = md5.Hash;
