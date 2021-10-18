@@ -82,7 +82,7 @@ namespace ThunderstoreCLI.Commands
 
             using var partClient = new HttpClient();
             partClient.Timeout = new TimeSpan(72, 0, 0);
-            Task<(bool completed, CompletedPartData data)>[] uploadTasks;
+            Task<CompletedPartData>[] uploadTasks;
 
             try
             {
@@ -106,7 +106,7 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            var uploadedParts = uploadTasks.Select(x => x.Result.data).ToArray();
+            var uploadedParts = uploadTasks.Select(x => x.Result).ToArray();
 
             try {
                 FinishUploadRequest(client, config, uploadUuid, uploadedParts);
@@ -202,7 +202,7 @@ namespace ThunderstoreCLI.Commands
             Console.WriteLine($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
         }
 
-        private static async Task<(bool completed, CompletedPartData data)> UploadChunk(
+        private static async Task<CompletedPartData> UploadChunk(
             HttpClient client,
             UploadInitiateData.UploadPartData part,
             string filepath
@@ -210,6 +210,7 @@ namespace ThunderstoreCLI.Commands
         {
             try
             {
+                await Task.Yield();
                 await using var stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 stream.Seek(part.Offset, SeekOrigin.Begin);
 
@@ -254,37 +255,38 @@ namespace ThunderstoreCLI.Commands
                     throw new PublishCommandException();
                 }
 
-                return (true, new CompletedPartData()
+                return new CompletedPartData()
                 {
                     ETag = response.Headers.ETag.Tag,
                     PartNumber = part.PartNumber
-                });
+                };
             }
             catch (Exception e)
             {
-                Console.WriteLine(Red("Exception occured while uploading file chunk:"));
+                Console.WriteLine();
+                Console.WriteLine(Red($"Exception occured while uploading file chunk #{part.PartNumber}"));
                 Console.WriteLine(Red(e.ToString()));
-
-                return (false, null);
+                throw new PublishCommandException();
             }
         }
 
-        private static async Task ShowProgressBar(Task<(bool, CompletedPartData)>[] tasks)
+        private static async Task ShowProgressBar(Task<CompletedPartData>[] tasks)
         {
             ushort spinIndex = 0;
-            string[] spinChars = { "|", "/", "-", "\\", "|", "/", "-", "\\" };
+            string[] spinChars = { "|", "/", "-", "\\" };
             while (true)
             {
-                if (tasks.Any(x => x.IsCompleted && !x.Result.Item1))
+                if (tasks.Any(x => x.IsFaulted))
                 {
                     Console.WriteLine();
                     throw new PublishCommandException();
                 }
 
                 var completed = tasks.Count(static x => x.IsCompleted);
+                var spinner = completed == tasks.Length ? "✓" : spinChars[spinIndex++ % spinChars.Length];
 
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded...{spinChars[spinIndex++ % spinChars.Length]}"));
+                Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded {spinner}"));
 
                 if (completed == tasks.Length)
                 {
