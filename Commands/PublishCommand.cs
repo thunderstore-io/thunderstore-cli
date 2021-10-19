@@ -15,6 +15,16 @@ namespace ThunderstoreCLI.Commands
 {
     public static class PublishCommand
     {
+        private static readonly HttpClient HttpClient;
+
+        static PublishCommand()
+        {
+            HttpClient = new HttpClient();
+            HttpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
+            HttpClient.DefaultRequestHeaders.Add("Keep-Alive", "3600");
+            HttpClient.Timeout = TimeSpan.FromHours(1);
+        }
+
         public static int Run(PublishOptions options, Config.Config config)
         {
             var configPath = config.GetProjectConfigPath();
@@ -67,27 +77,23 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = config.GetAuthHeader();
             UploadInitiateData uploadData;
 
             try
             {
-                uploadData = InitiateUploadRequest(client, config, filepath);
+                uploadData = InitiateUploadRequest(config, filepath);
             }
             catch (PublishCommandException)
             {
                 return 1;
             }
 
-            using var partClient = new HttpClient();
-            partClient.Timeout = new TimeSpan(72, 0, 0);
             Task<CompletedPartData>[] uploadTasks;
 
             try
             {
                 uploadTasks = uploadData.UploadUrls.Select(
-                    partData => UploadChunk(partClient, partData, filepath)
+                    partData => UploadChunk(partData, filepath)
                 ).ToArray();
             }
             catch (PublishCommandException)
@@ -102,14 +108,14 @@ namespace ThunderstoreCLI.Commands
             }
             catch (PublishCommandException)
             {
-                AbortUploadRequest(client, config, uploadUuid);
+                AbortUploadRequest(config, uploadUuid);
                 return 1;
             }
 
             var uploadedParts = uploadTasks.Select(x => x.Result).ToArray();
 
             try {
-                FinishUploadRequest(client, config, uploadUuid, uploadedParts);
+                FinishUploadRequest(config, uploadUuid, uploadedParts);
             }
             catch (PublishCommandException)
             {
@@ -117,7 +123,7 @@ namespace ThunderstoreCLI.Commands
             }
 
             try {
-                PublishPackageRequest(client, config, uploadUuid);
+                PublishPackageRequest(config, uploadUuid);
             }
             catch (PublishCommandException)
             {
@@ -127,14 +133,15 @@ namespace ThunderstoreCLI.Commands
             return 0;
         }
 
-        private static UploadInitiateData InitiateUploadRequest(HttpClient client, Config.Config config, string filepath)
+        private static UploadInitiateData InitiateUploadRequest(Config.Config config, string filepath)
         {
             var url = config.GetUserMediaUploadInitiateUrl();
             var request = new HttpRequestMessage(HttpMethod.Post, url)
             {
                 Content = new StringContent(SerializeFileData(filepath), Encoding.UTF8, "application/json")
             };
-            var response = client.Send(request);
+            request.Headers.Authorization = config.GetAuthHeader();
+            var response = HttpClient.Send(request);
 
             HandleRequestError("initializing the upload", response, HttpStatusCode.Created);
 
@@ -156,42 +163,39 @@ namespace ThunderstoreCLI.Commands
             return uploadData;
         }
 
-        private static void AbortUploadRequest(HttpClient client, Config.Config config, string uploadUuid)
+        private static void AbortUploadRequest(Config.Config config, string uploadUuid)
         {
             var url = config.GetUserMediaUploadAbortUrl(uploadUuid);
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Authorization = config.GetAuthHeader();
-            client.Send(request);
+            HttpClient.Send(request);
         }
 
-        private static void FinishUploadRequest(
-            HttpClient client,
-            Config.Config config,
-            string uploadUuid,
-            CompletedPartData[] uploadedParts
-        )
+        private static void FinishUploadRequest(Config.Config config, string uploadUuid, CompletedPartData[] uploadedParts)
         {
             var url = config.GetUserMediaUploadFinishUrl(uploadUuid);
             var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Authorization = config.GetAuthHeader();
             var requestContent = JsonSerializer.Serialize(new CompletedUpload()
             {
                 Parts = uploadedParts
             });
             request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
-            var response = client.Send(request);
+            var response = HttpClient.Send(request);
 
             HandleRequestError("finishing the upload", response);
 
             Console.WriteLine(Green("Successfully finalized the upload"));
         }
 
-        private static void PublishPackageRequest(HttpClient client, Config.Config config, string uploadUuid)
+        private static void PublishPackageRequest(Config.Config config, string uploadUuid)
         {
             var url = config.GetPackageSubmitUrl();
             var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Authorization = config.GetAuthHeader();
             var requestContent = SerializeUploadMeta(config, uploadUuid);
             request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
-            var response = client.Send(request);
+            var response = HttpClient.Send(request);
 
             HandleRequestError("publishing package", response);
 
@@ -202,11 +206,7 @@ namespace ThunderstoreCLI.Commands
             Console.WriteLine($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
         }
 
-        private static async Task<CompletedPartData> UploadChunk(
-            HttpClient client,
-            UploadInitiateData.UploadPartData part,
-            string filepath
-        )
+        private static async Task<CompletedPartData> UploadChunk(UploadInitiateData.UploadPartData part, string filepath)
         {
             try
             {
@@ -244,7 +244,7 @@ namespace ThunderstoreCLI.Commands
 
                 // ReSharper disable once AccessToDisposedClosure
                 // These tasks won't ever run past the client instance's lifetime
-                using var response = await client.SendAsync(partRequest);
+                using var response = await HttpClient.SendAsync(partRequest);
 
                 try
                 {
