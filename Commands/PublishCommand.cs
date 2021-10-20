@@ -215,6 +215,7 @@ namespace ThunderstoreCLI.Commands
                 stream.Seek(part.Offset, SeekOrigin.Begin);
 
                 byte[] hash;
+                var chunk = new MemoryStream();
                 var blocksize = 65536;
 
                 using (var reader = new BinaryReader(stream, Encoding.Default, true))
@@ -223,28 +224,29 @@ namespace ThunderstoreCLI.Commands
                     {
                         md5.Initialize();
                         var length = part.Length;
+
                         while (length > blocksize)
                         {
                             length -= blocksize;
-                            md5.TransformBlock(reader.ReadBytes(blocksize), 0, blocksize, null, 0);
+                            var bytes = reader.ReadBytes(blocksize);
+                            md5.TransformBlock(bytes , 0, blocksize, null, 0);
+                            await chunk.WriteAsync(bytes);
                         }
-                        md5.TransformFinalBlock(reader.ReadBytes(length), 0, length);
+
+                        var finalBytes = reader.ReadBytes(length);
+                        md5.TransformFinalBlock(finalBytes, 0, length);
                         hash = md5.Hash;
+                        await chunk.WriteAsync(finalBytes);
+                        chunk.Position = 0;
                     }
                 }
 
-                stream.Seek(part.Offset, SeekOrigin.Begin);
+                var request = new HttpRequestMessage(HttpMethod.Put, part.Url);
+                request.Content = new StreamContent(chunk);
+                request.Content.Headers.ContentMD5 = hash;
+                request.Content.Headers.ContentLength = part.Length;
 
-                var partRequest = new HttpRequestMessage(HttpMethod.Put, part.Url)
-                {
-                    Content = new StreamContent(stream, part.Length)
-                };
-
-                partRequest.Content.Headers.ContentMD5 = hash;
-
-                // ReSharper disable once AccessToDisposedClosure
-                // These tasks won't ever run past the client instance's lifetime
-                using var response = await HttpClient.SendAsync(partRequest);
+                using var response = await HttpClient.SendAsync(request);
 
                 try
                 {
