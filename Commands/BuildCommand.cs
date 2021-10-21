@@ -114,6 +114,14 @@ namespace ThunderstoreCLI.Commands
                 Console.WriteLine(Red("Exiting"));
                 return 1;
             }
+
+            if (!StringUtils.IsSemVer(config.PackageMeta.VersionNumber)) {
+                Console.WriteLine(Red($"ERROR: Invalid package version number \"{config.PackageMeta.VersionNumber}\""));
+                Console.WriteLine(Red("Version numbers must follow the Major.Minor.Patch format (e.g. 1.45.320)"));
+                Console.WriteLine(Red("Exiting"));
+                return 1;
+            }
+
             var packageId = config.GetPackageId();
             Console.WriteLine($"Building {Cyan(packageId)}");
             Console.WriteLine();
