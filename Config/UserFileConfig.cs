@@ -2,7 +2,7 @@
 {
     class UserFileConfig : EmptyConfig
     {
-        private AuthConfig authConfig;
+        private AuthConfig? authConfig;
 
         public override void Parse(Config currentConfig)
         {

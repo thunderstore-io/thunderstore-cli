@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http.Headers;
 
@@ -21,7 +22,7 @@ namespace ThunderstoreCLI.Config
             AuthConfig = authConfig;
         }
 
-        public string GetProjectBasePath()
+        public string? GetProjectBasePath()
         {
             return Path.GetDirectoryName(GetProjectConfigPath());
         }
@@ -33,21 +34,33 @@ namespace ThunderstoreCLI.Config
 
         public string GetPackageIconPath()
         {
+            if (BuildConfig.IconPath is null) {
+                throw new Exception("BuildConfig.IconPath can't be null");
+            }
             return GetProjectRelativePath(BuildConfig.IconPath);
         }
 
         public string GetPackageReadmePath()
         {
+            if (BuildConfig.ReadmePath is null) {
+                throw new Exception("BuildConfig.ReadmePath can't be null");
+            }
             return GetProjectRelativePath(BuildConfig.ReadmePath);
         }
 
         public string GetProjectConfigPath()
         {
+            if (GeneralConfig.ProjectConfigPath is null) {
+                throw new Exception("GeneralConfig.ProjectConfigPath can't be null");
+            }
             return Path.GetFullPath(GeneralConfig.ProjectConfigPath);
         }
 
         public string GetBuildOutputDir()
         {
+            if (BuildConfig.OutDir is null) {
+                throw new Exception("BuildConfig.OutDir can't be null");
+            }
             return GetProjectRelativePath(BuildConfig.OutDir);
         }
 
@@ -63,6 +76,9 @@ namespace ThunderstoreCLI.Config
 
         public string GetRepositoryBaseUrl()
         {
+            if (PublishConfig.Repository is null) {
+                throw new Exception("PublishConfig.Repository can't be null");
+            }
             var repo = PublishConfig.Repository.TrimEnd('/');
             return $"{repo}/api/experimental/";
         }
@@ -135,18 +151,18 @@ namespace ThunderstoreCLI.Config
 
     public class GeneralConfig
     {
-        public string ProjectConfigPath { get; set; }
+        public string? ProjectConfigPath { get; set; }
     }
 
     public class PackageMeta
     {
-        public string Namespace { get; set; }
-        public string Name { get; set; }
-        public string VersionNumber { get; set; }
-        public string Description { get; set; }
-        public string WebsiteUrl { get; set; }
+        public string? Namespace { get; set; }
+        public string? Name { get; set; }
+        public string? VersionNumber { get; set; }
+        public string? Description { get; set; }
+        public string? WebsiteUrl { get; set; }
         public bool? ContainsNsfwContent { get; set; }
-        public Dictionary<string, string> Dependencies { get; set; }
+        public Dictionary<string, string>? Dependencies { get; set; }
     }
 
     public struct CopyPathMap
@@ -163,23 +179,23 @@ namespace ThunderstoreCLI.Config
 
     public class BuildConfig
     {
-        public string IconPath { get; set; }
-        public string ReadmePath { get; set; }
-        public string OutDir { get; set; }
-        public List<CopyPathMap> CopyPaths { get; set; }
+        public string? IconPath { get; set; }
+        public string? ReadmePath { get; set; }
+        public string? OutDir { get; set; }
+        public List<CopyPathMap>? CopyPaths { get; set; }
     }
 
     public class PublishConfig
     {
-        public string Repository { get; set; }
-        public string[] Communities { get; set; }
-        public string[] Categories { get; set; }
+        public string? Repository { get; set; }
+        public string[]? Communities { get; set; }
+        public string[]? Categories { get; set; }
     }
 
     public class AuthConfig
     {
-        public string DefaultToken { get; set; }
-        public Dictionary<string, string> AuthorTokens { get; set; }
+        public string? DefaultToken { get; set; }
+        public Dictionary<string, string>? AuthorTokens { get; set; }
         public bool? UseSessionAuth { get; set; }
     }
 }

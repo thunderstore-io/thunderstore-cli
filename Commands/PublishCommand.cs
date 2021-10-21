@@ -92,7 +92,7 @@ namespace ThunderstoreCLI.Commands
 
             try
             {
-                uploadTasks = uploadData.UploadUrls.Select(
+                uploadTasks = uploadData.UploadUrls!.Select(  // Validated in InitiateUploadRequest
                     partData => UploadChunk(partData, filepath)
                 ).ToArray();
             }
@@ -101,7 +101,7 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            var uploadUuid = uploadData.Metadata.UUID;
+            string uploadUuid = uploadData.Metadata?.UUID!;  // Validated in InitiateUploadRequest
 
             try {
                 ShowProgressBar(uploadTasks).GetAwaiter().GetResult();
@@ -146,7 +146,26 @@ namespace ThunderstoreCLI.Commands
             HandleRequestError("initializing the upload", response, HttpStatusCode.Created);
 
             using var responseReader = new StreamReader(response.Content.ReadAsStream());
-            var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(responseReader.ReadToEnd());
+            var responseContent = responseReader.ReadToEnd();
+            var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(responseContent);
+
+            if (uploadData is null) {
+                Console.WriteLine(Red("ERROR: Undeserializable InitiateUploadRequest response:"));
+                Console.WriteLine(Dim(responseContent));
+                throw new PublishCommandException();
+            }
+
+            if (uploadData.Metadata?.Filename is null || uploadData.Metadata?.UUID is null) {
+                Console.WriteLine(Red("ERROR: No valid Metadata found in InitiateUploadRequest response"));
+                Console.WriteLine(Dim(responseContent));
+                throw new PublishCommandException();
+            }
+
+            if (uploadData.UploadUrls is null) {
+                Console.WriteLine(Red("ERROR: No valid UploadUrls found in InitiateUploadRequest response"));
+                Console.WriteLine(Dim(responseContent));
+                throw new PublishCommandException();
+            }
 
             string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
             int suffixIndex = 0;
@@ -202,6 +221,15 @@ namespace ThunderstoreCLI.Commands
             using var responseReader = new StreamReader(response.Content.ReadAsStream());
             var responseContent = responseReader.ReadToEnd();
             var jsonData = JsonSerializer.Deserialize<PublishData>(responseContent);
+
+            if (jsonData?.PackageVersion?.DownloadUrl is null) {
+                Console.WriteLine(Red(
+                    "ERROR: Field package_version.download_url missing from PublishPackageRequest response:"
+                ));
+                Console.WriteLine(Dim(responseContent));
+                throw new PublishCommandException();
+            }
+
             Console.WriteLine(Green("Successfully published ") + Cyan($"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
             Console.WriteLine($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
         }
@@ -235,6 +263,12 @@ namespace ThunderstoreCLI.Commands
 
                         var finalBytes = reader.ReadBytes(length);
                         md5.TransformFinalBlock(finalBytes, 0, length);
+
+                        if (md5.Hash is null) {
+                          Console.WriteLine(Red($"ERROR: MD5 hashing failed for part #{part.PartNumber}"));
+                          throw new PublishCommandException();
+                        }
+
                         hash = md5.Hash;
                         await chunk.WriteAsync(finalBytes);
                         chunk.Position = 0;
@@ -256,6 +290,13 @@ namespace ThunderstoreCLI.Commands
                 {
                     Console.WriteLine();
                     Console.WriteLine(Red(await response.Content.ReadAsStringAsync()));
+                    throw new PublishCommandException();
+                }
+
+                if (response.Headers.ETag is null)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(Red($"ERROR: Response contained no ETag for part #{part.PartNumber}"));
                     throw new PublishCommandException();
                 }
 
@@ -344,7 +385,7 @@ namespace ThunderstoreCLI.Commands
         public class FileData
         {
             [JsonPropertyName("filename")]
-            public string Filename { get; set; }
+            public string? Filename { get; set; }
 
             [JsonPropertyName("file_size_bytes")]
             public long Filesize { get; set; }
@@ -353,12 +394,12 @@ namespace ThunderstoreCLI.Commands
         public class CompletedUpload
         {
             [JsonPropertyName("parts")]
-            public CompletedPartData[] Parts { get; set; }
+            public CompletedPartData[]? Parts { get; set; }
         }
         public class CompletedPartData
         {
             [JsonPropertyName("ETag")]
-            public string ETag { get; set; }
+            public string? ETag { get; set; }
 
             [JsonPropertyName("PartNumber")]
             public int PartNumber { get; set; }
@@ -369,10 +410,10 @@ namespace ThunderstoreCLI.Commands
             public class UserMediaData
             {
                 [JsonPropertyName("uuid")]
-                public string UUID { get; set; }
+                public string? UUID { get; set; }
 
                 [JsonPropertyName("filename")]
-                public string Filename { get; set; }
+                public string? Filename { get; set; }
 
                 [JsonPropertyName("size")]
                 public long Size { get; set; }
@@ -384,7 +425,7 @@ namespace ThunderstoreCLI.Commands
                 public DateTime? ExpireTime { get; set; }
 
                 [JsonPropertyName("status")]
-                public string Status { get; set; }
+                public string? Status { get; set; }
             }
             public class UploadPartData
             {
@@ -392,7 +433,7 @@ namespace ThunderstoreCLI.Commands
                 public int PartNumber { get; set; }
 
                 [JsonPropertyName("url")]
-                public string Url { get; set; }
+                public string? Url { get; set; }
 
                 [JsonPropertyName("offset")]
                 public long Offset { get; set; }
@@ -402,28 +443,28 @@ namespace ThunderstoreCLI.Commands
             }
 
             [JsonPropertyName("user_media")]
-            public UserMediaData Metadata { get; set; }
+            public UserMediaData? Metadata { get; set; }
 
             [JsonPropertyName("upload_urls")]
-            public UploadPartData[] UploadUrls { get; set; }
+            public UploadPartData[]? UploadUrls { get; set; }
         }
 
         public class PackageUploadMetadata
         {
             [JsonPropertyName("author_name")]
-            public string AuthorName { get; set; }
+            public string? AuthorName { get; set; }
 
             [JsonPropertyName("categories")]
-            public string[] Categories { get; set; }
+            public string[]? Categories { get; set; }
 
             [JsonPropertyName("communities")]
-            public string[] Communities { get; set; }
+            public string[]? Communities { get; set; }
 
             [JsonPropertyName("has_nsfw_content")]
             public bool HasNsfwContent { get; set; }
 
             [JsonPropertyName("upload_uuid")]
-            public string UploadUUID { get; set; }
+            public string? UploadUUID { get; set; }
         }
 
         // JSON response structure for publish package request.
@@ -434,58 +475,56 @@ namespace ThunderstoreCLI.Commands
                 public class CommunityData
                 {
                     [JsonPropertyName("identifier")]
-                    public string Identifier { get; set; }
+                    public string? Identifier { get; set; }
 
                     [JsonPropertyName("name")]
-                    public string Name { get; set; }
+                    public string? Name { get; set; }
 
-                    # nullable enable
                     [JsonPropertyName("discord_url")]
                     public string? DiscordUrl { get; set; }
 
                     [JsonPropertyName("wiki_url")]
                     public object? WikiUrl { get; set; }
-                    # nullable disable
 
                     [JsonPropertyName("require_package_listing_approval")]
                     public bool RequirePackageListingApproval { get; set; }
                 }
 
                 [JsonPropertyName("community")]
-                public CommunityData Community { get; set; }
+                public CommunityData? Community { get; set; }
 
                 [JsonPropertyName("categories")]
-                public List<string> Categories { get; set; }
+                public List<string>? Categories { get; set; }
 
                 [JsonPropertyName("url")]
-                public string Url { get; set; }
+                public string? Url { get; set; }
             }
 
             public class PackageVersionData
             {
                 [JsonPropertyName("namespace")]
-                public string Namespace { get; set; }
+                public string? Namespace { get; set; }
 
                 [JsonPropertyName("name")]
-                public string Name { get; set; }
+                public string? Name { get; set; }
 
                 [JsonPropertyName("version_number")]
-                public string VersionNumber { get; set; }
+                public string? VersionNumber { get; set; }
 
                 [JsonPropertyName("full_name")]
-                public string FullName { get; set; }
+                public string? FullName { get; set; }
 
                 [JsonPropertyName("description")]
-                public string Description { get; set; }
+                public string? Description { get; set; }
 
                 [JsonPropertyName("icon")]
-                public string Icon { get; set; }
+                public string? Icon { get; set; }
 
                 [JsonPropertyName("dependencies")]
-                public List<string> Dependencies { get; set; }
+                public List<string>? Dependencies { get; set; }
 
                 [JsonPropertyName("download_url")]
-                public string DownloadUrl { get; set; }
+                public string? DownloadUrl { get; set; }
 
                 [JsonPropertyName("downloads")]
                 public int Downloads { get; set; }
@@ -494,17 +533,17 @@ namespace ThunderstoreCLI.Commands
                 public DateTime DateCreated { get; set; }
 
                 [JsonPropertyName("website_url")]
-                public string WebsiteUrl { get; set; }
+                public string? WebsiteUrl { get; set; }
 
                 [JsonPropertyName("is_active")]
                 public bool IsActive { get; set; }
             }
 
             [JsonPropertyName("available_communities")]
-            public List<AvailableCommunityData> AvailableCommunities { get; set; }
+            public List<AvailableCommunityData>? AvailableCommunities { get; set; }
 
             [JsonPropertyName("package_version")]
-            public PackageVersionData PackageVersion { get; set; }
+            public PackageVersionData? PackageVersion { get; set; }
 
         }
     }

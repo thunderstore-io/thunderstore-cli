@@ -10,7 +10,7 @@ namespace ThunderstoreCLI.Commands
         {
             var path = config.GetProjectConfigPath();
             var projectDir = Path.GetDirectoryName(path);
-            if (!Directory.Exists(projectDir))
+            if (projectDir is not null && !Directory.Exists(projectDir))
             {
                 Console.WriteLine($"Creating directory {projectDir}");
                 Directory.CreateDirectory(projectDir);

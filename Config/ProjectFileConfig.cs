@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Tommy;
 using static Crayon.Output;
@@ -8,11 +9,11 @@ namespace ThunderstoreCLI.Config
     class ProjectFileConfig : EmptyConfig
     {
 
-        private PackageMeta PackageMeta { get; set; }
+        private PackageMeta? PackageMeta { get; set; }
 
-        private BuildConfig BuildConfig { get; set; }
+        private BuildConfig? BuildConfig { get; set; }
 
-        private PublishConfig PublishConfig { get; set; }
+        private PublishConfig? PublishConfig { get; set; }
 
         public override void Parse(Config currentConfig)
         {
@@ -36,7 +37,7 @@ namespace ThunderstoreCLI.Config
             PublishConfig = ParsePublishConfig(tomlData);
         }
 
-        protected static PackageMeta ParsePackageMeta(TomlTable tomlData)
+        protected static PackageMeta? ParsePackageMeta(TomlTable tomlData)
         {
             if (!tomlData.HasKey("package"))
                 return null;
@@ -68,7 +69,7 @@ namespace ThunderstoreCLI.Config
             return result;
         }
 
-        protected static BuildConfig ParseBuildConfig(TomlTable tomlData)
+        protected static BuildConfig? ParseBuildConfig(TomlTable tomlData)
         {
             if (!tomlData.HasKey("build"))
                 return null;
@@ -110,7 +111,7 @@ namespace ThunderstoreCLI.Config
             return result;
         }
 
-        protected static PublishConfig ParsePublishConfig(TomlTable tomlData)
+        protected static PublishConfig? ParsePublishConfig(TomlTable tomlData)
         {
             if (!tomlData.HasKey("publish"))
                 return null;
@@ -125,22 +126,22 @@ namespace ThunderstoreCLI.Config
             };
         }
 
-        public override PackageMeta GetPackageMeta()
+        public override PackageMeta? GetPackageMeta()
         {
             return PackageMeta;
         }
 
-        public override BuildConfig GetBuildConfig()
+        public override BuildConfig? GetBuildConfig()
         {
             return BuildConfig;
         }
 
-        public override PublishConfig GetPublishConfig()
+        public override PublishConfig? GetPublishConfig()
         {
             return PublishConfig;
         }
 
-        public static TomlTable Read(Config config)
+        public static TomlTable? Read(Config config)
         {
             var configPath = config.GetProjectConfigPath();
             if (!File.Exists(configPath))
@@ -155,6 +156,8 @@ namespace ThunderstoreCLI.Config
 
         public static void Write(Config config, string path)
         {
+            var dependencies = config.PackageMeta.Dependencies ?? new Dictionary<string, string>();
+            var copyPaths = config.BuildConfig.CopyPaths ?? new List<CopyPathMap>();
             var toml = new TomlTable
             {
                 ["config"] =
@@ -170,7 +173,7 @@ namespace ThunderstoreCLI.Config
                     ["description"] = config.PackageMeta.Description,
                     ["websiteUrl"] = config.PackageMeta.WebsiteUrl,
                     ["containsNsfwContent"] = config.PackageMeta.ContainsNsfwContent,
-                    ["dependencies"] = TomlUtils.DictToTomlTable(config.PackageMeta.Dependencies)
+                    ["dependencies"] = TomlUtils.DictToTomlTable(dependencies)
                 },
 
                 ["build"] = new TomlTable
@@ -178,14 +181,14 @@ namespace ThunderstoreCLI.Config
                     ["icon"] = config.BuildConfig.IconPath,
                     ["readme"] = config.BuildConfig.ReadmePath,
                     ["outdir"] = config.BuildConfig.OutDir,
-                    ["copy"] = TomlUtils.BuildCopyPathTable(config.BuildConfig.CopyPaths)
+                    ["copy"] = TomlUtils.BuildCopyPathTable(copyPaths)
                 },
 
                 ["publish"] = new TomlTable
                 {
                     ["repository"] = config.PublishConfig.Repository,
-                    ["communities"] = TomlUtils.FromArray(config.PublishConfig.Communities),
-                    ["categories"] = TomlUtils.FromArray(config.PublishConfig.Categories)
+                    ["communities"] = TomlUtils.FromArray(config.PublishConfig.Communities ?? new string[0]),
+                    ["categories"] = TomlUtils.FromArray(config.PublishConfig.Categories ?? new string[0])
                 }
             };
             File.WriteAllText(path, TomlUtils.FormatToml(toml));
