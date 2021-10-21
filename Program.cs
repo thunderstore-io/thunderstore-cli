@@ -16,7 +16,7 @@ namespace ThunderstoreCLI
         [Option("package-namespace", SetName = "build", Required = false, HelpText = "Namespace for the package")]
         public string Namespace { get; set; }
 
-        [Option("package-version", SetName = "build", Required = false, HelpText = "Verson number for the package")]
+        [Option("package-version", SetName = "build", Required = false, HelpText = "Version number for the package")]
         public string VersionNumber { get; set; }
     }
 
@@ -32,10 +32,10 @@ namespace ThunderstoreCLI
     [Verb("build", HelpText = "Build a package")]
     public class BuildOptions : PackageOptions { }
 
-    [Verb("publish", HelpText = "Publish a package. By default will also build the project.")]
+    [Verb("publish", HelpText = "Publish a package. By default will also build a new package.")]
     public class PublishOptions : PackageOptions
     {
-        [Option("file", SetName = "select", Required = false, HelpText = "If provided, defined file instead of building.")]
+        [Option("file", SetName = "select", Required = false, HelpText = "If provided, use defined package instead of building.")]
         public string File { get; set; }
 
         [Option("token", Required = false, HelpText = "Authentication token to use for publishing.")]
