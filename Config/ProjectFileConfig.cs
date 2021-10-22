@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using Tommy;
 using static Crayon.Output;
 
@@ -119,9 +116,12 @@ namespace ThunderstoreCLI.Config
                 return null;
 
             var publishConfig = tomlData["publish"];
+
             return new PublishConfig
             {
-                Repository = TomlUtils.SafegetString(publishConfig, "repository")
+                Repository = TomlUtils.SafegetString(publishConfig, "repository"),
+                Communities = TomlUtils.SafegetArray(publishConfig, "communities", Array.Empty<string>()),
+                Categories = TomlUtils.SafegetArray(publishConfig, "categories", Array.Empty<string>())
             };
         }
 
@@ -185,7 +185,9 @@ namespace ThunderstoreCLI.Config
 
                 ["publish"] = new FormattedTomlTable
                 {
-                    ["repository"] = config.PublishConfig.Repository
+                    ["repository"] = config.PublishConfig.Repository,
+                    ["communities"] = TomlUtils.FromArray(config.PublishConfig.Communities),
+                    ["categories"] = TomlUtils.FromArray(config.PublishConfig.Categories)
                 }
             };
             File.WriteAllText(path, TomlUtils.FormatToml(toml));

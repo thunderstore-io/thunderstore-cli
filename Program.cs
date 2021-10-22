@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using CommandLine;
 using ThunderstoreCLI.Commands;
 
@@ -44,6 +43,9 @@ namespace ThunderstoreCLI
 
         [Option("repository", Required = false, HelpText = "URL of the repository where to publish.")]
         public string Repository { get; set; }
+
+        [Option("use-session-auth", Default = false, Required = false, HelpText = "Use session auth instead of bearer auth.\nDEPRECATED: will be removed in the future without warning!")]
+        public bool UseSessionAuth { get; set; }
     }
 
     class Program

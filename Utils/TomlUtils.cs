@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
 using ThunderstoreCLI.Config;
 using Tommy;
 
@@ -66,6 +66,30 @@ namespace ThunderstoreCLI
             {
                 return null;
             }
+        }
+
+        #nullable enable
+        public static string[]? SafegetArray(TomlNode node, string key, string[]? defaultValue = null)
+        {
+            try
+            {
+                return node[key].AsArray.RawArray.Select(x => x.AsString.Value).ToArray();
+            }
+            catch (NullReferenceException)
+            {
+                return defaultValue;
+            }
+        }
+        #nullable disable
+
+        public static TomlArray FromArray(string[] array)
+        {
+            var ret = new TomlArray();
+            if (array == null)
+                return ret;
+            foreach (var val in array)
+                ret.Add(val);
+            return ret;
         }
     }
 }

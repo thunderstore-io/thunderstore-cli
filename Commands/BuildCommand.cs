@@ -149,15 +149,13 @@ namespace ThunderstoreCLI.Commands
             }
             var filename = config.GetBuildOutputFile();
 
-            Console.WriteLine($"Output path: {Dim(filename)}");
-            Console.WriteLine();
+            Console.WriteLine($"Output path {Cyan(filename)}");
 
             var encounteredIssues = false;
 
             var plan = new ArchivePlan(config);
 
-            Console.WriteLine("Planning for files to include in build");
-            Console.WriteLine(new string('-', 20));
+            ConsoleWriteHeader("Planning for files to include in build");
 
             plan.AddPlan("icon.png", () => File.ReadAllBytes(iconPath));
             plan.AddPlan("README.md", () => File.ReadAllBytes(readmePath));
@@ -179,9 +177,7 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Writing configured files");
-            Console.WriteLine(new string('-', 20));
+            ConsoleWriteHeader("Writing configured files");
 
             using (var outputFile = File.Open(filename, FileMode.Create))
             {
@@ -306,6 +302,13 @@ namespace ThunderstoreCLI.Commands
                 WriteIndented = true
             };
             return JsonSerializer.Serialize(manifest, serializerOptions);
+        }
+
+        private static void ConsoleWriteHeader(string header)
+        {
+            Console.WriteLine();
+            Console.WriteLine(header);
+            Console.WriteLine(new string('-', header.Length));
         }
     }
 }

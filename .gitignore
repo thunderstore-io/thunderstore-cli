@@ -363,3 +363,6 @@ FodyWeavers.xsd
 
 # VS Code
 .vscode/
+
+# Rider config directory
+.idea/

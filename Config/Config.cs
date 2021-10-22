@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Net.Http.Headers;
 
 namespace ThunderstoreCLI.Config
 {
@@ -62,9 +61,35 @@ namespace ThunderstoreCLI.Config
             return Path.GetFullPath(Path.Join(GetBuildOutputDir(), $"{GetPackageId()}.zip"));
         }
 
-        public string GetPackageUploadUrl()
+        public string GetRepositoryBaseUrl()
         {
-            return $"{PublishConfig.Repository}/api/experimental/package/upload/";
+            var repo = PublishConfig.Repository.TrimEnd('/');
+            return $"{repo}/api/experimental/";
+        }
+
+        public string GetPackageSubmitUrl()
+        {
+            return $"{this.GetRepositoryBaseUrl()}submission/submit/";
+        }
+
+        public string GetUserMediaUploadInitiateUrl()
+        {
+            return $"{this.GetRepositoryBaseUrl()}usermedia/initiate-upload/";
+        }
+
+        public string GetUserMediaUploadAbortUrl(string uploadUuid)
+        {
+            return $"{this.GetRepositoryBaseUrl()}usermedia/{uploadUuid}/abort-upload/";
+        }
+
+        public string GetUserMediaUploadFinishUrl(string uploadUuid)
+        {
+            return $"{this.GetRepositoryBaseUrl()}usermedia/{uploadUuid}/finish-upload/";
+        }
+
+        public AuthenticationHeaderValue GetAuthHeader()
+        {
+            return new AuthenticationHeaderValue(AuthConfig.UseSessionAuth ?? false ? "Session" : "Bearer", AuthConfig.DefaultToken);
         }
 
         public static Config Parse(params IConfigProvider[] configProviders)
@@ -147,11 +172,14 @@ namespace ThunderstoreCLI.Config
     public class PublishConfig
     {
         public string Repository { get; set; }
+        public string[] Communities { get; set; }
+        public string[] Categories { get; set; }
     }
 
     public class AuthConfig
     {
         public string DefaultToken { get; set; }
         public Dictionary<string, string> AuthorTokens { get; set; }
+        public bool? UseSessionAuth { get; set; }
     }
 }
