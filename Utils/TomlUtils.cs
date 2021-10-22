@@ -9,9 +9,9 @@ namespace ThunderstoreCLI
 {
     public static class TomlUtils
     {
-        public static FormattedTomlTable DictToTomlTable(Dictionary<string, string> dict)
+        public static TomlTable DictToTomlTable(Dictionary<string, string> dict)
         {
-            var result = new FormattedTomlTable();
+            var result = new TomlTable();
             foreach (var kvp in dict)
             {
                 result.Add(kvp.Key, kvp.Value);
