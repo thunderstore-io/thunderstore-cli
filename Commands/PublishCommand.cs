@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -103,7 +103,8 @@ namespace ThunderstoreCLI.Commands
 
             string uploadUuid = uploadData.Metadata?.UUID!;  // Validated in InitiateUploadRequest
 
-            try {
+            try
+            {
                 ShowProgressBar(uploadTasks).GetAwaiter().GetResult();
             }
             catch (PublishCommandException)
@@ -114,7 +115,8 @@ namespace ThunderstoreCLI.Commands
 
             var uploadedParts = uploadTasks.Select(x => x.Result).ToArray();
 
-            try {
+            try
+            {
                 FinishUploadRequest(config, uploadUuid, uploadedParts);
             }
             catch (PublishCommandException)
@@ -122,7 +124,8 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            try {
+            try
+            {
                 PublishPackageRequest(config, uploadUuid);
             }
             catch (PublishCommandException)
@@ -149,19 +152,22 @@ namespace ThunderstoreCLI.Commands
             var responseContent = responseReader.ReadToEnd();
             var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(responseContent);
 
-            if (uploadData is null) {
+            if (uploadData is null)
+            {
                 Console.WriteLine(Red("ERROR: Undeserializable InitiateUploadRequest response:"));
                 Console.WriteLine(Dim(responseContent));
                 throw new PublishCommandException();
             }
 
-            if (uploadData.Metadata?.Filename is null || uploadData.Metadata?.UUID is null) {
+            if (uploadData.Metadata?.Filename is null || uploadData.Metadata?.UUID is null)
+            {
                 Console.WriteLine(Red("ERROR: No valid Metadata found in InitiateUploadRequest response"));
                 Console.WriteLine(Dim(responseContent));
                 throw new PublishCommandException();
             }
 
-            if (uploadData.UploadUrls is null) {
+            if (uploadData.UploadUrls is null)
+            {
                 Console.WriteLine(Red("ERROR: No valid UploadUrls found in InitiateUploadRequest response"));
                 Console.WriteLine(Dim(responseContent));
                 throw new PublishCommandException();
@@ -222,7 +228,8 @@ namespace ThunderstoreCLI.Commands
             var responseContent = responseReader.ReadToEnd();
             var jsonData = JsonSerializer.Deserialize<PublishData>(responseContent);
 
-            if (jsonData?.PackageVersion?.DownloadUrl is null) {
+            if (jsonData?.PackageVersion?.DownloadUrl is null)
+            {
                 Console.WriteLine(Red(
                     "ERROR: Field package_version.download_url missing from PublishPackageRequest response:"
                 ));
@@ -257,16 +264,17 @@ namespace ThunderstoreCLI.Commands
                         {
                             length -= blocksize;
                             var bytes = reader.ReadBytes(blocksize);
-                            md5.TransformBlock(bytes , 0, blocksize, null, 0);
+                            md5.TransformBlock(bytes, 0, blocksize, null, 0);
                             await chunk.WriteAsync(bytes);
                         }
 
                         var finalBytes = reader.ReadBytes(length);
                         md5.TransformFinalBlock(finalBytes, 0, length);
 
-                        if (md5.Hash is null) {
-                          Console.WriteLine(Red($"ERROR: MD5 hashing failed for part #{part.PartNumber}"));
-                          throw new PublishCommandException();
+                        if (md5.Hash is null)
+                        {
+                            Console.WriteLine(Red($"ERROR: MD5 hashing failed for part #{part.PartNumber}"));
+                            throw new PublishCommandException();
                         }
 
                         hash = md5.Hash;
@@ -349,7 +357,8 @@ namespace ThunderstoreCLI.Commands
             HttpStatusCode expectedStatus = HttpStatusCode.OK
         )
         {
-            if (response.StatusCode == expectedStatus) {
+            if (response.StatusCode == expectedStatus)
+            {
                 return;
             }
 

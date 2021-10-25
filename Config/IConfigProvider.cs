@@ -1,4 +1,4 @@
-﻿namespace ThunderstoreCLI.Config
+namespace ThunderstoreCLI.Config
 {
     public interface IConfigProvider
     {

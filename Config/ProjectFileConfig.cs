@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Tommy;
@@ -96,7 +96,7 @@ namespace ThunderstoreCLI.Config
                         continue;
                     }
 
-                    var node = (TomlNode)entry;
+                    var node = (TomlNode) entry;
                     if (!node.HasKey("source") || !node.HasKey("target"))
                     {
                         Console.WriteLine(Yellow($"WARNING: Build config instruction is missing parameters: {node}"));

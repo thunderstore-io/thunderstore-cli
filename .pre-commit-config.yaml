@@ -15,3 +15,10 @@ repos:
     -   id: no-commit-to-branch
         args: [--branch, master]
     -   id: trailing-whitespace
+-   repo: local
+    hooks:
+    -   id: dotnet-format
+        name: dotnet-format
+        language: system
+        entry: dotnet format ThunderstoreCLI.csproj --include
+        types: ["c#"]
