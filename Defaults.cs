@@ -1,4 +1,4 @@
-﻿namespace ThunderstoreCLI
+namespace ThunderstoreCLI
 {
     public static class Defaults
     {

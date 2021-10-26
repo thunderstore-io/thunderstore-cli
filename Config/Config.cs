@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http.Headers;
@@ -34,7 +34,8 @@ namespace ThunderstoreCLI.Config
 
         public string GetPackageIconPath()
         {
-            if (BuildConfig.IconPath is null) {
+            if (BuildConfig.IconPath is null)
+            {
                 throw new Exception("BuildConfig.IconPath can't be null");
             }
             return GetProjectRelativePath(BuildConfig.IconPath);
@@ -42,7 +43,8 @@ namespace ThunderstoreCLI.Config
 
         public string GetPackageReadmePath()
         {
-            if (BuildConfig.ReadmePath is null) {
+            if (BuildConfig.ReadmePath is null)
+            {
                 throw new Exception("BuildConfig.ReadmePath can't be null");
             }
             return GetProjectRelativePath(BuildConfig.ReadmePath);
@@ -50,7 +52,8 @@ namespace ThunderstoreCLI.Config
 
         public string GetProjectConfigPath()
         {
-            if (GeneralConfig.ProjectConfigPath is null) {
+            if (GeneralConfig.ProjectConfigPath is null)
+            {
                 throw new Exception("GeneralConfig.ProjectConfigPath can't be null");
             }
             return Path.GetFullPath(GeneralConfig.ProjectConfigPath);
@@ -58,7 +61,8 @@ namespace ThunderstoreCLI.Config
 
         public string GetBuildOutputDir()
         {
-            if (BuildConfig.OutDir is null) {
+            if (BuildConfig.OutDir is null)
+            {
                 throw new Exception("BuildConfig.OutDir can't be null");
             }
             return GetProjectRelativePath(BuildConfig.OutDir);
@@ -76,7 +80,8 @@ namespace ThunderstoreCLI.Config
 
         public string GetRepositoryBaseUrl()
         {
-            if (PublishConfig.Repository is null) {
+            if (PublishConfig.Repository is null)
+            {
                 throw new Exception("PublishConfig.Repository can't be null");
             }
             var repo = PublishConfig.Repository.TrimEnd('/');

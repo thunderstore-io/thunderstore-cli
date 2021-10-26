@@ -1,4 +1,4 @@
-﻿namespace ThunderstoreCLI.Config
+namespace ThunderstoreCLI.Config
 {
     public abstract class EmptyConfig : IConfigProvider
     {

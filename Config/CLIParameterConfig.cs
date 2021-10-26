@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Config
@@ -22,7 +22,8 @@ namespace ThunderstoreCLI.Config
 
         public override PackageMeta? GetPackageMeta()
         {
-            if (options == null) return null;
+            if (options == null)
+                return null;
             return new PackageMeta()
             {
                 Namespace = options.Namespace,
