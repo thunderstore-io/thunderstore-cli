@@ -44,11 +44,12 @@ namespace ThunderstoreCLI
             }
         }
 
-        public static string SafegetString(TomlNode node, string key)
+        public static string? SafegetString(TomlNode parentNode, string key)
         {
             try
             {
-                return node[key];
+                var textNode = parentNode[key];
+                return textNode.IsString ? textNode.ToString() : null;
             }
             catch (NullReferenceException)
             {
@@ -56,11 +57,12 @@ namespace ThunderstoreCLI
             }
         }
 
-        public static bool? SafegetBool(TomlNode node, string key)
+        public static bool? SafegetBool(TomlNode parentNode, string key)
         {
             try
             {
-                return node[key];
+                var boolNode = parentNode[key];
+                return boolNode.IsBoolean ? boolNode : null;
             }
             catch (NullReferenceException)
             {
@@ -68,7 +70,6 @@ namespace ThunderstoreCLI
             }
         }
 
-        #nullable enable
         public static string[]? SafegetArray(TomlNode node, string key, string[]? defaultValue = null)
         {
             try
@@ -80,7 +81,6 @@ namespace ThunderstoreCLI
                 return defaultValue;
             }
         }
-        #nullable disable
 
         public static TomlArray FromArray(string[] array)
         {

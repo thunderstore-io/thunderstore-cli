@@ -3,27 +3,27 @@
     public abstract class EmptyConfig : IConfigProvider
     {
         public virtual void Parse(Config currentConfig) { }
-        public virtual GeneralConfig GetGeneralConfig()
+        public virtual GeneralConfig? GetGeneralConfig()
         {
             return null;
         }
 
-        public virtual PackageMeta GetPackageMeta()
+        public virtual PackageMeta? GetPackageMeta()
         {
             return null;
         }
 
-        public virtual BuildConfig GetBuildConfig()
+        public virtual BuildConfig? GetBuildConfig()
         {
             return null;
         }
 
-        public virtual PublishConfig GetPublishConfig()
+        public virtual PublishConfig? GetPublishConfig()
         {
             return null;
         }
 
-        public virtual AuthConfig GetAuthConfig()
+        public virtual AuthConfig? GetAuthConfig()
         {
             return null;
         }

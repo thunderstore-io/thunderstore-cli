@@ -115,7 +115,8 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            if (!StringUtils.IsSemVer(config.PackageMeta.VersionNumber)) {
+            if (config.PackageMeta.VersionNumber is null || !StringUtils.IsSemVer(config.PackageMeta.VersionNumber))
+            {
                 Console.WriteLine(Red($"ERROR: Invalid package version number \"{config.PackageMeta.VersionNumber}\""));
                 Console.WriteLine(Red("Version numbers must follow the Major.Minor.Patch format (e.g. 1.45.320)"));
                 Console.WriteLine(Red("Exiting"));
@@ -161,11 +162,14 @@ namespace ThunderstoreCLI.Commands
             plan.AddPlan("README.md", () => File.ReadAllBytes(readmePath));
             plan.AddPlan("manifest.json", () => Encoding.UTF8.GetBytes(SerializeManifest(config)));
 
-            foreach (var pathMap in config.BuildConfig.CopyPaths)
+            if (config.BuildConfig.CopyPaths is not null)
             {
-                Console.WriteLine();
-                Console.WriteLine($"Mapping {Dim(pathMap.From)} to {Dim($"/{pathMap.To}")}");
-                encounteredIssues |= !AddPathToArchivePlan(plan, pathMap.From, pathMap.To);
+                foreach (var pathMap in config.BuildConfig.CopyPaths)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"Mapping {Dim(pathMap.From)} to {Dim($"/{pathMap.To}")}");
+                    encounteredIssues |= !AddPathToArchivePlan(plan, pathMap.From, pathMap.To);
+                }
             }
 
             if (plan.HasErrors)
@@ -288,6 +292,7 @@ namespace ThunderstoreCLI.Commands
 
         public static string SerializeManifest(Config.Config config)
         {
+            var dependencies = config.PackageMeta.Dependencies ?? new Dictionary<string, string>();
             var manifest = new PackageManifestV1()
             {
                 Namespace = config.PackageMeta.Namespace,
@@ -295,7 +300,7 @@ namespace ThunderstoreCLI.Commands
                 Description = config.PackageMeta.Description,
                 VersionNumber = config.PackageMeta.VersionNumber,
                 WebsiteUrl = config.PackageMeta.WebsiteUrl,
-                Dependencies = config.PackageMeta.Dependencies.Select(x => $"{x.Key}-{x.Value}").ToArray()
+                Dependencies = dependencies.Select(x => $"{x.Key}-{x.Value}").ToArray()
             };
             var serializerOptions = new JsonSerializerOptions
             {
