@@ -70,11 +70,14 @@ namespace ThunderstoreCLI
             }
         }
 
-        public static string[]? SafegetArray(TomlNode node, string key, string[]? defaultValue = null)
+        public static string[]? SafegetStringArray(TomlNode parentNode, string key, string[]? defaultValue = null)
         {
             try
             {
-                return node[key].AsArray.RawArray.Select(x => x.AsString.Value).ToArray();
+                var arrayNode = parentNode[key];
+                return arrayNode.IsArray
+                    ? arrayNode.AsArray.RawArray.Select(x => x.AsString.Value).ToArray()
+                    : defaultValue;
             }
             catch (NullReferenceException)
             {
