@@ -155,35 +155,33 @@ namespace ThunderstoreCLI.Config
 
         public static void Write(Config config, string path)
         {
-            var toml = new FormattedTomlTable
+            var toml = new TomlTable
             {
                 ["config"] =
                 {
                     ["schemaVersion"] = "0.0.1"
                 },
 
-                ["package"] = new FormattedTomlTable
+                ["package"] = new TomlTable
                 {
                     ["namespace"] = config.PackageMeta.Namespace,
                     ["name"] = config.PackageMeta.Name,
                     ["versionNumber"] = config.PackageMeta.VersionNumber,
                     ["description"] = config.PackageMeta.Description,
                     ["websiteUrl"] = config.PackageMeta.WebsiteUrl,
-                    ["containsNsfwContent"] = config.PackageMeta.ContainsNsfwContent
+                    ["containsNsfwContent"] = config.PackageMeta.ContainsNsfwContent,
+                    ["dependencies"] = TomlUtils.DictToTomlTable(config.PackageMeta.Dependencies)
                 },
 
-                ["package.dependencies"] = TomlUtils.DictToTomlTable(config.PackageMeta.Dependencies),
-
-                ["build"] = new FormattedTomlTable
+                ["build"] = new TomlTable
                 {
                     ["icon"] = config.BuildConfig.IconPath,
                     ["readme"] = config.BuildConfig.ReadmePath,
-                    ["outdir"] = config.BuildConfig.OutDir
+                    ["outdir"] = config.BuildConfig.OutDir,
+                    ["copy"] = TomlUtils.BuildCopyPathTable(config.BuildConfig.CopyPaths)
                 },
 
-                ["build.copy"] = TomlUtils.BuildCopyPathTable(config.BuildConfig.CopyPaths),
-
-                ["publish"] = new FormattedTomlTable
+                ["publish"] = new TomlTable
                 {
                     ["repository"] = config.PublishConfig.Repository,
                     ["communities"] = TomlUtils.FromArray(config.PublishConfig.Communities),
