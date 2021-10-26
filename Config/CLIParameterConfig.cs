@@ -36,6 +36,14 @@ namespace ThunderstoreCLI.Config
     public class CLIInitCommandConfig : CLIParameterConfig<InitOptions>
     {
         public CLIInitCommandConfig(InitOptions options) : base(options) { }
+
+        public override InitConfig GetInitConfig()
+        {
+            return new InitConfig()
+            {
+                Overwrite = options.Overwrite
+            };
+        }
     }
 
     public class CLIBuildCommandConfig : CLIParameterConfig<BuildOptions>
@@ -51,6 +59,7 @@ namespace ThunderstoreCLI.Config
         {
             return new PublishConfig()
             {
+                File = options.File,
                 Repository = options.Repository
             };
         }

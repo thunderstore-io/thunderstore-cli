@@ -98,7 +98,7 @@ namespace ThunderstoreCLI.Commands
             }
         }
 
-        public static int Run(BuildOptions options, Config.Config config)
+        public static int Run(Config.Config config)
         {
             return DoBuild(config);
         }

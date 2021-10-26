@@ -79,17 +79,17 @@ namespace ThunderstoreCLI
 
         static int Init(InitOptions options)
         {
-            return InitCommand.Run(options, GetConfig(new Config.CLIInitCommandConfig(options)));
+            return InitCommand.Run(GetConfig(new Config.CLIInitCommandConfig(options)));
         }
 
         static int Build(BuildOptions options)
         {
-            return BuildCommand.Run(options, GetConfig(new Config.CLIBuildCommandConfig(options)));
+            return BuildCommand.Run(GetConfig(new Config.CLIBuildCommandConfig(options)));
         }
 
         static int Publish(PublishOptions options)
         {
-            return PublishCommand.Run(options, GetConfig(new Config.CLIPublishCommandConfig(options)));
+            return PublishCommand.Run(GetConfig(new Config.CLIPublishCommandConfig(options)));
         }
     }
 

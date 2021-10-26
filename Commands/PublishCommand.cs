@@ -25,7 +25,7 @@ namespace ThunderstoreCLI.Commands
             HttpClient.Timeout = TimeSpan.FromHours(1);
         }
 
-        public static int Run(PublishOptions options, Config.Config config)
+        public static int Run(Config.Config config)
         {
             var configPath = config.GetProjectConfigPath();
             if (!File.Exists(configPath))
@@ -38,9 +38,9 @@ namespace ThunderstoreCLI.Commands
             }
 
             string packagePath = "";
-            if (!string.IsNullOrWhiteSpace(options.File))
+            if (!string.IsNullOrWhiteSpace(config.PublishConfig.File))
             {
-                var filePath = Path.GetFullPath(options.File);
+                var filePath = Path.GetFullPath(config.PublishConfig.File);
                 if (!File.Exists(filePath))
                 {
                     Console.WriteLine(Red($"ERROR: The provided file does not exist."));
@@ -60,10 +60,10 @@ namespace ThunderstoreCLI.Commands
                 packagePath = config.GetBuildOutputFile();
             }
 
-            return PublishFile(options, config, packagePath);
+            return PublishFile(config, packagePath);
         }
 
-        public static int PublishFile(PublishOptions options, Config.Config config, string filepath)
+        public static int PublishFile(Config.Config config, string filepath)
         {
             Console.WriteLine();
             Console.WriteLine($"Publishing {Cyan(filepath)}");

@@ -13,6 +13,11 @@ namespace ThunderstoreCLI.Config
             return null;
         }
 
+        public virtual InitConfig? GetInitConfig()
+        {
+            return null;
+        }
+
         public virtual BuildConfig? GetBuildConfig()
         {
             return null;

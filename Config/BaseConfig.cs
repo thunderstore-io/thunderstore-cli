@@ -9,19 +9,6 @@ namespace ThunderstoreCLI.Config
                 ProjectConfigPath = Defaults.PROJECT_CONFIG_PATH
             };
         }
-        public override BuildConfig GetBuildConfig()
-        {
-            return new BuildConfig()
-            {
-                IconPath = "./icon.png",
-                ReadmePath = "./README.md",
-                OutDir = "./build",
-                CopyPaths = new()
-                {
-                    { new("./dist", "") }
-                }
-            };
-        }
 
         public override PackageMeta GetPackageMeta()
         {
@@ -40,10 +27,33 @@ namespace ThunderstoreCLI.Config
             };
         }
 
+        public override InitConfig GetInitConfig()
+        {
+            return new InitConfig()
+            {
+                Overwrite = false
+            };
+        }
+
+        public override BuildConfig GetBuildConfig()
+        {
+            return new BuildConfig()
+            {
+                IconPath = "./icon.png",
+                ReadmePath = "./README.md",
+                OutDir = "./build",
+                CopyPaths = new()
+                {
+                    { new("./dist", "") }
+                }
+            };
+        }
+
         public override PublishConfig GetPublishConfig()
         {
             return new PublishConfig()
             {
+                File = null,
                 Repository = Defaults.REPOSITORY_URL
             };
         }

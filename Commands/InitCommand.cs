@@ -6,7 +6,7 @@ namespace ThunderstoreCLI.Commands
 {
     public static class InitCommand
     {
-        public static int Run(InitOptions options, Config.Config config)
+        public static int Run(Config.Config config)
         {
             var path = config.GetProjectConfigPath();
             var projectDir = Path.GetDirectoryName(path);
@@ -17,7 +17,7 @@ namespace ThunderstoreCLI.Commands
             }
 
             Console.WriteLine($"Creating a new project configuration to {projectDir}");
-            if (File.Exists(path) && !options.Overwrite)
+            if (File.Exists(path) && !config.InitConfig.ShouldOverwrite())
             {
                 Console.WriteLine($"Project configuration already exists, stopping");
                 Console.WriteLine($"Use the --{InitOptions.OVERWRITE_FLAG} to overwrite the file");

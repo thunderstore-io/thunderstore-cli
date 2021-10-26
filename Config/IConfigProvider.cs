@@ -6,6 +6,7 @@ namespace ThunderstoreCLI.Config
 
         GeneralConfig? GetGeneralConfig();
         PackageMeta? GetPackageMeta();
+        InitConfig? GetInitConfig();
         BuildConfig? GetBuildConfig();
         PublishConfig? GetPublishConfig();
         AuthConfig? GetAuthConfig();
