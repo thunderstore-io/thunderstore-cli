@@ -105,16 +105,6 @@ namespace ThunderstoreCLI.Commands
 
         public static int DoBuild(Config.Config config)
         {
-            var configPath = config.GetProjectConfigPath();
-            if (!File.Exists(configPath))
-            {
-                Console.WriteLine(Red($"ERROR: Configuration file not found, looked from: {White(Dim(configPath))}"));
-                Console.WriteLine(Red("A project configuration file is required for the build command."));
-                Console.WriteLine(Red("You can initialize one with the 'init' command."));
-                Console.WriteLine(Red("Exiting"));
-                return 1;
-            }
-
             if (config.PackageMeta.VersionNumber is null || !StringUtils.IsSemVer(config.PackageMeta.VersionNumber))
             {
                 Console.WriteLine(Red($"ERROR: Invalid package version number \"{config.PackageMeta.VersionNumber}\""));

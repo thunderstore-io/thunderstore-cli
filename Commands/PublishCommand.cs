@@ -27,28 +27,10 @@ namespace ThunderstoreCLI.Commands
 
         public static int Run(Config.Config config)
         {
-            var configPath = config.GetProjectConfigPath();
-            if (!File.Exists(configPath))
-            {
-                Console.WriteLine(Red($"ERROR: Configuration file not found, looked from: {White(Dim(configPath))}"));
-                Console.WriteLine(Red("A project configuration file is required for the publish command."));
-                Console.WriteLine(Red("You can initialize one with the 'init' command."));
-                Console.WriteLine(Red("Exiting"));
-                return 1;
-            }
-
             string packagePath = "";
             if (!string.IsNullOrWhiteSpace(config.PublishConfig.File))
             {
-                var filePath = Path.GetFullPath(config.PublishConfig.File);
-                if (!File.Exists(filePath))
-                {
-                    Console.WriteLine(Red($"ERROR: The provided file does not exist."));
-                    Console.WriteLine(Red($"Searched path: {White(Dim(filePath))}"));
-                    Console.WriteLine(Red("Exiting"));
-                    return 1;
-                }
-                packagePath = filePath;
+                packagePath = Path.GetFullPath(config.PublishConfig.File);
             }
             else
             {

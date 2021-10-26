@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using ThunderstoreCLI.Config;
+using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI.Commands
 {

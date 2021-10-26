@@ -2,61 +2,19 @@ using System;
 using System.Collections.Generic;
 using CommandLine;
 using ThunderstoreCLI.Commands;
+using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI
 {
-    public class PackageOptions
-    {
-        [Option("config-path", Required = false, Default = Defaults.PROJECT_CONFIG_PATH, HelpText = "Path for the project configuration file")]
-        public string? ConfigPath { get; set; }
-
-        [Option("package-name", SetName = "build", Required = false, HelpText = "Name for the package")]
-        public string? Name { get; set; }
-
-        [Option("package-namespace", SetName = "build", Required = false, HelpText = "Namespace for the package")]
-        public string? Namespace { get; set; }
-
-        [Option("package-version", SetName = "build", Required = false, HelpText = "Version number for the package")]
-        public string? VersionNumber { get; set; }
-    }
-
-    [Verb("init", HelpText = "Initialize a new project configuration")]
-    public class InitOptions : PackageOptions
-    {
-        public const string OVERWRITE_FLAG = "overwrite";
-
-        [Option(OVERWRITE_FLAG, Required = false, Default = false, HelpText = "If present, overwrite current configuration")]
-        public bool Overwrite { get; set; }
-    }
-
-    [Verb("build", HelpText = "Build a package")]
-    public class BuildOptions : PackageOptions { }
-
-    [Verb("publish", HelpText = "Publish a package. By default will also build a new package.")]
-    public class PublishOptions : PackageOptions
-    {
-        [Option("file", SetName = "select", Required = false, HelpText = "If provided, use defined package instead of building.")]
-        public string? File { get; set; }
-
-        [Option("token", Required = false, HelpText = "Authentication token to use for publishing.")]
-        public string? Token { get; set; }
-
-        [Option("repository", Required = false, HelpText = "URL of the repository where to publish.")]
-        public string? Repository { get; set; }
-
-        [Option("use-session-auth", Default = false, Required = false, HelpText = "Use session auth instead of bearer auth.\nDEPRECATED: will be removed in the future without warning!")]
-        public bool UseSessionAuth { get; set; }
-    }
-
     class Program
     {
         static int Main(string[] args)
         {
             return Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions>(args)
                 .MapResult(
-                    (InitOptions o) => Init(o),
-                    (BuildOptions o) => Build(o),
-                    (PublishOptions o) => Publish(o),
+                    (InitOptions o) => o.Validate() ? Init(o) : 1,
+                    (BuildOptions o) => o.Validate() ? Build(o) : 1,
+                    (PublishOptions o) => o.Validate() ? Publish(o) : 1,
                     errs => HandleError(errs)
                 );
         }
