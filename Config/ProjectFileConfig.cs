@@ -121,8 +121,8 @@ namespace ThunderstoreCLI.Config
             return new PublishConfig
             {
                 Repository = TomlUtils.SafegetString(publishConfig, "repository"),
-                Communities = TomlUtils.SafegetArray(publishConfig, "communities", Array.Empty<string>()),
-                Categories = TomlUtils.SafegetArray(publishConfig, "categories", Array.Empty<string>())
+                Communities = TomlUtils.SafegetStringArray(publishConfig, "communities", Array.Empty<string>()),
+                Categories = TomlUtils.SafegetStringArray(publishConfig, "categories", Array.Empty<string>())
             };
         }
 
