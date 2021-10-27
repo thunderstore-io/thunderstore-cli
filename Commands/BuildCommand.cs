@@ -50,10 +50,12 @@ namespace ThunderstoreCLI.Commands
                     var duplicatePath = duplicateMap[key];
                     if (duplicatePath != path)
                     {
-                        Console.WriteLine(Red("ERROR: Case mismatch!"));
-                        Console.WriteLine(Red($"A file target was added twice to the build with different casing, which is not allowed!"));
-                        Console.WriteLine(Red($"Previously: {White(Dim($"/{duplicatePath}"))}"));
-                        Console.WriteLine(Red($"Now: {White(Dim($"/{path}"))}"));
+                        Write.Error(
+                            "Case mismatch!",
+                            $"A file target was added twice to the build with different casing, which is not allowed!",
+                            $"Previously: {White(Dim($"/{duplicatePath}"))}",
+                            $"Now: {White(Dim($"/{path}"))}"
+                        );
                         HasErrors = true;
                         return;
                     }
@@ -64,17 +66,21 @@ namespace ThunderstoreCLI.Commands
                 }
                 else if (directories.Contains(key))
                 {
-                    Console.WriteLine(Red("ERROR: Filepath conflict"));
-                    Console.WriteLine(Red("A directory already exists in the location where a file was to be placed"));
-                    Console.WriteLine(Red($"Path in question: {White(Dim($"/{path}"))}"));
+                    Write.Error(
+                        "Filepath conflict!",
+                        "A directory already exists in the location where a file was to be placed",
+                        $"Path in question: {White(Dim($"/{path}"))}"
+                    );
                     HasErrors = true;
                     return;
                 }
                 else if (directoryKeys.Any(x => files.Contains(x)))
                 {
-                    Console.WriteLine(Red("ERROR: Directory path conflict"));
-                    Console.WriteLine(Red("A file already exists in the location where a directory was to be created"));
-                    Console.WriteLine(Red($"Path in question: {White(Dim($"/{path}"))}"));
+                    Write.Error(
+                        "Directory path conflict!",
+                        "A file already exists in the location where a directory was to be created",
+                        $"Path in question: {White(Dim($"/{path}"))}"
+                    );
                     HasErrors = true;
                     return;
                 }
@@ -121,16 +127,14 @@ namespace ThunderstoreCLI.Commands
             var readmePath = config.GetPackageReadmePath();
             if (!File.Exists(readmePath))
             {
-                Console.WriteLine(Red($"ERROR: Readme not found from the declared path: {White(Dim(readmePath))}"));
-                Console.WriteLine(Red("Exiting"));
+                Write.ErrorExit($"Readme not found from the declared path: {White(Dim(readmePath))}");
                 return 1;
             }
 
             var iconPath = config.GetPackageIconPath();
             if (!File.Exists(iconPath))
             {
-                Console.WriteLine(Red($"ERROR: Icon not found from the declared path: {White(Dim(iconPath))}"));
-                Console.WriteLine(Red("Exiting"));
+                Write.ErrorExit($"Icon not found from the declared path: {White(Dim(iconPath))}");
                 return 1;
             }
 
@@ -166,9 +170,10 @@ namespace ThunderstoreCLI.Commands
             if (plan.HasErrors)
             {
                 Console.WriteLine();
-                Console.WriteLine(Red("ERROR: Build was aborted due to errors identified in planning phase"));
-                Console.WriteLine(Red("Adjust your configuration so no issues are present"));
-                Console.WriteLine(Red("Exiting"));
+                Write.ErrorExit(
+                    "Build was aborted due to errors identified in planning phase",
+                    "Adjust your configuration so no issues are present"
+                );
                 return 1;
             }
 
