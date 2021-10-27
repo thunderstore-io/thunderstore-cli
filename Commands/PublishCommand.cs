@@ -27,6 +27,15 @@ namespace ThunderstoreCLI.Commands
 
         public static int Run(Config.Config config)
         {
+            try
+            {
+                ValidateConfig(config);
+            }
+            catch (CommandException)
+            {
+                return 1;
+            }
+
             string packagePath = "";
             if (!string.IsNullOrWhiteSpace(config.PublishConfig.File))
             {
@@ -371,6 +380,14 @@ namespace ThunderstoreCLI.Commands
                 Filename = Path.GetFileName(filePath),
                 Filesize = new FileInfo(filePath).Length
             });
+        }
+
+        private static void ValidateConfig(Config.Config config, bool justReturnErrors = false)
+        {
+            var buildConfigErrors = BuildCommand.ValidateConfig(config, false);
+            var v = new Config.Validator("publish", buildConfigErrors);
+            v.AddIfEmpty(config.AuthConfig.DefaultToken, "Auth DefaultToken");
+            v.ThrowIfErrors();
         }
 
         public class FileData
