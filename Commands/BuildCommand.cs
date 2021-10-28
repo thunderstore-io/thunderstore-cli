@@ -146,7 +146,7 @@ namespace ThunderstoreCLI.Commands
             }
             var filename = config.GetBuildOutputFile();
 
-            Console.WriteLine($"Output path {Cyan(filename)}");
+            Write.Line($"Output path {Cyan(filename)}");
 
             var encounteredIssues = false;
 

@@ -225,7 +225,7 @@ namespace ThunderstoreCLI.Commands
             }
 
             Write.Success($"Successfully published {Cyan($"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}")}");
-            Console.WriteLine($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
+            Write.Line($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
         }
 
         private static async Task<CompletedPartData> UploadChunk(UploadInitiateData.UploadPartData part, string filepath)

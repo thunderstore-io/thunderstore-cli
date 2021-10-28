@@ -48,6 +48,9 @@ namespace ThunderstoreCLI
             _WriteMultiline(_Light, message, submessages);
         }
 
+        /// <summary>Write regular line to stdout</summary>
+        public static void Line(string message) => _Regular(message);
+
         /// <summary>Write message with highlight color to stdout</summary>
         public static void Note(string message, params string[] submessages)
         {

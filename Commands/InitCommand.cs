@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using ThunderstoreCLI.Config;
 using ThunderstoreCLI.Options;
@@ -22,29 +21,29 @@ namespace ThunderstoreCLI.Commands
             var projectDir = Path.GetDirectoryName(path);
             if (projectDir is not null && !Directory.Exists(projectDir))
             {
-                Console.WriteLine($"Creating directory {projectDir}");
+                Write.Line($"Creating directory {projectDir}");
                 Directory.CreateDirectory(projectDir);
             }
 
-            Console.WriteLine($"Creating a new project configuration to {projectDir}");
+            Write.Line($"Creating a new project configuration to {projectDir}");
             if (File.Exists(path) && !config.InitConfig.ShouldOverwrite())
             {
-                Console.WriteLine($"Project configuration already exists, stopping");
-                Console.WriteLine($"Use the --{InitOptions.OVERWRITE_FLAG} to overwrite the file");
+                Write.Line($"Project configuration already exists, stopping");
+                Write.Line($"Use the --{InitOptions.OVERWRITE_FLAG} to overwrite the file");
                 return 1;
             }
             else
             {
                 if (File.Exists(path))
                 {
-                    Console.WriteLine($"Project configuration already exists, overwriting");
+                    Write.Line($"Project configuration already exists, overwriting");
                 }
                 ProjectFileConfig.Write(config, path);
 
                 var iconPath = config.GetPackageIconPath();
                 if (File.Exists(iconPath))
                 {
-                    Console.WriteLine("Icon found, skipping creation of default");
+                    Write.Line("Icon found, skipping creation of default");
                 }
                 else
                 {
@@ -54,14 +53,14 @@ namespace ThunderstoreCLI.Commands
                 var readmePath = config.GetPackageReadmePath();
                 if (File.Exists(readmePath))
                 {
-                    Console.WriteLine("Readme found, skipping creation of default");
+                    Write.Line("Readme found, skipping creation of default");
                 }
                 else
                 {
                     File.WriteAllText(readmePath, BuildReadme(config));
                 }
 
-                Console.WriteLine("Done!");
+                Write.Line("Done!");
                 return 0;
             }
         }
