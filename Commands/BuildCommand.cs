@@ -206,7 +206,7 @@ namespace ThunderstoreCLI.Commands
             }
             else
             {
-                Console.WriteLine(Green($"Successfully built {Cyan(packageId)}"));
+                Write.Success($"Successfully built {Cyan(packageId)}");
                 return 0;
             }
         }

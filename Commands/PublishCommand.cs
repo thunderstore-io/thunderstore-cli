@@ -199,7 +199,7 @@ namespace ThunderstoreCLI.Commands
 
             HandleRequestError("finishing the upload", response);
 
-            Console.WriteLine(Green("Successfully finalized the upload"));
+            Write.Success("Successfully finalized the upload");
         }
 
         private static void PublishPackageRequest(Config.Config config, string uploadUuid)
@@ -226,7 +226,7 @@ namespace ThunderstoreCLI.Commands
                 throw new PublishCommandException();
             }
 
-            Console.WriteLine(Green("Successfully published ") + Cyan($"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
+            Write.Success($"Successfully published {Cyan($"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}")}");
             Console.WriteLine($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
         }
 
