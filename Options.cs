@@ -68,9 +68,6 @@ namespace ThunderstoreCLI.Options
         [Option("repository", Required = false, HelpText = "URL of the repository where to publish.")]
         public string? Repository { get; set; }
 
-        [Option("use-session-auth", Default = false, Required = false, HelpText = "Use session auth instead of bearer auth.\nDEPRECATED: will be removed in the future without warning!")]
-        public bool UseSessionAuth { get; set; }
-
         public override bool Validate()
         {
             if (!base.Validate())
@@ -89,11 +86,6 @@ namespace ThunderstoreCLI.Options
                     );
                     return false;
                 }
-            }
-
-            if (UseSessionAuth)
-            {
-                Write.Note("The usage of session auth is deprecated and will be removed in the future without warning!");
             }
 
             return true;
