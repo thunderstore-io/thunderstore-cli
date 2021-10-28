@@ -41,6 +41,12 @@ namespace ThunderstoreCLI
             _Regular(new string('-', header.Length));
         }
 
+        /// <summary>Write message with highlight color to stdout</summary>
+        public static void Note(string message, params string[] submessages)
+        {
+            _WriteMultiline(_Warn, message, submessages);
+        }
+
         /// <summary>Write success message to stdout</summary>
         public static void Success(string message, params string[] submessages)
         {

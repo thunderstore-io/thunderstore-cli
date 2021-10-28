@@ -201,7 +201,7 @@ namespace ThunderstoreCLI.Commands
 
             if (encounteredIssues || plan.HasWarnings)
             {
-                Console.WriteLine(Yellow("Some issues were encountered when building, see output for more details"));
+                Write.Note("Some issues were encountered when building, see output for more details");
                 return 1;
             }
             else

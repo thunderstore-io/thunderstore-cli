@@ -93,7 +93,7 @@ namespace ThunderstoreCLI.Options
 
             if (UseSessionAuth)
             {
-                Console.WriteLine(Yellow("The usage of session auth is deprecated and will be removed in the future without warning!"));
+                Write.Note("The usage of session auth is deprecated and will be removed in the future without warning!");
             }
 
             return true;
