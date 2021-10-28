@@ -7,6 +7,7 @@ namespace ThunderstoreCLI
     public static class Write
     {
         private static void _Error(string msg) => Console.WriteLine(Red(msg));
+        private static void _Warn(string msg) => Console.WriteLine(Yellow(msg));
 
         private static void _WriteMultiline(Action<string> write, string msg, string[] submsgs)
         {
@@ -25,6 +26,12 @@ namespace ThunderstoreCLI
         {
             Error(message, submessages);
             _Error("Exiting");
+        }
+
+        /// <summary>Write warning message to stdout</summary>
+        public static void Warn(string message, params string[] submessages)
+        {
+            _WriteMultiline(_Warn, $"WARNING: {message}", submessages);
         }
     }
 }

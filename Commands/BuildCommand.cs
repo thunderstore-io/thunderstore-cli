@@ -59,8 +59,10 @@ namespace ThunderstoreCLI.Commands
                         HasErrors = true;
                         return;
                     }
-                    Console.WriteLine(Yellow($"WARNING: {Dim(path)} was added multiple times to the build and will be overwritten"));
-                    Console.WriteLine(Yellow(Dim($"Re-Planned for {White(Dim($"/{path}"))}")));
+                    Write.Warn(
+                        $"{Dim(path)} was added multiple times to the build and will be overwritten",
+                        $"Re-Planned for {White(Dim($"/{path}"))}"
+                    );
                     plan[path] = dataGetter;
                     HasWarnings = true;
                 }
@@ -243,7 +245,7 @@ namespace ThunderstoreCLI.Commands
             }
             else
             {
-                Console.WriteLine(Yellow($"WARNING: Nothing found at {sourcePath}, looked from {basePath}"));
+                Write.Warn($"Nothing found at {sourcePath}, looked from {basePath}");
                 return false;
             }
         }
