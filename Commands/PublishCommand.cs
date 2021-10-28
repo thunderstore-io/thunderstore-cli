@@ -285,14 +285,14 @@ namespace ThunderstoreCLI.Commands
                 }
                 catch
                 {
-                    Console.WriteLine();
+                    Write.Empty();
                     Write.ErrorExit(await response.Content.ReadAsStringAsync());
                     throw new PublishCommandException();
                 }
 
                 if (response.Headers.ETag is null)
                 {
-                    Console.WriteLine();
+                    Write.Empty();
                     Write.ErrorExit($"Response contained no ETag for part #{part.PartNumber}");
                     throw new PublishCommandException();
                 }
@@ -305,7 +305,7 @@ namespace ThunderstoreCLI.Commands
             }
             catch (Exception e)
             {
-                Console.WriteLine();
+                Write.Empty();
                 Write.ErrorExit($"Exception occured while uploading file chunk #{part.PartNumber}:", e.ToString());
                 throw new PublishCommandException();
             }
@@ -319,7 +319,7 @@ namespace ThunderstoreCLI.Commands
             {
                 if (tasks.Any(x => x.IsFaulted))
                 {
-                    Console.WriteLine();
+                    Write.Empty();
                     throw new PublishCommandException();
                 }
 
@@ -331,7 +331,7 @@ namespace ThunderstoreCLI.Commands
 
                 if (completed == tasks.Length)
                 {
-                    Console.WriteLine();
+                    Write.Empty();
                     return;
                 }
 

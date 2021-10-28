@@ -153,7 +153,7 @@ namespace ThunderstoreCLI.Commands
 
             var plan = new ArchivePlan(config);
 
-            ConsoleWriteHeader("Planning for files to include in build");
+            Write.Header("Planning for files to include in build");
 
             plan.AddPlan("icon.png", () => File.ReadAllBytes(iconPath));
             plan.AddPlan("README.md", () => File.ReadAllBytes(readmePath));
@@ -171,7 +171,7 @@ namespace ThunderstoreCLI.Commands
 
             if (plan.HasErrors)
             {
-                Console.WriteLine();
+                Write.Empty();
                 Write.ErrorExit(
                     "Build was aborted due to errors identified in planning phase",
                     "Adjust your configuration so no issues are present"
@@ -179,7 +179,7 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            ConsoleWriteHeader("Writing configured files");
+            Write.Header("Writing configured files");
 
             using (var outputFile = File.Open(filename, FileMode.Create))
             {
@@ -197,7 +197,7 @@ namespace ThunderstoreCLI.Commands
                 }
             }
 
-            Console.WriteLine();
+            Write.Empty();
 
             if (encounteredIssues || plan.HasWarnings)
             {
@@ -321,13 +321,6 @@ namespace ThunderstoreCLI.Commands
             }
 
             return v.GetErrors();
-        }
-
-        private static void ConsoleWriteHeader(string header)
-        {
-            Console.WriteLine();
-            Console.WriteLine(header);
-            Console.WriteLine(new string('-', header.Length));
         }
     }
 }

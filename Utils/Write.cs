@@ -7,6 +7,7 @@ namespace ThunderstoreCLI
     public static class Write
     {
         private static void _Error(string msg) => Console.WriteLine(Red(msg));
+        private static void _Regular(string msg) => Console.WriteLine(msg);
         private static void _Success(string msg) => Console.WriteLine(Green(msg));
         private static void _Warn(string msg) => Console.WriteLine(Yellow(msg));
 
@@ -15,6 +16,9 @@ namespace ThunderstoreCLI
             write(msg);
             submsgs.ToList().ForEach(write);
         }
+
+        /// <summary>Write empty line to stdout</summary>
+        public static void Empty() => _Regular("");
 
         /// <summary>Write error message to stdout</summary>
         public static void Error(string message, params string[] submessages)
@@ -27,6 +31,14 @@ namespace ThunderstoreCLI
         {
             Error(message, submessages);
             _Error("Exiting");
+        }
+
+        /// <summary>Write line with underlining to stdout</summary>
+        public static void Header(string header)
+        {
+            Empty();
+            _Regular(header);
+            _Regular(new string('-', header.Length));
         }
 
         /// <summary>Write success message to stdout</summary>
