@@ -56,9 +56,7 @@ namespace ThunderstoreCLI.Commands
 
         public static int PublishFile(Config.Config config, string filepath)
         {
-            Console.WriteLine();
-            Console.WriteLine($"Publishing {Cyan(filepath)}");
-            Console.WriteLine();
+            Write.WithNL($"Publishing {Cyan(filepath)}", before: true, after: true);
 
             if (!File.Exists(filepath))
             {
@@ -171,8 +169,8 @@ namespace ThunderstoreCLI.Commands
                 suffixIndex++;
             }
 
-            Console.WriteLine($"Uploading {Cyan(uploadData.Metadata.Filename)} ({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks...");
-            Console.WriteLine();
+            var details = $"({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks...";
+            Write.WithNL($"Uploading {Cyan(uploadData.Metadata.Filename)} {details}", after: true);
 
             return uploadData;
         }

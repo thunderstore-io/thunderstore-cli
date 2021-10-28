@@ -58,5 +58,21 @@ namespace ThunderstoreCLI
         {
             _WriteMultiline(_Warn, $"WARNING: {message}", submessages);
         }
+
+        /// <summary>Output line to stdout with optional empty lines before and/or after</summary>
+        public static void WithNL(string message, bool before = false, bool after = false)
+        {
+            if (before)
+            {
+                Empty();
+            }
+
+            _Regular(message);
+
+            if (after)
+            {
+                Empty();
+            }
+        }
     }
 }

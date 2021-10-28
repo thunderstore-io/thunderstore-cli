@@ -123,8 +123,7 @@ namespace ThunderstoreCLI.Commands
         public static int DoBuild(Config.Config config)
         {
             var packageId = config.GetPackageId();
-            Console.WriteLine($"Building {Cyan(packageId)}");
-            Console.WriteLine();
+            Write.WithNL($"Building {Cyan(packageId)}", after: true);
 
             var readmePath = config.GetPackageReadmePath();
             if (!File.Exists(readmePath))
@@ -163,8 +162,7 @@ namespace ThunderstoreCLI.Commands
             {
                 foreach (var pathMap in config.BuildConfig.CopyPaths)
                 {
-                    Console.WriteLine();
-                    Console.WriteLine($"Mapping {Dim(pathMap.From)} to {Dim($"/{pathMap.To}")}");
+                    Write.WithNL($"Mapping {Dim(pathMap.From)} to {Dim($"/{pathMap.To}")}", before: true);
                     encounteredIssues |= !AddPathToArchivePlan(plan, pathMap.From, pathMap.To);
                 }
             }
