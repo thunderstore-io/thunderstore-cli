@@ -7,6 +7,7 @@ namespace ThunderstoreCLI
     public static class Write
     {
         private static void _Error(string msg) => Console.WriteLine(Red(msg));
+        private static void _Light(string msg) => Console.WriteLine(Dim(msg));
         private static void _Regular(string msg) => Console.WriteLine(msg);
         private static void _Success(string msg) => Console.WriteLine(Green(msg));
         private static void _Warn(string msg) => Console.WriteLine(Yellow(msg));
@@ -39,6 +40,12 @@ namespace ThunderstoreCLI
             Empty();
             _Regular(header);
             _Regular(new string('-', header.Length));
+        }
+
+        /// <summary>Write message with dimmer color to stdout</summary>
+        public static void Light(string message, params string[] submessages)
+        {
+            _WriteMultiline(_Light, message, submessages);
         }
 
         /// <summary>Write message with highlight color to stdout</summary>

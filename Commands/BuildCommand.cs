@@ -96,7 +96,7 @@ namespace ThunderstoreCLI.Commands
                     {
                         directories.Add(entry);
                     }
-                    Console.WriteLine(Dim($"Planned for /{path}"));
+                    Write.Light($"Planned for /{path}");
                 }
             }
 
@@ -185,7 +185,7 @@ namespace ThunderstoreCLI.Commands
                 {
                     foreach (var entry in plan)
                     {
-                        Console.WriteLine(Dim($"Writing /{entry.Key}"));
+                        Write.Light($"Writing /{entry.Key}");
                         var archiveEntry = archive.CreateEntry(entry.Key, CompressionLevel.Optimal);
                         using (var writer = new BinaryWriter(archiveEntry.Open()))
                         {
