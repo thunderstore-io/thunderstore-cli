@@ -383,7 +383,7 @@ namespace ThunderstoreCLI.Commands
         {
             var buildConfigErrors = BuildCommand.ValidateConfig(config, false);
             var v = new Config.Validator("publish", buildConfigErrors);
-            v.AddIfEmpty(config.AuthConfig.DefaultToken, "Auth DefaultToken");
+            v.AddIfEmpty(config.AuthConfig.AuthToken, "Auth AuthToken");
             v.ThrowIfErrors();
         }
 
