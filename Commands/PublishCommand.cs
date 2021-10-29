@@ -25,30 +25,21 @@ namespace ThunderstoreCLI.Commands
             HttpClient.Timeout = TimeSpan.FromHours(1);
         }
 
-        public static int Run(PublishOptions options, Config.Config config)
+        public static int Run(Config.Config config)
         {
-            var configPath = config.GetProjectConfigPath();
-            if (!File.Exists(configPath))
+            try
             {
-                Console.WriteLine(Red($"ERROR: Configuration file not found, looked from: {White(Dim(configPath))}"));
-                Console.WriteLine(Red("A project configuration file is required for the publish command."));
-                Console.WriteLine(Red("You can initialize one with the 'init' command."));
-                Console.WriteLine(Red("Exiting"));
+                ValidateConfig(config);
+            }
+            catch (CommandException)
+            {
                 return 1;
             }
 
             string packagePath = "";
-            if (!string.IsNullOrWhiteSpace(options.File))
+            if (!string.IsNullOrWhiteSpace(config.PublishConfig.File))
             {
-                var filePath = Path.GetFullPath(options.File);
-                if (!File.Exists(filePath))
-                {
-                    Console.WriteLine(Red($"ERROR: The provided file does not exist."));
-                    Console.WriteLine(Red($"Searched path: {White(Dim(filePath))}"));
-                    Console.WriteLine(Red("Exiting"));
-                    return 1;
-                }
-                packagePath = filePath;
+                packagePath = Path.GetFullPath(config.PublishConfig.File);
             }
             else
             {
@@ -60,10 +51,10 @@ namespace ThunderstoreCLI.Commands
                 packagePath = config.GetBuildOutputFile();
             }
 
-            return PublishFile(options, config, packagePath);
+            return PublishFile(config, packagePath);
         }
 
-        public static int PublishFile(PublishOptions options, Config.Config config, string filepath)
+        public static int PublishFile(Config.Config config, string filepath)
         {
             Console.WriteLine();
             Console.WriteLine($"Publishing {Cyan(filepath)}");
@@ -389,6 +380,14 @@ namespace ThunderstoreCLI.Commands
                 Filename = Path.GetFileName(filePath),
                 Filesize = new FileInfo(filePath).Length
             });
+        }
+
+        private static void ValidateConfig(Config.Config config, bool justReturnErrors = false)
+        {
+            var buildConfigErrors = BuildCommand.ValidateConfig(config, false);
+            var v = new Config.Validator("publish", buildConfigErrors);
+            v.AddIfEmpty(config.AuthConfig.DefaultToken, "Auth DefaultToken");
+            v.ThrowIfErrors();
         }
 
         public class FileData

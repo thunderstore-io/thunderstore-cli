@@ -98,31 +98,22 @@ namespace ThunderstoreCLI.Commands
             }
         }
 
-        public static int Run(BuildOptions options, Config.Config config)
+        public static int Run(Config.Config config)
         {
+            try
+            {
+                ValidateConfig(config);
+            }
+            catch (CommandException)
+            {
+                return 1;
+            }
+
             return DoBuild(config);
         }
 
         public static int DoBuild(Config.Config config)
         {
-            var configPath = config.GetProjectConfigPath();
-            if (!File.Exists(configPath))
-            {
-                Console.WriteLine(Red($"ERROR: Configuration file not found, looked from: {White(Dim(configPath))}"));
-                Console.WriteLine(Red("A project configuration file is required for the build command."));
-                Console.WriteLine(Red("You can initialize one with the 'init' command."));
-                Console.WriteLine(Red("Exiting"));
-                return 1;
-            }
-
-            if (config.PackageMeta.VersionNumber is null || !StringUtils.IsSemVer(config.PackageMeta.VersionNumber))
-            {
-                Console.WriteLine(Red($"ERROR: Invalid package version number \"{config.PackageMeta.VersionNumber}\""));
-                Console.WriteLine(Red("Version numbers must follow the Major.Minor.Patch format (e.g. 1.45.320)"));
-                Console.WriteLine(Red("Exiting"));
-                return 1;
-            }
-
             var packageId = config.GetPackageId();
             Console.WriteLine($"Building {Cyan(packageId)}");
             Console.WriteLine();
@@ -307,6 +298,22 @@ namespace ThunderstoreCLI.Commands
                 WriteIndented = true
             };
             return JsonSerializer.Serialize(manifest, serializerOptions);
+        }
+
+        public static List<string> ValidateConfig(Config.Config config, bool throwIfErrors = true)
+        {
+            var v = new Config.Validator("build");
+            v.AddIfEmpty(config.PackageMeta.Namespace, "Package Namespace");
+            v.AddIfEmpty(config.PackageMeta.Name, "Package Name");
+            v.AddIfNotSemver(config.PackageMeta.VersionNumber, "Package VersionNumber");
+            v.AddIfEmpty(config.BuildConfig.OutDir, "Build OutDir");
+
+            if (throwIfErrors)
+            {
+                v.ThrowIfErrors();
+            }
+
+            return v.GetErrors();
         }
 
         private static void ConsoleWriteHeader(string header)

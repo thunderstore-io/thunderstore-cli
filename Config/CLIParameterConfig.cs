@@ -1,5 +1,4 @@
-using System;
-using static Crayon.Output;
+using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI.Config
 {
@@ -36,6 +35,14 @@ namespace ThunderstoreCLI.Config
     public class CLIInitCommandConfig : CLIParameterConfig<InitOptions>
     {
         public CLIInitCommandConfig(InitOptions options) : base(options) { }
+
+        public override InitConfig GetInitConfig()
+        {
+            return new InitConfig()
+            {
+                Overwrite = options.Overwrite
+            };
+        }
     }
 
     public class CLIBuildCommandConfig : CLIParameterConfig<BuildOptions>
@@ -51,16 +58,13 @@ namespace ThunderstoreCLI.Config
         {
             return new PublishConfig()
             {
+                File = options.File,
                 Repository = options.Repository
             };
         }
 
         public override AuthConfig GetAuthConfig()
         {
-            if (options.UseSessionAuth)
-            {
-                Console.WriteLine(Yellow("The usage of session auth is deprecated and will be removed in the future without warning!"));
-            }
             return new AuthConfig()
             {
                 DefaultToken = options.Token,

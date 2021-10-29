@@ -1,13 +1,23 @@
 using System;
 using System.IO;
 using ThunderstoreCLI.Config;
+using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI.Commands
 {
     public static class InitCommand
     {
-        public static int Run(InitOptions options, Config.Config config)
+        public static int Run(Config.Config config)
         {
+            try
+            {
+                ValidateConfig(config);
+            }
+            catch (CommandException)
+            {
+                return 1;
+            }
+
             var path = config.GetProjectConfigPath();
             var projectDir = Path.GetDirectoryName(path);
             if (projectDir is not null && !Directory.Exists(projectDir))
@@ -17,7 +27,7 @@ namespace ThunderstoreCLI.Commands
             }
 
             Console.WriteLine($"Creating a new project configuration to {projectDir}");
-            if (File.Exists(path) && !options.Overwrite)
+            if (File.Exists(path) && !config.InitConfig.ShouldOverwrite())
             {
                 Console.WriteLine($"Project configuration already exists, stopping");
                 Console.WriteLine($"Use the --{InitOptions.OVERWRITE_FLAG} to overwrite the file");
@@ -63,6 +73,23 @@ namespace ThunderstoreCLI.Commands
 
 {config.PackageMeta.Description}
 ".Trim();
+        }
+
+        private static void ValidateConfig(Config.Config config)
+        {
+            var v = new Config.Validator("init");
+            v.AddIfEmpty(config.PackageMeta.Namespace, "Package Namespace");
+            v.AddIfEmpty(config.PackageMeta.Name, "Package Name");
+            v.AddIfNotSemver(config.PackageMeta.VersionNumber, "Package VersionNumber");
+            v.AddIfNull(config.PackageMeta.Description, "Package Description");
+            v.AddIfNull(config.PackageMeta.WebsiteUrl, "Package WebsiteUrl");
+            v.AddIfNull(config.PackageMeta.ContainsNsfwContent, "Package ContainsNsfwContent");
+            v.AddIfNull(config.PackageMeta.Dependencies, "Package Dependencies");
+            v.AddIfEmpty(config.BuildConfig.IconPath, "Build IconPath");
+            v.AddIfEmpty(config.BuildConfig.ReadmePath, "Build ReadmePath");
+            v.AddIfEmpty(config.BuildConfig.OutDir, "Build OutDir");
+            v.AddIfEmpty(config.PublishConfig.Repository, "Publish Repository");
+            v.ThrowIfErrors();
         }
     }
 }

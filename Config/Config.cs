@@ -9,14 +9,16 @@ namespace ThunderstoreCLI.Config
     {
         public GeneralConfig GeneralConfig { get; private set; }
         public PackageMeta PackageMeta { get; private set; }
+        public InitConfig InitConfig { get; private set; }
         public BuildConfig BuildConfig { get; private set; }
         public PublishConfig PublishConfig { get; private set; }
         public AuthConfig AuthConfig { get; private set; }
 
-        private Config(GeneralConfig generalConfig, PackageMeta packageMeta, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
+        private Config(GeneralConfig generalConfig, PackageMeta packageMeta, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
         {
             GeneralConfig = generalConfig;
             PackageMeta = packageMeta;
+            InitConfig = initConfig;
             BuildConfig = buildConfig;
             PublishConfig = publishConfig;
             AuthConfig = authConfig;
@@ -117,15 +119,17 @@ namespace ThunderstoreCLI.Config
         {
             var generalConfig = new GeneralConfig();
             var packageMeta = new PackageMeta();
+            var initConfig = new InitConfig();
             var buildConfig = new BuildConfig();
             var publishConfig = new PublishConfig();
             var authConfig = new AuthConfig();
-            var result = new Config(generalConfig, packageMeta, buildConfig, publishConfig, authConfig);
+            var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig);
             foreach (var provider in configProviders)
             {
                 provider.Parse(result);
                 Merge(generalConfig, provider.GetGeneralConfig(), false);
                 Merge(packageMeta, provider.GetPackageMeta(), false);
+                Merge(initConfig, provider.GetInitConfig(), false);
                 Merge(buildConfig, provider.GetBuildConfig(), false);
                 Merge(publishConfig, provider.GetPublishConfig(), false);
                 Merge(authConfig, provider.GetAuthConfig(), false);
@@ -170,6 +174,16 @@ namespace ThunderstoreCLI.Config
         public Dictionary<string, string>? Dependencies { get; set; }
     }
 
+    public class InitConfig
+    {
+        public bool? Overwrite { get; set; }
+
+        public bool ShouldOverwrite()
+        {
+            return Overwrite ?? false;
+        }
+    }
+
     public struct CopyPathMap
     {
         public readonly string From;
@@ -192,6 +206,7 @@ namespace ThunderstoreCLI.Config
 
     public class PublishConfig
     {
+        public string? File { get; set; }
         public string? Repository { get; set; }
         public string[]? Communities { get; set; }
         public string[]? Categories { get; set; }
