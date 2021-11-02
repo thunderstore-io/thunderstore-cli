@@ -112,7 +112,7 @@ namespace ThunderstoreCLI.Config
 
         public AuthenticationHeaderValue GetAuthHeader()
         {
-            return new AuthenticationHeaderValue("Bearer", AuthConfig.DefaultToken);
+            return new AuthenticationHeaderValue("Bearer", AuthConfig.AuthToken);
         }
 
         public static Config Parse(params IConfigProvider[] configProviders)
@@ -214,7 +214,6 @@ namespace ThunderstoreCLI.Config
 
     public class AuthConfig
     {
-        public string? DefaultToken { get; set; }
-        public Dictionary<string, string>? AuthorTokens { get; set; }
+        public string? AuthToken { get; set; }
     }
 }

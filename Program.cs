@@ -25,7 +25,6 @@ namespace ThunderstoreCLI
                 cliConfig,
                 new Config.EnvironmentConfig(),
                 new Config.ProjectFileConfig(),
-                new Config.UserFileConfig(),
                 new Config.BaseConfig()
             );
         }
