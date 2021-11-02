@@ -24,7 +24,7 @@ namespace ThunderstoreCLI.Options
         {
             if (String.IsNullOrWhiteSpace(ConfigPath))
             {
-                Console.WriteLine(Red("ERROR: Invalid value for --config-path argument"));
+                Write.ErrorExit("Invalid value for --config-path argument");
                 return false;
             }
 
@@ -32,10 +32,11 @@ namespace ThunderstoreCLI.Options
             var fullPath = Path.GetFullPath(ConfigPath);
             if (!isInitCommand && !File.Exists(fullPath))
             {
-                Console.WriteLine(Red($"ERROR: Configuration file not found, looked from: {White(Dim(fullPath))}"));
-                Console.WriteLine(Red("A project configuration file is required for this command."));
-                Console.WriteLine(Red("You can initialize one with the 'init' command or define its location with --config-path argument."));
-                Console.WriteLine(Red("Exiting"));
+                Write.ErrorExit(
+                    $"Configuration file not found, looked from: {White(Dim(fullPath))}",
+                    "A project configuration file is required for this command.",
+                    "You can initialize one with the 'init' command or define its location with --config-path argument."
+                );
                 return false;
             }
 
@@ -82,16 +83,17 @@ namespace ThunderstoreCLI.Options
                 var filePath = Path.GetFullPath(File);
                 if (!System.IO.File.Exists(filePath))
                 {
-                    Console.WriteLine(Red($"ERROR: Package file not found, looked from: {White(Dim(filePath))}"));
-                    Console.WriteLine(Red("Package defined with --file argument must exist."));
-                    Console.WriteLine(Red("Exiting"));
+                    Write.ErrorExit(
+                        $"Package file not found, looked from: {White(Dim(filePath))}",
+                        "Package defined with --file argument must exist."
+                    );
                     return false;
                 }
             }
 
             if (UseSessionAuth)
             {
-                Console.WriteLine(Yellow("The usage of session auth is deprecated and will be removed in the future without warning!"));
+                Write.Note("The usage of session auth is deprecated and will be removed in the future without warning!");
             }
 
             return true;

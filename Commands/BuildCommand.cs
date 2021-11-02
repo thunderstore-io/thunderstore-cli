@@ -50,31 +50,39 @@ namespace ThunderstoreCLI.Commands
                     var duplicatePath = duplicateMap[key];
                     if (duplicatePath != path)
                     {
-                        Console.WriteLine(Red("ERROR: Case mismatch!"));
-                        Console.WriteLine(Red($"A file target was added twice to the build with different casing, which is not allowed!"));
-                        Console.WriteLine(Red($"Previously: {White(Dim($"/{duplicatePath}"))}"));
-                        Console.WriteLine(Red($"Now: {White(Dim($"/{path}"))}"));
+                        Write.Error(
+                            "Case mismatch!",
+                            $"A file target was added twice to the build with different casing, which is not allowed!",
+                            $"Previously: {White(Dim($"/{duplicatePath}"))}",
+                            $"Now: {White(Dim($"/{path}"))}"
+                        );
                         HasErrors = true;
                         return;
                     }
-                    Console.WriteLine(Yellow($"WARNING: {Dim(path)} was added multiple times to the build and will be overwritten"));
-                    Console.WriteLine(Yellow(Dim($"Re-Planned for {White(Dim($"/{path}"))}")));
+                    Write.Warn(
+                        $"{Dim(path)} was added multiple times to the build and will be overwritten",
+                        $"Re-Planned for {White(Dim($"/{path}"))}"
+                    );
                     plan[path] = dataGetter;
                     HasWarnings = true;
                 }
                 else if (directories.Contains(key))
                 {
-                    Console.WriteLine(Red("ERROR: Filepath conflict"));
-                    Console.WriteLine(Red("A directory already exists in the location where a file was to be placed"));
-                    Console.WriteLine(Red($"Path in question: {White(Dim($"/{path}"))}"));
+                    Write.Error(
+                        "Filepath conflict!",
+                        "A directory already exists in the location where a file was to be placed",
+                        $"Path in question: {White(Dim($"/{path}"))}"
+                    );
                     HasErrors = true;
                     return;
                 }
                 else if (directoryKeys.Any(x => files.Contains(x)))
                 {
-                    Console.WriteLine(Red("ERROR: Directory path conflict"));
-                    Console.WriteLine(Red("A file already exists in the location where a directory was to be created"));
-                    Console.WriteLine(Red($"Path in question: {White(Dim($"/{path}"))}"));
+                    Write.Error(
+                        "Directory path conflict!",
+                        "A file already exists in the location where a directory was to be created",
+                        $"Path in question: {White(Dim($"/{path}"))}"
+                    );
                     HasErrors = true;
                     return;
                 }
@@ -88,7 +96,7 @@ namespace ThunderstoreCLI.Commands
                     {
                         directories.Add(entry);
                     }
-                    Console.WriteLine(Dim($"Planned for /{path}"));
+                    Write.Light($"Planned for /{path}");
                 }
             }
 
@@ -115,22 +123,19 @@ namespace ThunderstoreCLI.Commands
         public static int DoBuild(Config.Config config)
         {
             var packageId = config.GetPackageId();
-            Console.WriteLine($"Building {Cyan(packageId)}");
-            Console.WriteLine();
+            Write.WithNL($"Building {Cyan(packageId)}", after: true);
 
             var readmePath = config.GetPackageReadmePath();
             if (!File.Exists(readmePath))
             {
-                Console.WriteLine(Red($"ERROR: Readme not found from the declared path: {White(Dim(readmePath))}"));
-                Console.WriteLine(Red("Exiting"));
+                Write.ErrorExit($"Readme not found from the declared path: {White(Dim(readmePath))}");
                 return 1;
             }
 
             var iconPath = config.GetPackageIconPath();
             if (!File.Exists(iconPath))
             {
-                Console.WriteLine(Red($"ERROR: Icon not found from the declared path: {White(Dim(iconPath))}"));
-                Console.WriteLine(Red("Exiting"));
+                Write.ErrorExit($"Icon not found from the declared path: {White(Dim(iconPath))}");
                 return 1;
             }
 
@@ -141,13 +146,13 @@ namespace ThunderstoreCLI.Commands
             }
             var filename = config.GetBuildOutputFile();
 
-            Console.WriteLine($"Output path {Cyan(filename)}");
+            Write.Line($"Output path {Cyan(filename)}");
 
             var encounteredIssues = false;
 
             var plan = new ArchivePlan(config);
 
-            ConsoleWriteHeader("Planning for files to include in build");
+            Write.Header("Planning for files to include in build");
 
             plan.AddPlan("icon.png", () => File.ReadAllBytes(iconPath));
             plan.AddPlan("README.md", () => File.ReadAllBytes(readmePath));
@@ -157,22 +162,22 @@ namespace ThunderstoreCLI.Commands
             {
                 foreach (var pathMap in config.BuildConfig.CopyPaths)
                 {
-                    Console.WriteLine();
-                    Console.WriteLine($"Mapping {Dim(pathMap.From)} to {Dim($"/{pathMap.To}")}");
+                    Write.WithNL($"Mapping {Dim(pathMap.From)} to {Dim($"/{pathMap.To}")}", before: true);
                     encounteredIssues |= !AddPathToArchivePlan(plan, pathMap.From, pathMap.To);
                 }
             }
 
             if (plan.HasErrors)
             {
-                Console.WriteLine();
-                Console.WriteLine(Red("ERROR: Build was aborted due to errors identified in planning phase"));
-                Console.WriteLine(Red("Adjust your configuration so no issues are present"));
-                Console.WriteLine(Red("Exiting"));
+                Write.Empty();
+                Write.ErrorExit(
+                    "Build was aborted due to errors identified in planning phase",
+                    "Adjust your configuration so no issues are present"
+                );
                 return 1;
             }
 
-            ConsoleWriteHeader("Writing configured files");
+            Write.Header("Writing configured files");
 
             using (var outputFile = File.Open(filename, FileMode.Create))
             {
@@ -180,7 +185,7 @@ namespace ThunderstoreCLI.Commands
                 {
                     foreach (var entry in plan)
                     {
-                        Console.WriteLine(Dim($"Writing /{entry.Key}"));
+                        Write.Light($"Writing /{entry.Key}");
                         var archiveEntry = archive.CreateEntry(entry.Key, CompressionLevel.Optimal);
                         using (var writer = new BinaryWriter(archiveEntry.Open()))
                         {
@@ -190,16 +195,16 @@ namespace ThunderstoreCLI.Commands
                 }
             }
 
-            Console.WriteLine();
+            Write.Empty();
 
             if (encounteredIssues || plan.HasWarnings)
             {
-                Console.WriteLine(Yellow("Some issues were encountered when building, see output for more details"));
+                Write.Note("Some issues were encountered when building, see output for more details");
                 return 1;
             }
             else
             {
-                Console.WriteLine(Green($"Successfully built {Cyan(packageId)}"));
+                Write.Success($"Successfully built {Cyan(packageId)}");
                 return 0;
             }
         }
@@ -238,7 +243,7 @@ namespace ThunderstoreCLI.Commands
             }
             else
             {
-                Console.WriteLine(Yellow($"WARNING: Nothing found at {sourcePath}, looked from {basePath}"));
+                Write.Warn($"Nothing found at {sourcePath}, looked from {basePath}");
                 return false;
             }
         }
@@ -314,13 +319,6 @@ namespace ThunderstoreCLI.Commands
             }
 
             return v.GetErrors();
-        }
-
-        private static void ConsoleWriteHeader(string header)
-        {
-            Console.WriteLine();
-            Console.WriteLine(header);
-            Console.WriteLine(new string('-', header.Length));
         }
     }
 }

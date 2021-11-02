@@ -56,15 +56,14 @@ namespace ThunderstoreCLI.Commands
 
         public static int PublishFile(Config.Config config, string filepath)
         {
-            Console.WriteLine();
-            Console.WriteLine($"Publishing {Cyan(filepath)}");
-            Console.WriteLine();
+            Write.WithNL($"Publishing {Cyan(filepath)}", before: true, after: true);
 
             if (!File.Exists(filepath))
             {
-                Console.WriteLine(Red($"ERROR: File selected for publish was not found"));
-                Console.WriteLine(Red($"Looked from: {White(Dim(filepath))}"));
-                Console.WriteLine(Red("Exiting"));
+                Write.ErrorExit(
+                    "File selected for publish was not found",
+                    $"Looked from: {White(Dim(filepath))}"
+                );
                 return 1;
             }
 
@@ -145,22 +144,19 @@ namespace ThunderstoreCLI.Commands
 
             if (uploadData is null)
             {
-                Console.WriteLine(Red("ERROR: Undeserializable InitiateUploadRequest response:"));
-                Console.WriteLine(Dim(responseContent));
+                Write.ErrorExit("Undeserializable InitiateUploadRequest response:", Dim(responseContent));
                 throw new PublishCommandException();
             }
 
             if (uploadData.Metadata?.Filename is null || uploadData.Metadata?.UUID is null)
             {
-                Console.WriteLine(Red("ERROR: No valid Metadata found in InitiateUploadRequest response"));
-                Console.WriteLine(Dim(responseContent));
+                Write.ErrorExit("No valid Metadata found in InitiateUploadRequest response:", Dim(responseContent));
                 throw new PublishCommandException();
             }
 
             if (uploadData.UploadUrls is null)
             {
-                Console.WriteLine(Red("ERROR: No valid UploadUrls found in InitiateUploadRequest response"));
-                Console.WriteLine(Dim(responseContent));
+                Write.ErrorExit("No valid UploadUrls found in InitiateUploadRequest response:", Dim(responseContent));
                 throw new PublishCommandException();
             }
 
@@ -173,8 +169,8 @@ namespace ThunderstoreCLI.Commands
                 suffixIndex++;
             }
 
-            Console.WriteLine($"Uploading {Cyan(uploadData.Metadata.Filename)} ({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks...");
-            Console.WriteLine();
+            var details = $"({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks...";
+            Write.WithNL($"Uploading {Cyan(uploadData.Metadata.Filename)} {details}", after: true);
 
             return uploadData;
         }
@@ -201,7 +197,7 @@ namespace ThunderstoreCLI.Commands
 
             HandleRequestError("finishing the upload", response);
 
-            Console.WriteLine(Green("Successfully finalized the upload"));
+            Write.Success("Successfully finalized the upload");
         }
 
         private static void PublishPackageRequest(Config.Config config, string uploadUuid)
@@ -221,15 +217,15 @@ namespace ThunderstoreCLI.Commands
 
             if (jsonData?.PackageVersion?.DownloadUrl is null)
             {
-                Console.WriteLine(Red(
-                    "ERROR: Field package_version.download_url missing from PublishPackageRequest response:"
-                ));
-                Console.WriteLine(Dim(responseContent));
+                Write.ErrorExit(
+                    "Field package_version.download_url missing from PublishPackageRequest response:",
+                    Dim(responseContent)
+                );
                 throw new PublishCommandException();
             }
 
-            Console.WriteLine(Green("Successfully published ") + Cyan($"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}"));
-            Console.WriteLine($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
+            Write.Success($"Successfully published {Cyan($"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}")}");
+            Write.Line($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
         }
 
         private static async Task<CompletedPartData> UploadChunk(UploadInitiateData.UploadPartData part, string filepath)
@@ -264,7 +260,7 @@ namespace ThunderstoreCLI.Commands
 
                         if (md5.Hash is null)
                         {
-                            Console.WriteLine(Red($"ERROR: MD5 hashing failed for part #{part.PartNumber}"));
+                            Write.ErrorExit($"MD5 hashing failed for part #{part.PartNumber})");
                             throw new PublishCommandException();
                         }
 
@@ -287,15 +283,15 @@ namespace ThunderstoreCLI.Commands
                 }
                 catch
                 {
-                    Console.WriteLine();
-                    Console.WriteLine(Red(await response.Content.ReadAsStringAsync()));
+                    Write.Empty();
+                    Write.ErrorExit(await response.Content.ReadAsStringAsync());
                     throw new PublishCommandException();
                 }
 
                 if (response.Headers.ETag is null)
                 {
-                    Console.WriteLine();
-                    Console.WriteLine(Red($"ERROR: Response contained no ETag for part #{part.PartNumber}"));
+                    Write.Empty();
+                    Write.ErrorExit($"Response contained no ETag for part #{part.PartNumber}");
                     throw new PublishCommandException();
                 }
 
@@ -307,9 +303,8 @@ namespace ThunderstoreCLI.Commands
             }
             catch (Exception e)
             {
-                Console.WriteLine();
-                Console.WriteLine(Red($"Exception occured while uploading file chunk #{part.PartNumber}"));
-                Console.WriteLine(Red(e.ToString()));
+                Write.Empty();
+                Write.ErrorExit($"Exception occured while uploading file chunk #{part.PartNumber}:", e.ToString());
                 throw new PublishCommandException();
             }
         }
@@ -322,7 +317,7 @@ namespace ThunderstoreCLI.Commands
             {
                 if (tasks.Any(x => x.IsFaulted))
                 {
-                    Console.WriteLine();
+                    Write.Empty();
                     throw new PublishCommandException();
                 }
 
@@ -334,7 +329,7 @@ namespace ThunderstoreCLI.Commands
 
                 if (completed == tasks.Length)
                 {
-                    Console.WriteLine();
+                    Write.Empty();
                     return;
                 }
 
@@ -354,9 +349,11 @@ namespace ThunderstoreCLI.Commands
             }
 
             using var responseReader = new StreamReader(response.Content.ReadAsStream());
-            Console.WriteLine(Red($"ERROR: Unexpected response from the server while {step}:"));
-            Console.WriteLine($"Status code: {response.StatusCode:D} {response.StatusCode}");
-            Console.WriteLine(Dim(responseReader.ReadToEnd()));
+            Write.ErrorExit(
+                $"Unexpected response from the server while {step}:",
+                $"Status code: {response.StatusCode:D} {response.StatusCode}",
+                Dim(responseReader.ReadToEnd())
+            );
             throw new PublishCommandException();
         }
 

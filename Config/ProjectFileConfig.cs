@@ -23,13 +23,17 @@ namespace ThunderstoreCLI.Config
 
             if (!tomlData.HasKey("config") || !tomlData["config"].HasKey("schemaVersion"))
             {
-                Console.WriteLine(Yellow("WARNING: Project configuration is lacking schema version"));
-                Console.WriteLine(Yellow("Might not be able to parse configuration as expected."));
+                ThunderstoreCLI.Write.Warn(
+                    "Project configuration is lacking schema version",
+                    "Might not be able to parse configuration as expected"
+                );
             }
             if (tomlData["config"]["schemaVersion"] != "0.0.1")
             {
-                Console.WriteLine(Yellow("WARNING: Unknown project configuration schema version"));
-                Console.WriteLine(Yellow("Might not be able to parse configuration as expected."));
+                ThunderstoreCLI.Write.Warn(
+                    "Unknown project configuration schema version",
+                    "Might not be able to parse configuration as expected"
+                );
             }
 
             PackageMeta = ParsePackageMeta(tomlData);
@@ -91,17 +95,18 @@ namespace ThunderstoreCLI.Config
                 {
                     if (!(entry is TomlNode))
                     {
-                        Console.WriteLine(Yellow($"WARNING: Unable to properly parse build config: {entry}"));
-                        Console.WriteLine(Yellow("Skipping entry"));
+                        ThunderstoreCLI.Write.Warn($"Unable to properly parse build config: {entry}", "Skipping entry");
                         continue;
                     }
 
                     var node = (TomlNode) entry;
                     if (!node.HasKey("source") || !node.HasKey("target"))
                     {
-                        Console.WriteLine(Yellow($"WARNING: Build config instruction is missing parameters: {node}"));
-                        Console.WriteLine(Yellow($"Make sure both 'source' and 'target' are defined"));
-                        Console.WriteLine(Yellow("Skipping entry"));
+                        ThunderstoreCLI.Write.Warn(
+                            $"Build config instruction is missing parameters: {node}",
+                            "Make sure both 'source' and 'target' are defined",
+                            "Skipping entry"
+                        );
                         continue;
                     }
 
@@ -146,8 +151,10 @@ namespace ThunderstoreCLI.Config
             var configPath = config.GetProjectConfigPath();
             if (!File.Exists(configPath))
             {
-                Console.WriteLine(Yellow($"WARNING: Unable to find project configuration file."));
-                Console.WriteLine(Yellow($"Looked from {Dim(configPath)}"));
+                ThunderstoreCLI.Write.Warn(
+                    "Unable to find project configuration file",
+                    $"Looked from {Dim(configPath)}"
+                );
                 return null;
             }
             using var reader = new StreamReader(File.OpenRead(configPath));

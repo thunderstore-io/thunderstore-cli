@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using static Crayon.Output;
 
 namespace ThunderstoreCLI.Config
 {
@@ -68,15 +67,7 @@ namespace ThunderstoreCLI.Config
         {
             if (_errors.Count > 0)
             {
-                Console.WriteLine(Red($"ERROR: Invalid configuration to run '{_name}' command"));
-
-                foreach (var error in _errors)
-                {
-                    Console.WriteLine(Red($"  × {error}"));
-                }
-
-                Console.WriteLine(Red("Exiting"));
-
+                Write.ErrorExit($"Invalid configuration to run '{_name}' command", _errors.ToArray());
                 throw new CommandException("Invalid config for InitCommand");
             }
         }
