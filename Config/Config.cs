@@ -112,7 +112,7 @@ namespace ThunderstoreCLI.Config
 
         public AuthenticationHeaderValue GetAuthHeader()
         {
-            return new AuthenticationHeaderValue(AuthConfig.UseSessionAuth ?? false ? "Session" : "Bearer", AuthConfig.DefaultToken);
+            return new AuthenticationHeaderValue("Bearer", AuthConfig.DefaultToken);
         }
 
         public static Config Parse(params IConfigProvider[] configProviders)
@@ -216,6 +216,5 @@ namespace ThunderstoreCLI.Config
     {
         public string? DefaultToken { get; set; }
         public Dictionary<string, string>? AuthorTokens { get; set; }
-        public bool? UseSessionAuth { get; set; }
     }
 }
