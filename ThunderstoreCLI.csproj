@@ -6,7 +6,6 @@
         <RootNamespace>ThunderstoreCLI</RootNamespace>
         <AssemblyName>tcli</AssemblyName>
         <StartupObject>ThunderstoreCLI.Program</StartupObject>
-        <Version>0.0.1</Version>
         <Company>Thunderstore</Company>
         <Product>Thunderstore CLI</Product>
         <PackageProjectUrl>https://thunderstore.io/</PackageProjectUrl>
@@ -23,6 +22,10 @@
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.8.0" />
         <PackageReference Include="Crayon" Version="2.0.60" />
+        <PackageReference Include="MinVer" Version="2.5.0">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
         <PackageReference Include="Tommy" Version="3.0.1" />
     </ItemGroup>
 
