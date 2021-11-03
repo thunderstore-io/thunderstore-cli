@@ -13,3 +13,17 @@ with:
 ```
 dotnet tool install -g dotnet-format
 ```
+
+## Versioning
+
+This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Versioning is handled with [MinVer](https://github.com/adamralph/minver) via Git
+tags.
+
+* To create a new pre-release, use alpha suffix, e.g. `git tag 0.1.0-alpha.1`
+* Any subsequent commits will automatically be versioned "0.1.0-alpha.1.1",
+  where the last number denotes the number of commits since the last version tag
+  (a.k.a. "height")
+* To create a new release, use e.g. `git tag 0.1.0`
+* Any subsequent commits will automatically be versioned "0.1.1-alpha.0.1"
+* Remember to push the tags to GitHub, e.g. `git push origin 0.1.0`
