@@ -20,5 +20,5 @@ repos:
     -   id: dotnet-format
         name: dotnet-format
         language: system
-        entry: dotnet format ThunderstoreCLI.csproj --include
+        entry: dotnet format ThunderstoreCLI.sln --include
         types: ["c#"]
