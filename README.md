@@ -1,5 +1,7 @@
 # thunderstore-cli
 
+[![codecov](https://codecov.io/gh/thunderstore-io/thunderstore-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/thunderstore-io/thunderstore-cli)
+
 Command line tool for building and uploading mod packages to
 [Thunderstore](https://thunderstore.io/) mod database.
 
