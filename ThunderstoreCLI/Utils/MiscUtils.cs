@@ -60,6 +60,7 @@ namespace ThunderstoreCLI
         /// <summary>Read information about releases from GitHub</summary>
         /// <exception cref="HttpRequestException">Throw for non-success status code</exception>
         /// <exception cref="TaskCanceledException">Throw if request timeouts</exception>
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
         public static async Task<string> FetchReleaseInformation()
         {
             using var client = new HttpClient();
