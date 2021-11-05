@@ -387,6 +387,7 @@ namespace ThunderstoreCLI.Commands
             v.ThrowIfErrors();
         }
 
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
         public class FileData
         {
             [JsonPropertyName("filename")]
@@ -396,11 +397,14 @@ namespace ThunderstoreCLI.Commands
             public long Filesize { get; set; }
         }
 
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
         public class CompletedUpload
         {
             [JsonPropertyName("parts")]
             public CompletedPartData[]? Parts { get; set; }
         }
+
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
         public class CompletedPartData
         {
             [JsonPropertyName("ETag")]
@@ -410,6 +414,7 @@ namespace ThunderstoreCLI.Commands
             public int PartNumber { get; set; }
         }
 
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
         public class UploadInitiateData
         {
             public class UserMediaData
@@ -454,6 +459,7 @@ namespace ThunderstoreCLI.Commands
             public UploadPartData[]? UploadUrls { get; set; }
         }
 
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
         public class PackageUploadMetadata
         {
             [JsonPropertyName("author_name")]
@@ -473,6 +479,7 @@ namespace ThunderstoreCLI.Commands
         }
 
         // JSON response structure for publish package request.
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
         public class PublishData
         {
             public class AvailableCommunityData
@@ -554,6 +561,7 @@ namespace ThunderstoreCLI.Commands
     }
 
     [Serializable]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
     public class PublishCommandException : Exception
     {
         public PublishCommandException()

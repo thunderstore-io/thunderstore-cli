@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace ThunderstoreCLI
 {
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
     public class PackageManifestV1
     {
         [JsonPropertyName("namespace")]

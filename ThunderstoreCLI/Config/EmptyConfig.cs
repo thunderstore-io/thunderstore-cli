@@ -1,5 +1,6 @@
 namespace ThunderstoreCLI.Config
 {
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
     public abstract class EmptyConfig : IConfigProvider
     {
         public virtual void Parse(Config currentConfig) { }
