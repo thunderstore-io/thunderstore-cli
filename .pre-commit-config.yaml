@@ -22,3 +22,7 @@ repos:
         language: system
         entry: dotnet format ThunderstoreCLI.sln --include
         types: ["c#"]
+
+# https://pre-commit.ci/
+ci:
+    autofix-prs: false
