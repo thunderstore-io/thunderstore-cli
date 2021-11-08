@@ -3,6 +3,24 @@ name: Build & Test
 on: [push]
 
 jobs:
+  pre-commit:
+    name: Code style check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install pre-commit
+        run: curl https://pre-commit.com/install-local.py | python -
+      - name: Install dotnet-format
+        run: dotnet tool install -g dotnet-format
+      - name: Run pre-commit
+        run: ~/bin/pre-commit run --show-diff-on-failure --color=always --all-files
+
   build-and-test:
     name: Build and test ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
