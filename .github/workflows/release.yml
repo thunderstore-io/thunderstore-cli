@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  # Validate tag with proper regex since the check above is very limited.
+  validate-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: tag
+        uses: dawidd6/action-get-tag@v1
+      - id: regex-match
+        uses: actions-ecosystem/action-regex-match@v2
+        with:
+          text: ${{ steps.tag.outputs.tag }}
+          regex: '^([1-9][0-9]*|[0-9])\.([1-9][0-9]*|[0-9])\.([1-9][0-9]*|[0-9])$'
+      - id: fail-fast
+        if: ${{ steps.regex-match.outputs.match == '' }}
+        uses: actions/github-script@v3
+        with:
+          script: core.setFailed('Tag is invalid')
+
+  release:
+    needs: validate-tag
+    if: github.event.base_ref == 'refs/heads/master'
+    name: Create binary ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        kind: ['linux', 'windows', 'macOS']
+        include:
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
+          - kind: windows
+            os: windows-latest
+            target: win-x64
+          - kind: macOS
+            os: macos-latest
+            target: osx-x64
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+      - id: tag
+        uses: dawidd6/action-get-tag@v1
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build
+        shell: bash
+        run: |
+          release_name="tcli-${{ steps.tag.outputs.tag }}-${{ matrix.target }}"
+          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" -o "$release_name" -p:PublishReadyToRun=true
+
+          if [ "${{ matrix.target }}" == "win-x64" ]; then
+            7z a -tzip "${release_name}.zip" "./${release_name}/*"
+          else
+            tar czvf "${release_name}.tar.gz" "$release_name"
+          fi
+
+          rm -r "$release_name"
+
+      - name: Publish
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "tcli*"
+          name: "Thunderstore CLI ${{ steps.tag.outputs.tag }}"
+          body_path: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
+          draft: true
+          prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}

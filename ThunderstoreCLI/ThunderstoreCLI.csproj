@@ -17,6 +17,7 @@
         <PublishReadyToRun>true</PublishReadyToRun>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <Nullable>enable</Nullable>
+        <DebugType Condition=" '$(Configuration)' == 'Release' ">None</DebugType>
     </PropertyGroup>
 
     <ItemGroup>
