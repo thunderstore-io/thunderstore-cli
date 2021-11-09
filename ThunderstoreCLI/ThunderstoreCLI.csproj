@@ -29,6 +29,11 @@
         <PackageReference Include="Tommy" Version="3.0.1" />
     </ItemGroup>
 
+    <!-- https://github.com/dotnet/runtime/blob/main/docs/design/features/globalization-invariant-mode.md -->
+    <ItemGroup>
+        <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
+    </ItemGroup>
+
     <ItemGroup>
         <Compile Update="Properties\Resources.Designer.cs">
             <DesignTime>True</DesignTime>
