@@ -311,8 +311,10 @@ namespace ThunderstoreCLI.Commands
 
         private static async Task ShowProgressBar(Task<CompletedPartData>[] tasks)
         {
+            var lastSeenCompleted = 0;
             ushort spinIndex = 0;
             string[] spinChars = { "|", "/", "-", "\\" };
+
             while (true)
             {
                 if (tasks.Any(x => x.IsFaulted))
@@ -324,8 +326,20 @@ namespace ThunderstoreCLI.Commands
                 var completed = tasks.Count(static x => x.IsCompleted);
                 var spinner = completed == tasks.Length ? "✓" : spinChars[spinIndex++ % spinChars.Length];
 
-                Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded {spinner}"));
+                // Cursor operations are not always available e.g. in GitHub Actions environment.
+                try
+                {
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded {spinner}"));
+                }
+                catch (IOException)
+                {
+                    if (completed > lastSeenCompleted)
+                    {
+                        Write.Success($"{completed}/{tasks.Length} chunks uploaded");
+                        lastSeenCompleted = completed;
+                    }
+                }
 
                 if (completed == tasks.Length)
                 {
