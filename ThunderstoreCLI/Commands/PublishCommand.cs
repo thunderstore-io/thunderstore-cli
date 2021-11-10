@@ -95,9 +95,10 @@ namespace ThunderstoreCLI.Commands
 
             try
             {
-                ShowProgressBar(uploadTasks).GetAwaiter().GetResult();
+                var spinner = new ProgressSpinner("chunks uploaded", uploadTasks);
+                spinner.Start().GetAwaiter().GetResult();
             }
-            catch (PublishCommandException)
+            catch (SpinnerException)
             {
                 AbortUploadRequest(config, uploadUuid);
                 return 1;
@@ -306,48 +307,6 @@ namespace ThunderstoreCLI.Commands
                 Write.Empty();
                 Write.ErrorExit($"Exception occured while uploading file chunk #{part.PartNumber}:", e.ToString());
                 throw new PublishCommandException();
-            }
-        }
-
-        private static async Task ShowProgressBar(Task<CompletedPartData>[] tasks)
-        {
-            var lastSeenCompleted = 0;
-            ushort spinIndex = 0;
-            string[] spinChars = { "|", "/", "-", "\\" };
-
-            while (true)
-            {
-                if (tasks.Any(x => x.IsFaulted))
-                {
-                    Write.Empty();
-                    throw new PublishCommandException();
-                }
-
-                var completed = tasks.Count(static x => x.IsCompleted);
-                var spinner = completed == tasks.Length ? "✓" : spinChars[spinIndex++ % spinChars.Length];
-
-                // Cursor operations are not always available e.g. in GitHub Actions environment.
-                try
-                {
-                    Console.SetCursorPosition(0, Console.CursorTop);
-                    Console.Write(Green($"{completed}/{tasks.Length} chunks uploaded {spinner}"));
-                }
-                catch (IOException)
-                {
-                    if (completed > lastSeenCompleted)
-                    {
-                        Write.Success($"{completed}/{tasks.Length} chunks uploaded");
-                        lastSeenCompleted = completed;
-                    }
-                }
-
-                if (completed == tasks.Length)
-                {
-                    Write.Empty();
-                    return;
-                }
-
-                await Task.Delay(200);
             }
         }
 
