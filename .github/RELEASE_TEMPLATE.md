@@ -16,6 +16,6 @@ Feature description
 
 * Removal description
 
-## Contributors
+## Code Contributors
 
 * at-mention contributors here
