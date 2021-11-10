@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
