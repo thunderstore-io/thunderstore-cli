@@ -74,3 +74,4 @@ jobs:
           body_path: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
           draft: true
           prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
+          
