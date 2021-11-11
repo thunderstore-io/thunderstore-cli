@@ -17,4 +17,5 @@ jobs:
         shell: bash
         run: |
           dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "nuget/" -p:SelfContained=false -p:PublishTrimmed=false -p:PublishSingleFile=false -p:StartupObject="" -p:RuntimeIdentifier="" -p:PublishReadyToRun=false -p:PackAsTool=true
-          dotnet nuget push "nuget/*.nupkg" -s https://api.nuget.org/v3/index.json -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
+          cd nuget
+          dotnet nuget push *.nupkg -s https://api.nuget.org/v3/index.json -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
