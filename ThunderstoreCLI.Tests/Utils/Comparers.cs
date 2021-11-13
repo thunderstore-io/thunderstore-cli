@@ -8,11 +8,11 @@ namespace ThunderstoreCLI.Tests
 
         public static TheoryData<int[], int[]> EqualValues => new()
         {
-            { new [] { 1, 0, 0 },    new [] { 1, 0, 0 } },
-            { new [] { 0, 1, 0 },    new [] { 0, 1, 0 } },
-            { new [] { 0, 0, 1 },    new [] { 0, 0, 1 } },
-            { new [] { 0, 0, 0 },    new [] { 0, 0, 0 } },
-            { null,                  null }
+            { new[] { 1, 0, 0 }, new[] { 1, 0, 0 } },
+            { new[] { 0, 1, 0 }, new[] { 0, 1, 0 } },
+            { new[] { 0, 0, 1 }, new[] { 0, 0, 1 } },
+            { new[] { 0, 0, 0 }, new[] { 0, 0, 0 } },
+            { null, null }
         };
 
         [Theory]
@@ -26,11 +26,11 @@ namespace ThunderstoreCLI.Tests
 
         public static TheoryData<int[], int[]> GreaterValueFirst => new()
         {
-            { new [] { 2, 0, 0 }, new [] { 1, 0, 0 } },
-            { new [] { 1, 1, 0 }, new [] { 1, 0, 0 } },
-            { new [] { 1, 0, 1 }, new [] { 1, 0, 0 } },
-            { new [] { 0, 0, 1 }, new [] { 0, 0, 0 } },
-            { new [] { 0, 0, 1 }, null }
+            { new[] { 2, 0, 0 }, new[] { 1, 0, 0 } },
+            { new[] { 1, 1, 0 }, new[] { 1, 0, 0 } },
+            { new[] { 1, 0, 1 }, new[] { 1, 0, 0 } },
+            { new[] { 0, 0, 1 }, new[] { 0, 0, 0 } },
+            { new[] { 0, 0, 1 }, null }
         };
 
         [Theory]
@@ -44,11 +44,11 @@ namespace ThunderstoreCLI.Tests
 
         public static TheoryData<int[], int[]> GreaterValueLast => new()
         {
-            { new [] { 1, 0, 0 }, new [] { 2, 0, 0 } },
-            { new [] { 1, 0, 0 }, new [] { 1, 1, 0 } },
-            { new [] { 1, 0, 0 }, new [] { 1, 0, 1 } },
-            { new [] { 0, 0, 0 }, new [] { 0, 0, 1 } },
-            { null,               new [] { 0, 0, 1 } }
+            { new[] { 1, 0, 0 }, new[] { 2, 0, 0 } },
+            { new[] { 1, 0, 0 }, new[] { 1, 1, 0 } },
+            { new[] { 1, 0, 0 }, new[] { 1, 0, 1 } },
+            { new[] { 0, 0, 0 }, new[] { 0, 0, 1 } },
+            { null, new[] { 0, 0, 1 } }
         };
 
         [Theory]

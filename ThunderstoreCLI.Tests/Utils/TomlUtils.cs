@@ -121,10 +121,10 @@ namespace ThunderstoreCLI.Tests
         public static TheoryData<string, string[]> ValidStringArrayValues => new()
         {
             { $"{_key} = []", System.Array.Empty<string>() },
-            { $"{_key} = [\"\"]", new [] { "" } },
-            { $"{_key} = [\"value\"]", new [] { "value" } },
-            { $"{_key} = [\"value1\", \"value2\"]", new [] { "value1", "value2" } },
-            { $"{_key} = ['literal']", new [] { "literal" } }
+            { $"{_key} = [\"\"]", new[] { "" } },
+            { $"{_key} = [\"value\"]", new[] { "value" } },
+            { $"{_key} = [\"value1\", \"value2\"]", new[] { "value1", "value2" } },
+            { $"{_key} = ['literal']", new[] { "literal" } }
         };
 
         [Theory]
