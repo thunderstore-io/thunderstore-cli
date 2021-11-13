@@ -1,4 +1,5 @@
 using ThunderstoreCLI.Config;
+
 using Tommy;
 
 namespace ThunderstoreCLI

@@ -1,4 +1,5 @@
 using Tommy;
+
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Config
@@ -102,7 +103,7 @@ namespace ThunderstoreCLI.Config
                         continue;
                     }
 
-                    var node = (TomlNode) entry;
+                    var node = (TomlNode)entry;
                     if (!node.HasKey("source") || !node.HasKey("target"))
                     {
                         ThunderstoreCLI.Write.Warn(
@@ -136,20 +137,11 @@ namespace ThunderstoreCLI.Config
             };
         }
 
-        public override PackageMeta? GetPackageMeta()
-        {
-            return PackageMeta;
-        }
+        public override PackageMeta? GetPackageMeta() => PackageMeta;
 
-        public override BuildConfig? GetBuildConfig()
-        {
-            return BuildConfig;
-        }
+        public override BuildConfig? GetBuildConfig() => BuildConfig;
 
-        public override PublishConfig? GetPublishConfig()
-        {
-            return PublishConfig;
-        }
+        public override PublishConfig? GetPublishConfig() => PublishConfig;
 
         public static TomlTable? Read(Config config)
         {

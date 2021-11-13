@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands

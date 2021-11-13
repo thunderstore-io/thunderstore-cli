@@ -1,5 +1,7 @@
 using System.IO;
+
 using Tommy;
+
 using Xunit;
 
 namespace ThunderstoreCLI.Tests

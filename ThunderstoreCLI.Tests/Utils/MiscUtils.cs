@@ -1,4 +1,5 @@
 using System;
+
 using Xunit;
 
 namespace ThunderstoreCLI.Tests
@@ -17,10 +18,7 @@ namespace ThunderstoreCLI.Tests
         }
 
         [Fact]
-        public void ParseLatestVersion_WhenFindsNoMatches_ThrowsArgumentException()
-        {
-            Assert.Throws<ArgumentException>(() => MiscUtils.ParseLatestVersion(""));
-        }
+        public void ParseLatestVersion_WhenFindsNoMatches_ThrowsArgumentException() => Assert.Throws<ArgumentException>(() => MiscUtils.ParseLatestVersion(""));
 
         [Fact]
         public void ParseLatestVersion_WhenFindsOneMatch_ReturnsIt()

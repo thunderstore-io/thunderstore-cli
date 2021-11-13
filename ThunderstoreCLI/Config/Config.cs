@@ -21,15 +21,9 @@ namespace ThunderstoreCLI.Config
             AuthConfig = authConfig;
         }
 
-        public string? GetProjectBasePath()
-        {
-            return Path.GetDirectoryName(GetProjectConfigPath());
-        }
+        public string? GetProjectBasePath() => Path.GetDirectoryName(GetProjectConfigPath());
 
-        public string GetProjectRelativePath(string path)
-        {
-            return Path.GetFullPath(Path.Join(GetProjectBasePath(), path));
-        }
+        public string GetProjectRelativePath(string path) => Path.GetFullPath(Path.Join(GetProjectBasePath(), path));
 
         public string GetPackageIconPath()
         {
@@ -67,15 +61,9 @@ namespace ThunderstoreCLI.Config
             return GetProjectRelativePath(BuildConfig.OutDir);
         }
 
-        public string GetPackageId()
-        {
-            return $"{PackageMeta.Namespace}-{PackageMeta.Name}-{PackageMeta.VersionNumber}";
-        }
+        public string GetPackageId() => $"{PackageMeta.Namespace}-{PackageMeta.Name}-{PackageMeta.VersionNumber}";
 
-        public string GetBuildOutputFile()
-        {
-            return Path.GetFullPath(Path.Join(GetBuildOutputDir(), $"{GetPackageId()}.zip"));
-        }
+        public string GetBuildOutputFile() => Path.GetFullPath(Path.Join(GetBuildOutputDir(), $"{GetPackageId()}.zip"));
 
         public string GetRepositoryBaseUrl()
         {
@@ -87,30 +75,15 @@ namespace ThunderstoreCLI.Config
             return $"{repo}/api/experimental/";
         }
 
-        public string GetPackageSubmitUrl()
-        {
-            return $"{GetRepositoryBaseUrl()}submission/submit/";
-        }
+        public string GetPackageSubmitUrl() => $"{GetRepositoryBaseUrl()}submission/submit/";
 
-        public string GetUserMediaUploadInitiateUrl()
-        {
-            return $"{GetRepositoryBaseUrl()}usermedia/initiate-upload/";
-        }
+        public string GetUserMediaUploadInitiateUrl() => $"{GetRepositoryBaseUrl()}usermedia/initiate-upload/";
 
-        public string GetUserMediaUploadAbortUrl(string uploadUuid)
-        {
-            return $"{GetRepositoryBaseUrl()}usermedia/{uploadUuid}/abort-upload/";
-        }
+        public string GetUserMediaUploadAbortUrl(string uploadUuid) => $"{GetRepositoryBaseUrl()}usermedia/{uploadUuid}/abort-upload/";
 
-        public string GetUserMediaUploadFinishUrl(string uploadUuid)
-        {
-            return $"{GetRepositoryBaseUrl()}usermedia/{uploadUuid}/finish-upload/";
-        }
+        public string GetUserMediaUploadFinishUrl(string uploadUuid) => $"{GetRepositoryBaseUrl()}usermedia/{uploadUuid}/finish-upload/";
 
-        public AuthenticationHeaderValue GetAuthHeader()
-        {
-            return new AuthenticationHeaderValue("Bearer", AuthConfig.AuthToken);
-        }
+        public AuthenticationHeaderValue GetAuthHeader() => new AuthenticationHeaderValue("Bearer", AuthConfig.AuthToken);
 
         public static Config Parse(params IConfigProvider[] configProviders)
         {
@@ -179,10 +152,7 @@ namespace ThunderstoreCLI.Config
     {
         public bool? Overwrite { get; set; }
 
-        public bool ShouldOverwrite()
-        {
-            return Overwrite ?? false;
-        }
+        public bool ShouldOverwrite() => Overwrite ?? false;
     }
 
     public struct CopyPathMap

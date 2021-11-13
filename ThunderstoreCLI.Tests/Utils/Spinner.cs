@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+
 using Xunit;
 
 namespace ThunderstoreCLI.Tests
@@ -17,10 +18,7 @@ namespace ThunderstoreCLI.Tests
         }
 
         [Fact]
-        public void WhenInitiatedWithoutTasks_ThrowsSpinnerException()
-        {
-            Assert.Throws<SpinnerException>(() => new ProgressSpinner("", Array.Empty<Task>()));
-        }
+        public void WhenInitiatedWithoutTasks_ThrowsSpinnerException() => Assert.Throws<SpinnerException>(() => new ProgressSpinner("", Array.Empty<Task>()));
 
         [Fact]
         public async Task WhenTaskFails_ThrowsSpinnerException()

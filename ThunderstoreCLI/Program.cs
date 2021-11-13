@@ -1,4 +1,5 @@
 using CommandLine;
+
 using ThunderstoreCLI.Commands;
 using ThunderstoreCLI.Options;
 
@@ -27,10 +28,7 @@ namespace ThunderstoreCLI
             );
         }
 
-        private static int HandleError(IEnumerable<Error> errors)
-        {
-            return 1;
-        }
+        private static int HandleError(IEnumerable<Error> errors) => 1;
 
         private static int Init(InitOptions options)
         {

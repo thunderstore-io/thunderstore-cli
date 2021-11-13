@@ -1,4 +1,5 @@
 using CommandLine;
+
 using static Crayon.Output;
 
 /// Options are arguments passed from command line.

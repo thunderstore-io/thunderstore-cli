@@ -56,10 +56,7 @@ namespace ThunderstoreCLI.Config
             );
         }
 
-        public List<string> GetErrors()
-        {
-            return _errors;
-        }
+        public List<string> GetErrors() => _errors;
 
         /// <summary>Output any added error messages to Console</summary>
         /// <exception cref="CommandException">Throw if any errors were added</exception>

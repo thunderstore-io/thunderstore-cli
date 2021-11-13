@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+
 using Xunit;
 
 namespace ThunderstoreCLI.Tests
@@ -14,10 +15,7 @@ namespace ThunderstoreCLI.Tests
             Console.SetOut(_stringWriter);
         }
 
-        public string GetOuput()
-        {
-            return _stringWriter.ToString();
-        }
+        public string GetOuput() => _stringWriter.ToString();
 
         public void Dispose()
         {

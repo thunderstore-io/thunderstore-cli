@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands
@@ -96,10 +97,7 @@ namespace ThunderstoreCLI.Commands
                 }
             }
 
-            public Dictionary<string, Func<byte[]>>.Enumerator GetEnumerator()
-            {
-                return plan.GetEnumerator();
-            }
+            public Dictionary<string, Func<byte[]>>.Enumerator GetEnumerator() => plan.GetEnumerator();
         }
 
         public static int Run(Config.Config config)
