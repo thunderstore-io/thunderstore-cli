@@ -73,7 +73,7 @@ namespace ThunderstoreCLI.Options
                 return false;
             }
 
-            if (!(File is null))
+            if (File is not null)
             {
                 string? filePath = Path.GetFullPath(File);
                 if (!System.IO.File.Exists(filePath))

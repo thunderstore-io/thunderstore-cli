@@ -4,9 +4,9 @@ namespace ThunderstoreCLI.Tests
 {
     public class ThunderstoreCLI_Comparers_SemVer
     {
-        private readonly ThunderstoreCLI.Comparers.SemVer _semVer = new ThunderstoreCLI.Comparers.SemVer();
+        private readonly Comparers.SemVer _semVer = new();
 
-        public static TheoryData<int[], int[]> EqualValues => new TheoryData<int[], int[]>
+        public static TheoryData<int[], int[]> EqualValues => new()
         {
             { new [] { 1, 0, 0 },    new [] { 1, 0, 0 } },
             { new [] { 0, 1, 0 },    new [] { 0, 1, 0 } },
@@ -24,7 +24,7 @@ namespace ThunderstoreCLI.Tests
             Assert.Equal(0, result);
         }
 
-        public static TheoryData<int[], int[]> GreaterValueFirst => new TheoryData<int[], int[]>
+        public static TheoryData<int[], int[]> GreaterValueFirst => new()
         {
             { new [] { 2, 0, 0 }, new [] { 1, 0, 0 } },
             { new [] { 1, 1, 0 }, new [] { 1, 0, 0 } },
@@ -42,7 +42,7 @@ namespace ThunderstoreCLI.Tests
             Assert.Equal(1, result);
         }
 
-        public static TheoryData<int[], int[]> GreaterValueLast => new TheoryData<int[], int[]>
+        public static TheoryData<int[], int[]> GreaterValueLast => new()
         {
             { new [] { 1, 0, 0 }, new [] { 2, 0, 0 } },
             { new [] { 1, 0, 0 }, new [] { 1, 1, 0 } },

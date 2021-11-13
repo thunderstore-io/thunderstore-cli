@@ -31,13 +31,11 @@ namespace ThunderstoreCLI
 
         public static string FormatToml(TomlTable toml)
         {
-            using (var writer = new StringWriter())
-            {
-                writer.NewLine = "\n";
-                toml.WriteTo(writer);
-                writer.Flush();
-                return writer.ToString().Trim();
-            }
+            using var writer = new StringWriter();
+            writer.NewLine = "\n";
+            toml.WriteTo(writer);
+            writer.Flush();
+            return writer.ToString().Trim();
         }
 
         public static string? SafegetString(TomlNode parentNode, string key)

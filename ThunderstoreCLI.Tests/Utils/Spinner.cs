@@ -6,7 +6,7 @@ namespace ThunderstoreCLI.Tests
 {
     public class ThunderstoreCLI_ProgresSpinner
     {
-        private async Task CreateTask(bool isSuccess, int delay = 1)
+        private static async Task CreateTask(bool isSuccess, int delay = 1)
         {
             await Task.Delay(delay);
 
@@ -19,7 +19,7 @@ namespace ThunderstoreCLI.Tests
         [Fact]
         public void WhenInitiatedWithoutTasks_ThrowsSpinnerException()
         {
-            Assert.Throws<SpinnerException>(() => new ProgressSpinner("", new Task[] { }));
+            Assert.Throws<SpinnerException>(() => new ProgressSpinner("", Array.Empty<Task>()));
         }
 
         [Fact]

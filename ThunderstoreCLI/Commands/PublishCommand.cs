@@ -237,32 +237,30 @@ namespace ThunderstoreCLI.Commands
 
                 using (var reader = new BinaryReader(stream, Encoding.Default, true))
                 {
-                    using (var md5 = MD5.Create())
+                    using var md5 = MD5.Create();
+                    md5.Initialize();
+                    int length = part.Length;
+
+                    while (length > blocksize)
                     {
-                        md5.Initialize();
-                        int length = part.Length;
-
-                        while (length > blocksize)
-                        {
-                            length -= blocksize;
-                            byte[]? bytes = reader.ReadBytes(blocksize);
-                            md5.TransformBlock(bytes, 0, blocksize, null, 0);
-                            await chunk.WriteAsync(bytes);
-                        }
-
-                        byte[]? finalBytes = reader.ReadBytes(length);
-                        md5.TransformFinalBlock(finalBytes, 0, length);
-
-                        if (md5.Hash is null)
-                        {
-                            Write.ErrorExit($"MD5 hashing failed for part #{part.PartNumber})");
-                            throw new PublishCommandException();
-                        }
-
-                        hash = md5.Hash;
-                        await chunk.WriteAsync(finalBytes);
-                        chunk.Position = 0;
+                        length -= blocksize;
+                        byte[]? bytes = reader.ReadBytes(blocksize);
+                        md5.TransformBlock(bytes, 0, blocksize, null, 0);
+                        await chunk.WriteAsync(bytes);
                     }
+
+                    byte[]? finalBytes = reader.ReadBytes(length);
+                    md5.TransformFinalBlock(finalBytes, 0, length);
+
+                    if (md5.Hash is null)
+                    {
+                        Write.ErrorExit($"MD5 hashing failed for part #{part.PartNumber})");
+                        throw new PublishCommandException();
+                    }
+
+                    hash = md5.Hash;
+                    await chunk.WriteAsync(finalBytes);
+                    chunk.Position = 0;
                 }
 
                 var request = new HttpRequestMessage(HttpMethod.Put, part.Url)

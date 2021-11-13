@@ -4,7 +4,7 @@ namespace ThunderstoreCLI.Tests
 {
     public class ThunderstoreCLI_StringUtils
     {
-        public static TheoryData<string> ValidSemVers => new TheoryData<string>
+        public static TheoryData<string> ValidSemVers => new()
         {
             "0.0.1",
             "0.1.0",
@@ -21,7 +21,7 @@ namespace ThunderstoreCLI.Tests
             Assert.True(actual);
         }
 
-        public static TheoryData<string> InvalidSemVers => new TheoryData<string>
+        public static TheoryData<string> InvalidSemVers => new()
         {
             "1",
             "1.0",
@@ -41,7 +41,7 @@ namespace ThunderstoreCLI.Tests
             Assert.False(actual);
         }
 
-        public static TheoryData<string> UnsupportedValidSemVers => new TheoryData<string>
+        public static TheoryData<string> UnsupportedValidSemVers => new()
         {
             "1.0.0-alpha.1",
             "1.0.0+build.1"

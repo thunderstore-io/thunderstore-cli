@@ -8,7 +8,7 @@ namespace ThunderstoreCLI.Tests
     {
         public static string _key = "key";
 
-        public static TheoryData<string> InvalidValues => new TheoryData<string>
+        public static TheoryData<string> InvalidValues => new()
         {
             $"{_key} = 0",
             $"{_key} = +3.1415",
@@ -36,7 +36,7 @@ namespace ThunderstoreCLI.Tests
             Assert.Null(actual);
         }
 
-        public static TheoryData<string, string> ValidStringValues => new TheoryData<string, string>
+        public static TheoryData<string, string> ValidStringValues => new()
         {
             { $"{_key} = \"value\"", "value" },
             { $"{_key} = \"\"", "" },
@@ -78,7 +78,7 @@ namespace ThunderstoreCLI.Tests
             Assert.Null(actual);
         }
 
-        public static TheoryData<string, bool> ValidBoolValues => new TheoryData<string, bool>
+        public static TheoryData<string, bool> ValidBoolValues => new()
         {
             { $"{_key} = true", true },
             { $"{_key} = false", false }
@@ -118,9 +118,9 @@ namespace ThunderstoreCLI.Tests
             Assert.Null(actual);
         }
 
-        public static TheoryData<string, string[]> ValidStringArrayValues => new TheoryData<string, string[]>
+        public static TheoryData<string, string[]> ValidStringArrayValues => new()
         {
-            { $"{_key} = []", new string[] { } },
+            { $"{_key} = []", System.Array.Empty<string>() },
             { $"{_key} = [\"\"]", new [] { "" } },
             { $"{_key} = [\"value\"]", new [] { "value" } },
             { $"{_key} = [\"value1\", \"value2\"]", new [] { "value1", "value2" } },

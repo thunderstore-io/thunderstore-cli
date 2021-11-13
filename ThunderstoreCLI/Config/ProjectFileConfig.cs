@@ -96,7 +96,7 @@ namespace ThunderstoreCLI.Config
                 TomlNode? pathSets = buildConfig["copy"];
                 foreach (object? entry in pathSets)
                 {
-                    if (!(entry is TomlNode))
+                    if (entry is not TomlNode)
                     {
                         ThunderstoreCLI.Write.Warn($"Unable to properly parse build config: {entry}", "Skipping entry");
                         continue;
@@ -199,8 +199,8 @@ namespace ThunderstoreCLI.Config
                 ["publish"] = new TomlTable
                 {
                     ["repository"] = config.PublishConfig.Repository,
-                    ["communities"] = TomlUtils.FromArray(config.PublishConfig.Communities ?? new string[0]),
-                    ["categories"] = TomlUtils.FromArray(config.PublishConfig.Categories ?? new string[0])
+                    ["communities"] = TomlUtils.FromArray(config.PublishConfig.Communities ?? Array.Empty<string>()),
+                    ["categories"] = TomlUtils.FromArray(config.PublishConfig.Categories ?? Array.Empty<string>())
                 }
             };
             File.WriteAllText(path, TomlUtils.FormatToml(toml));

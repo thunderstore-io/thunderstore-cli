@@ -6,7 +6,7 @@ namespace ThunderstoreCLI.Tests
 {
     public class FakeConsole : IDisposable
     {
-        private readonly StringWriter _stringWriter = new StringWriter();
+        private readonly StringWriter _stringWriter = new();
         private readonly TextWriter _originalOutput = Console.Out;
 
         public FakeConsole()
@@ -130,7 +130,7 @@ namespace ThunderstoreCLI.Tests
             Assert.Equal($"{Yellow}WARNING: MyWarning{Reset}{NL}", mockConsole.GetOuput());
         }
 
-        public static TheoryData<bool, bool, string> WithNewLines => new TheoryData<bool, bool, string>
+        public static TheoryData<bool, bool, string> WithNewLines => new()
         {
             { false, false, $"Line{NL}" },
             { true, false, $"{NL}Line{NL}" },

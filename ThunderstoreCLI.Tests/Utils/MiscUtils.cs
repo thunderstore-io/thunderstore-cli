@@ -30,7 +30,7 @@ namespace ThunderstoreCLI.Tests
             Assert.Equal(new[] { 1, 0, 0 }, actual);
         }
 
-        public static TheoryData<string, int[]> MultipleReleases => new TheoryData<string, int[]>
+        public static TheoryData<string, int[]> MultipleReleases => new()
         {
             { @"[{""tag_name"":""1.0.0""},{""tag_name"":""0.1.0""}]", new [] { 1, 0, 0 } },
             { @"[{""tag_name"":""1.9.9""},{""tag_name"":""2.0.0""}]", new [] { 2, 0, 0 } }

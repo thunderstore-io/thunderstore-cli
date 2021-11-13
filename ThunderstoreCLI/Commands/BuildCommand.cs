@@ -36,7 +36,7 @@ namespace ThunderstoreCLI.Commands
                 int lastSeparatorIndex = pathParts.LastIndexOf("/");
                 while (lastSeparatorIndex > 0)
                 {
-                    pathParts = pathParts.Substring(0, lastSeparatorIndex);
+                    pathParts = pathParts[..lastSeparatorIndex];
                     directoryKeys.Add(pathParts);
                     lastSeparatorIndex = pathParts.LastIndexOf("/");
                 }
@@ -177,17 +177,13 @@ namespace ThunderstoreCLI.Commands
 
             using (FileStream? outputFile = File.Open(filename, FileMode.Create))
             {
-                using (var archive = new ZipArchive(outputFile, ZipArchiveMode.Create))
+                using var archive = new ZipArchive(outputFile, ZipArchiveMode.Create);
+                foreach (KeyValuePair<string, Func<byte[]>> entry in plan)
                 {
-                    foreach (KeyValuePair<string, Func<byte[]>> entry in plan)
-                    {
-                        Write.Light($"Writing /{entry.Key}");
-                        ZipArchiveEntry? archiveEntry = archive.CreateEntry(entry.Key, CompressionLevel.Optimal);
-                        using (var writer = new BinaryWriter(archiveEntry.Open()))
-                        {
-                            writer.Write(entry.Value());
-                        }
-                    }
+                    Write.Light($"Writing /{entry.Key}");
+                    ZipArchiveEntry? archiveEntry = archive.CreateEntry(entry.Key, CompressionLevel.Optimal);
+                    using var writer = new BinaryWriter(archiveEntry.Open());
+                    writer.Write(entry.Value());
                 }
             }
 
@@ -266,7 +262,7 @@ namespace ThunderstoreCLI.Commands
             // Strip leading path traversals, since everything has to relate to
             // the root.
             int firstSeparatorIndex = result.IndexOf('/');
-            while (firstSeparatorIndex > -1 && string.IsNullOrEmpty(result.Substring(0, firstSeparatorIndex).Replace(".", "")))
+            while (firstSeparatorIndex > -1 && string.IsNullOrEmpty(result[..firstSeparatorIndex].Replace(".", "")))
             {
                 result = result[(firstSeparatorIndex + 1)..];
                 firstSeparatorIndex = result.IndexOf('/');
