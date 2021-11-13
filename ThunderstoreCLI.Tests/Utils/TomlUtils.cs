@@ -29,9 +29,9 @@ namespace ThunderstoreCLI.Tests
         [Fact]
         public void SafegetString_WhenKeyIsNotFound_ReturnsNull()
         {
-            var table = CreateTomlTable("");
+            TomlTable table = CreateTomlTable("");
 
-            var actual = TomlUtils.SafegetString(table, _key);
+            string actual = TomlUtils.SafegetString(table, _key);
 
             Assert.Null(actual);
         }
@@ -48,9 +48,9 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(ValidStringValues))]
         public void SafegetString_WhenValueIsString_ReturnsValue(string input, string expected)
         {
-            var table = CreateTomlTable(input);
+            TomlTable table = CreateTomlTable(input);
 
-            var actual = TomlUtils.SafegetString(table, _key);
+            string actual = TomlUtils.SafegetString(table, _key);
 
             Assert.Equal(expected, actual);
         }
@@ -61,9 +61,9 @@ namespace ThunderstoreCLI.Tests
         [InlineData("key = [\"foo\", \"bar\"]")]
         public void SafegetString_WhenValueIsNotString_ReturnsNull(string input)
         {
-            var table = CreateTomlTable(input);
+            TomlTable table = CreateTomlTable(input);
 
-            var actual = TomlUtils.SafegetString(table, _key);
+            string actual = TomlUtils.SafegetString(table, _key);
 
             Assert.Null(actual);
         }
@@ -71,9 +71,9 @@ namespace ThunderstoreCLI.Tests
         [Fact]
         public void SafegetBool_WhenKeyIsNotFound_ReturnsNull()
         {
-            var table = CreateTomlTable("");
+            TomlTable table = CreateTomlTable("");
 
-            var actual = TomlUtils.SafegetBool(table, _key);
+            bool? actual = TomlUtils.SafegetBool(table, _key);
 
             Assert.Null(actual);
         }
@@ -88,9 +88,9 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(ValidBoolValues))]
         public void SafegetBool_WhenValueIsBool_ReturnsValue(string input, bool expected)
         {
-            var table = CreateTomlTable(input);
+            TomlTable table = CreateTomlTable(input);
 
-            var actual = TomlUtils.SafegetBool(table, _key);
+            bool? actual = TomlUtils.SafegetBool(table, _key);
 
             Assert.Equal(expected, actual);
         }
@@ -101,9 +101,9 @@ namespace ThunderstoreCLI.Tests
         [InlineData("key = [\"foo\", \"bar\"]")]
         public void SafegetBool_WhenValueIsNotBool_ReturnsNull(string input)
         {
-            var table = CreateTomlTable(input);
+            TomlTable table = CreateTomlTable(input);
 
-            var actual = TomlUtils.SafegetBool(table, _key);
+            bool? actual = TomlUtils.SafegetBool(table, _key);
 
             Assert.Null(actual);
         }
@@ -111,9 +111,9 @@ namespace ThunderstoreCLI.Tests
         [Fact]
         public void SafegetStringArray_WhenKeyIsNotFound_ReturnsNull()
         {
-            var table = CreateTomlTable("");
+            TomlTable table = CreateTomlTable("");
 
-            var actual = TomlUtils.SafegetBool(table, _key);
+            bool? actual = TomlUtils.SafegetBool(table, _key);
 
             Assert.Null(actual);
         }
@@ -131,9 +131,9 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(ValidStringArrayValues))]
         public void SafegetStringArray_WhenValueIsStringArray_ReturnsValue(string input, string[] expected)
         {
-            var table = CreateTomlTable(input);
+            TomlTable table = CreateTomlTable(input);
 
-            var actual = TomlUtils.SafegetStringArray(table, _key);
+            string[] actual = TomlUtils.SafegetStringArray(table, _key);
 
             Assert.Equal(expected, actual);
         }
@@ -144,9 +144,9 @@ namespace ThunderstoreCLI.Tests
         [InlineData("key = true")]
         public void SafegetStringArray_WhenValueIsNotStringArray_ReturnsNull(string input)
         {
-            var table = CreateTomlTable(input);
+            TomlTable table = CreateTomlTable(input);
 
-            var actual = TomlUtils.SafegetStringArray(table, _key);
+            string[] actual = TomlUtils.SafegetStringArray(table, _key);
 
             Assert.Null(actual);
         }

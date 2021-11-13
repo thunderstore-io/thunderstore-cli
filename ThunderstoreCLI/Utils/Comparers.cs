@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace ThunderstoreCLI.Comparers
 {
     public class SemVer : IComparer<int[]>

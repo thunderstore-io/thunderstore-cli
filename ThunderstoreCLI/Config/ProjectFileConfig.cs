@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using Tommy;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Config
 {
-    class ProjectFileConfig : EmptyConfig
+    internal class ProjectFileConfig : EmptyConfig
     {
 
         private PackageMeta? PackageMeta { get; set; }
@@ -17,9 +14,11 @@ namespace ThunderstoreCLI.Config
 
         public override void Parse(Config currentConfig)
         {
-            var tomlData = Read(currentConfig);
+            TomlTable? tomlData = Read(currentConfig);
             if (tomlData == null)
+            {
                 return;
+            }
 
             if (!tomlData.HasKey("config") || !tomlData["config"].HasKey("schemaVersion"))
             {
@@ -44,9 +43,11 @@ namespace ThunderstoreCLI.Config
         protected static PackageMeta? ParsePackageMeta(TomlTable tomlData)
         {
             if (!tomlData.HasKey("package"))
+            {
                 return null;
+            }
 
-            var packageMeta = tomlData["package"];
+            TomlNode? packageMeta = tomlData["package"];
 
             // TODO: Add warnings on missing values
             var result = new PackageMeta()
@@ -62,8 +63,8 @@ namespace ThunderstoreCLI.Config
 
             if (packageMeta.HasKey("dependencies"))
             {
-                var packageDependencies = packageMeta["dependencies"];
-                foreach (var packageName in packageDependencies.Keys)
+                TomlNode? packageDependencies = packageMeta["dependencies"];
+                foreach (string? packageName in packageDependencies.Keys)
                 {
                     // TODO: Validate both are strings if needed?
                     result.Dependencies[packageName] = packageDependencies[packageName];
@@ -76,9 +77,11 @@ namespace ThunderstoreCLI.Config
         protected static BuildConfig? ParseBuildConfig(TomlTable tomlData)
         {
             if (!tomlData.HasKey("build"))
+            {
                 return null;
+            }
 
-            var buildConfig = tomlData["build"];
+            TomlNode? buildConfig = tomlData["build"];
 
             var result = new BuildConfig
             {
@@ -90,8 +93,8 @@ namespace ThunderstoreCLI.Config
 
             if (buildConfig.HasKey("copy"))
             {
-                var pathSets = buildConfig["copy"];
-                foreach (var entry in pathSets)
+                TomlNode? pathSets = buildConfig["copy"];
+                foreach (object? entry in pathSets)
                 {
                     if (!(entry is TomlNode))
                     {
@@ -119,9 +122,11 @@ namespace ThunderstoreCLI.Config
         protected static PublishConfig? ParsePublishConfig(TomlTable tomlData)
         {
             if (!tomlData.HasKey("publish"))
+            {
                 return null;
+            }
 
-            var publishConfig = tomlData["publish"];
+            TomlNode? publishConfig = tomlData["publish"];
 
             return new PublishConfig
             {
@@ -148,7 +153,7 @@ namespace ThunderstoreCLI.Config
 
         public static TomlTable? Read(Config config)
         {
-            var configPath = config.GetProjectConfigPath();
+            string? configPath = config.GetProjectConfigPath();
             if (!File.Exists(configPath))
             {
                 ThunderstoreCLI.Write.Warn(
@@ -163,8 +168,8 @@ namespace ThunderstoreCLI.Config
 
         public static void Write(Config config, string path)
         {
-            var dependencies = config.PackageMeta.Dependencies ?? new Dictionary<string, string>();
-            var copyPaths = config.BuildConfig.CopyPaths ?? new List<CopyPathMap>();
+            Dictionary<string, string>? dependencies = config.PackageMeta.Dependencies ?? new Dictionary<string, string>();
+            List<CopyPathMap>? copyPaths = config.BuildConfig.CopyPaths ?? new List<CopyPathMap>();
             var toml = new TomlTable
             {
                 ["config"] =

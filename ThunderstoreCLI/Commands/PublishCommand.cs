@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands
@@ -43,7 +37,7 @@ namespace ThunderstoreCLI.Commands
             }
             else
             {
-                var exitCode = BuildCommand.DoBuild(config);
+                int exitCode = BuildCommand.DoBuild(config);
                 if (exitCode > 0)
                 {
                     return exitCode;
@@ -104,7 +98,7 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            var uploadedParts = uploadTasks.Select(x => x.Result).ToArray();
+            CompletedPartData[]? uploadedParts = uploadTasks.Select(x => x.Result).ToArray();
 
             try
             {
@@ -129,19 +123,19 @@ namespace ThunderstoreCLI.Commands
 
         private static UploadInitiateData InitiateUploadRequest(Config.Config config, string filepath)
         {
-            var url = config.GetUserMediaUploadInitiateUrl();
+            string? url = config.GetUserMediaUploadInitiateUrl();
             var request = new HttpRequestMessage(HttpMethod.Post, url)
             {
                 Content = new StringContent(SerializeFileData(filepath), Encoding.UTF8, "application/json")
             };
             request.Headers.Authorization = config.GetAuthHeader();
-            var response = HttpClient.Send(request);
+            HttpResponseMessage? response = HttpClient.Send(request);
 
             HandleRequestError("initializing the upload", response, HttpStatusCode.Created);
 
             using var responseReader = new StreamReader(response.Content.ReadAsStream());
-            var responseContent = responseReader.ReadToEnd();
-            var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(responseContent);
+            string? responseContent = responseReader.ReadToEnd();
+            UploadInitiateData? uploadData = JsonSerializer.Deserialize<UploadInitiateData>(responseContent);
 
             if (uploadData is null)
             {
@@ -170,7 +164,7 @@ namespace ThunderstoreCLI.Commands
                 suffixIndex++;
             }
 
-            var details = $"({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks...";
+            string? details = $"({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks...";
             Write.WithNL($"Uploading {Cyan(uploadData.Metadata.Filename)} {details}", after: true);
 
             return uploadData;
@@ -178,7 +172,7 @@ namespace ThunderstoreCLI.Commands
 
         private static void AbortUploadRequest(Config.Config config, string uploadUuid)
         {
-            var url = config.GetUserMediaUploadAbortUrl(uploadUuid);
+            string? url = config.GetUserMediaUploadAbortUrl(uploadUuid);
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Authorization = config.GetAuthHeader();
             HttpClient.Send(request);
@@ -186,15 +180,15 @@ namespace ThunderstoreCLI.Commands
 
         private static void FinishUploadRequest(Config.Config config, string uploadUuid, CompletedPartData[] uploadedParts)
         {
-            var url = config.GetUserMediaUploadFinishUrl(uploadUuid);
+            string? url = config.GetUserMediaUploadFinishUrl(uploadUuid);
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Authorization = config.GetAuthHeader();
-            var requestContent = JsonSerializer.Serialize(new CompletedUpload()
+            string? requestContent = JsonSerializer.Serialize(new CompletedUpload()
             {
                 Parts = uploadedParts
             });
             request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
-            var response = HttpClient.Send(request);
+            HttpResponseMessage? response = HttpClient.Send(request);
 
             HandleRequestError("finishing the upload", response);
 
@@ -203,18 +197,18 @@ namespace ThunderstoreCLI.Commands
 
         private static void PublishPackageRequest(Config.Config config, string uploadUuid)
         {
-            var url = config.GetPackageSubmitUrl();
+            string? url = config.GetPackageSubmitUrl();
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Authorization = config.GetAuthHeader();
-            var requestContent = SerializeUploadMeta(config, uploadUuid);
+            string? requestContent = SerializeUploadMeta(config, uploadUuid);
             request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
-            var response = HttpClient.Send(request);
+            HttpResponseMessage? response = HttpClient.Send(request);
 
             HandleRequestError("publishing package", response);
 
             using var responseReader = new StreamReader(response.Content.ReadAsStream());
-            var responseContent = responseReader.ReadToEnd();
-            var jsonData = JsonSerializer.Deserialize<PublishData>(responseContent);
+            string? responseContent = responseReader.ReadToEnd();
+            PublishData? jsonData = JsonSerializer.Deserialize<PublishData>(responseContent);
 
             if (jsonData?.PackageVersion?.DownloadUrl is null)
             {
@@ -234,29 +228,29 @@ namespace ThunderstoreCLI.Commands
             try
             {
                 await Task.Yield();
-                await using var stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                await using FileStream? stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 stream.Seek(part.Offset, SeekOrigin.Begin);
 
                 byte[] hash;
                 var chunk = new MemoryStream();
-                var blocksize = 65536;
+                int blocksize = 65536;
 
                 using (var reader = new BinaryReader(stream, Encoding.Default, true))
                 {
                     using (var md5 = MD5.Create())
                     {
                         md5.Initialize();
-                        var length = part.Length;
+                        int length = part.Length;
 
                         while (length > blocksize)
                         {
                             length -= blocksize;
-                            var bytes = reader.ReadBytes(blocksize);
+                            byte[]? bytes = reader.ReadBytes(blocksize);
                             md5.TransformBlock(bytes, 0, blocksize, null, 0);
                             await chunk.WriteAsync(bytes);
                         }
 
-                        var finalBytes = reader.ReadBytes(length);
+                        byte[]? finalBytes = reader.ReadBytes(length);
                         md5.TransformFinalBlock(finalBytes, 0, length);
 
                         if (md5.Hash is null)
@@ -271,12 +265,14 @@ namespace ThunderstoreCLI.Commands
                     }
                 }
 
-                var request = new HttpRequestMessage(HttpMethod.Put, part.Url);
-                request.Content = new StreamContent(chunk);
+                var request = new HttpRequestMessage(HttpMethod.Put, part.Url)
+                {
+                    Content = new StreamContent(chunk)
+                };
                 request.Content.Headers.ContentMD5 = hash;
                 request.Content.Headers.ContentLength = part.Length;
 
-                using var response = await HttpClient.SendAsync(request);
+                using HttpResponseMessage? response = await HttpClient.SendAsync(request);
 
                 try
                 {
@@ -354,7 +350,7 @@ namespace ThunderstoreCLI.Commands
 
         private static void ValidateConfig(Config.Config config, bool justReturnErrors = false)
         {
-            var buildConfigErrors = BuildCommand.ValidateConfig(config, false);
+            List<string>? buildConfigErrors = BuildCommand.ValidateConfig(config, false);
             var v = new Config.Validator("publish", buildConfigErrors);
             v.AddIfEmpty(config.AuthConfig.AuthToken, "Auth AuthToken");
             v.ThrowIfErrors();

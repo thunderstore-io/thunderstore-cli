@@ -16,7 +16,7 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(ValidSemVers))]
         public void IsSemVer_WhenValueIsSemVer_ReturnsTrue(string value)
         {
-            var actual = StringUtils.IsSemVer(value);
+            bool actual = StringUtils.IsSemVer(value);
 
             Assert.True(actual);
         }
@@ -36,7 +36,7 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(InvalidSemVers))]
         public void IsSemVer_WhenValueIsNotSemVer_ReturnsFalse(string value)
         {
-            var actual = StringUtils.IsSemVer(value);
+            bool actual = StringUtils.IsSemVer(value);
 
             Assert.False(actual);
         }
@@ -51,7 +51,7 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(UnsupportedValidSemVers))]
         public void IsSemVer_WhenValueIsNotSupported_ReturnsFalse(string value)
         {
-            var actual = StringUtils.IsSemVer(value);
+            bool actual = StringUtils.IsSemVer(value);
 
             Assert.False(actual);
         }

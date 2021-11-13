@@ -1,9 +1,5 @@
-using System;
-using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace ThunderstoreCLI
 {
@@ -28,14 +24,14 @@ namespace ThunderstoreCLI
             }
 
             // Drop possible pre-release cruft ("-alpha.0.1") from the end.
-            var versionParts = version.Split('-')[0].Split('.');
+            string[]? versionParts = version.Split('-')[0].Split('.');
 
             if (versionParts is null || versionParts.Length != 3)
             {
                 throw new Exception("Malformed app version: ${version}");
             }
 
-            return versionParts.Select(part => Int32.Parse(part)).ToArray();
+            return versionParts.Select(part => int.Parse(part)).ToArray();
         }
 
         /// <summary>Extract version from release information</summary>
@@ -52,7 +48,7 @@ namespace ThunderstoreCLI
 
             return matches
                 .Select(match => match.Groups[1].ToString().Split('.'))
-                .Select(ver => ver.Select(part => Int32.Parse(part)).ToArray())
+                .Select(ver => ver.Select(part => int.Parse(part)).ToArray())
                 .OrderByDescending(ver => ver, new Comparers.SemVer())
                 .First();
         }
@@ -67,8 +63,8 @@ namespace ThunderstoreCLI
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
             client.DefaultRequestHeaders.Add("User-Agent", Defaults.GITHUB_USER);
 
-            var url = $"https://api.github.com/repos/{Defaults.GITHUB_USER}/{Defaults.GITHUB_REPO}/releases";
-            var response = await client.GetAsync(url);
+            string? url = $"https://api.github.com/repos/{Defaults.GITHUB_USER}/{Defaults.GITHUB_REPO}/releases";
+            HttpResponseMessage? response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStringAsync();

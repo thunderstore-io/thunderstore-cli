@@ -1,16 +1,33 @@
-using System;
-using System.Linq;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI
 {
     public static class Write
     {
-        private static void _Error(string msg) => Console.WriteLine(Red(msg));
-        private static void _Light(string msg) => Console.WriteLine(Dim(msg));
-        private static void _Regular(string msg) => Console.WriteLine(msg);
-        private static void _Success(string msg) => Console.WriteLine(Green(msg));
-        private static void _Warn(string msg) => Console.WriteLine(Yellow(msg));
+        private static void _Error(string msg)
+        {
+            Console.WriteLine(Red(msg));
+        }
+
+        private static void _Light(string msg)
+        {
+            Console.WriteLine(Dim(msg));
+        }
+
+        private static void _Regular(string msg)
+        {
+            Console.WriteLine(msg);
+        }
+
+        private static void _Success(string msg)
+        {
+            Console.WriteLine(Green(msg));
+        }
+
+        private static void _Warn(string msg)
+        {
+            Console.WriteLine(Yellow(msg));
+        }
 
         private static void _WriteMultiline(Action<string> write, string msg, string[] submsgs)
         {
@@ -19,7 +36,10 @@ namespace ThunderstoreCLI
         }
 
         /// <summary>Write empty line to stdout</summary>
-        public static void Empty() => _Regular("");
+        public static void Empty()
+        {
+            _Regular("");
+        }
 
         /// <summary>Write error message to stdout</summary>
         public static void Error(string message, params string[] submessages)
@@ -49,7 +69,10 @@ namespace ThunderstoreCLI
         }
 
         /// <summary>Write regular line to stdout</summary>
-        public static void Line(string message) => _Regular(message);
+        public static void Line(string message)
+        {
+            _Regular(message);
+        }
 
         /// <summary>Write message with highlight color to stdout</summary>
         public static void Note(string message, params string[] submessages)

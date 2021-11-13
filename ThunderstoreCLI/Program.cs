@@ -1,15 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using CommandLine;
 using ThunderstoreCLI.Commands;
 using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI
 {
-    class Program
+    internal class Program
     {
-        static int Main(string[] args)
+        private static int Main(string[] args)
         {
             return Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions>(args)
                 .MapResult(
@@ -20,7 +17,7 @@ namespace ThunderstoreCLI
                 );
         }
 
-        static Config.Config GetConfig(Config.IConfigProvider cliConfig)
+        private static Config.Config GetConfig(Config.IConfigProvider cliConfig)
         {
             return Config.Config.Parse(
                 cliConfig,
@@ -30,43 +27,43 @@ namespace ThunderstoreCLI
             );
         }
 
-        static int HandleError(IEnumerable<Error> errors)
+        private static int HandleError(IEnumerable<Error> errors)
         {
             return 1;
         }
 
-        static int Init(InitOptions options)
+        private static int Init(InitOptions options)
         {
-            var updateChecker = CheckForUpdates();
-            var exitCode = InitCommand.Run(GetConfig(new Config.CLIInitCommandConfig(options)));
+            Task<string>? updateChecker = CheckForUpdates();
+            int exitCode = InitCommand.Run(GetConfig(new Config.CLIInitCommandConfig(options)));
             WriteUpdateNotification(updateChecker);
             return exitCode;
         }
 
-        static int Build(BuildOptions options)
+        private static int Build(BuildOptions options)
         {
-            var updateChecker = CheckForUpdates();
-            var exitCode = BuildCommand.Run(GetConfig(new Config.CLIBuildCommandConfig(options)));
+            Task<string>? updateChecker = CheckForUpdates();
+            int exitCode = BuildCommand.Run(GetConfig(new Config.CLIBuildCommandConfig(options)));
             WriteUpdateNotification(updateChecker);
             return exitCode;
         }
 
-        static int Publish(PublishOptions options)
+        private static int Publish(PublishOptions options)
         {
-            var updateChecker = CheckForUpdates();
-            var exitCode = PublishCommand.Run(GetConfig(new Config.CLIPublishCommandConfig(options)));
+            Task<string>? updateChecker = CheckForUpdates();
+            int exitCode = PublishCommand.Run(GetConfig(new Config.CLIPublishCommandConfig(options)));
             WriteUpdateNotification(updateChecker);
             return exitCode;
         }
 
         private static async Task<string> CheckForUpdates()
         {
-            var current = MiscUtils.GetCurrentVersion();
+            int[]? current = MiscUtils.GetCurrentVersion();
             int[] latest;
 
             try
             {
-                var responseContent = await MiscUtils.FetchReleaseInformation();
+                string? responseContent = await MiscUtils.FetchReleaseInformation();
                 latest = MiscUtils.ParseLatestVersion(responseContent);
             }
             catch (Exception)
@@ -80,7 +77,7 @@ namespace ThunderstoreCLI
                 (latest[0] == current[0] && latest[1] == current[1] && latest[2] > current[2])
             )
             {
-                var version = $"{latest[0]}.{latest[1]}.{latest[2]}";
+                string? version = $"{latest[0]}.{latest[1]}.{latest[2]}";
                 return $"Newer version {version} of Thunderstore CLI is available";
             }
 
@@ -94,7 +91,7 @@ namespace ThunderstoreCLI
                 return;
             }
 
-            var notification = checkTask.GetAwaiter().GetResult();
+            string? notification = checkTask.GetAwaiter().GetResult();
 
             if (notification != "")
             {
@@ -103,7 +100,7 @@ namespace ThunderstoreCLI
         }
     }
 
-    class CommandException : Exception
+    internal class CommandException : Exception
     {
         public CommandException(string message) : base(message) { }
     }

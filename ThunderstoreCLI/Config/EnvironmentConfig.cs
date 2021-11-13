@@ -1,9 +1,8 @@
-using System;
 using static System.Environment;
 
 namespace ThunderstoreCLI.Config
 {
-    class EnvironmentConfig : EmptyConfig
+    internal class EnvironmentConfig : EmptyConfig
     {
         private const string AUTH_TOKEN = "TCLI_AUTH_TOKEN";
 
@@ -20,14 +19,14 @@ namespace ThunderstoreCLI.Config
             // Try to read the value from user-specific env variables.
             // This should result with up-to-date value on Windows, but
             // doesn't work on Linux/Mac.
-            var value = GetEnvironmentVariable(AUTH_TOKEN, EnvironmentVariableTarget.User);
+            string? value = GetEnvironmentVariable(AUTH_TOKEN, EnvironmentVariableTarget.User);
 
 
             // Alternatively try to read the value from process-specific
             // env variables. This works on Linux/Mac, but results in
             // outdated values if the env variable has been updated
             // after the shell was launched.
-            if (String.IsNullOrWhiteSpace(value))
+            if (string.IsNullOrWhiteSpace(value))
             {
                 value = GetEnvironmentVariable(AUTH_TOKEN, EnvironmentVariableTarget.Process);
             }

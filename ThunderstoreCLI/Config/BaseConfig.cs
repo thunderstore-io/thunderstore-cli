@@ -1,6 +1,6 @@
 namespace ThunderstoreCLI.Config
 {
-    class BaseConfig : EmptyConfig
+    internal class BaseConfig : EmptyConfig
     {
         public override GeneralConfig GetGeneralConfig()
         {

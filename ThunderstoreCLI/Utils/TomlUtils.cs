@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using ThunderstoreCLI.Config;
 using Tommy;
 
@@ -12,7 +8,7 @@ namespace ThunderstoreCLI
         public static TomlTable DictToTomlTable(Dictionary<string, string> dict)
         {
             var result = new TomlTable();
-            foreach (var kvp in dict)
+            foreach (KeyValuePair<string, string> kvp in dict)
             {
                 result.Add(kvp.Key, kvp.Value);
             }
@@ -22,7 +18,7 @@ namespace ThunderstoreCLI
         public static TomlArray BuildCopyPathTable(List<CopyPathMap> list)
         {
             var result = new TomlArray() { IsTableArray = true };
-            foreach (var entry in list)
+            foreach (CopyPathMap entry in list)
             {
                 result.Add(DictToTomlTable(new()
                 {
@@ -48,7 +44,7 @@ namespace ThunderstoreCLI
         {
             try
             {
-                var textNode = parentNode[key];
+                TomlNode? textNode = parentNode[key];
                 return textNode.IsString ? textNode.ToString() : null;
             }
             catch (NullReferenceException)
@@ -61,7 +57,7 @@ namespace ThunderstoreCLI
         {
             try
             {
-                var boolNode = parentNode[key];
+                TomlNode? boolNode = parentNode[key];
                 return boolNode.IsBoolean ? boolNode : null;
             }
             catch (NullReferenceException)
@@ -74,7 +70,7 @@ namespace ThunderstoreCLI
         {
             try
             {
-                var arrayNode = parentNode[key];
+                TomlNode? arrayNode = parentNode[key];
                 return arrayNode.IsArray
                     ? arrayNode.AsArray.RawArray.Select(x => x.AsString.Value).ToArray()
                     : defaultValue;
@@ -89,9 +85,15 @@ namespace ThunderstoreCLI
         {
             var ret = new TomlArray();
             if (array == null)
+            {
                 return ret;
-            foreach (var val in array)
+            }
+
+            foreach (string? val in array)
+            {
                 ret.Add(val);
+            }
+
             return ret;
         }
     }

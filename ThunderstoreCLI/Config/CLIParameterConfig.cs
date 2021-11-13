@@ -22,7 +22,10 @@ namespace ThunderstoreCLI.Config
         public override PackageMeta? GetPackageMeta()
         {
             if (options == null)
+            {
                 return null;
+            }
+
             return new PackageMeta()
             {
                 Namespace = options.Namespace,

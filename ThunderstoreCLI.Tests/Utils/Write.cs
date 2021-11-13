@@ -6,8 +6,8 @@ namespace ThunderstoreCLI.Tests
 {
     public class FakeConsole : IDisposable
     {
-        private StringWriter _stringWriter = new StringWriter();
-        private TextWriter _originalOutput = Console.Out;
+        private readonly StringWriter _stringWriter = new StringWriter();
+        private readonly TextWriter _originalOutput = Console.Out;
 
         public FakeConsole()
         {

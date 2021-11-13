@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net.Http.Headers;
 
 namespace ThunderstoreCLI.Config
@@ -86,28 +83,28 @@ namespace ThunderstoreCLI.Config
             {
                 throw new Exception("PublishConfig.Repository can't be null");
             }
-            var repo = PublishConfig.Repository.TrimEnd('/');
+            string? repo = PublishConfig.Repository.TrimEnd('/');
             return $"{repo}/api/experimental/";
         }
 
         public string GetPackageSubmitUrl()
         {
-            return $"{this.GetRepositoryBaseUrl()}submission/submit/";
+            return $"{GetRepositoryBaseUrl()}submission/submit/";
         }
 
         public string GetUserMediaUploadInitiateUrl()
         {
-            return $"{this.GetRepositoryBaseUrl()}usermedia/initiate-upload/";
+            return $"{GetRepositoryBaseUrl()}usermedia/initiate-upload/";
         }
 
         public string GetUserMediaUploadAbortUrl(string uploadUuid)
         {
-            return $"{this.GetRepositoryBaseUrl()}usermedia/{uploadUuid}/abort-upload/";
+            return $"{GetRepositoryBaseUrl()}usermedia/{uploadUuid}/abort-upload/";
         }
 
         public string GetUserMediaUploadFinishUrl(string uploadUuid)
         {
-            return $"{this.GetRepositoryBaseUrl()}usermedia/{uploadUuid}/finish-upload/";
+            return $"{GetRepositoryBaseUrl()}usermedia/{uploadUuid}/finish-upload/";
         }
 
         public AuthenticationHeaderValue GetAuthHeader()
@@ -124,7 +121,7 @@ namespace ThunderstoreCLI.Config
             var publishConfig = new PublishConfig();
             var authConfig = new AuthConfig();
             var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig);
-            foreach (var provider in configProviders)
+            foreach (IConfigProvider? provider in configProviders)
             {
                 provider.Parse(result);
                 Merge(generalConfig, provider.GetGeneralConfig(), false);
@@ -140,19 +137,23 @@ namespace ThunderstoreCLI.Config
         public static void Merge<T>(T target, T source, bool overwrite)
         {
             if (source == null)
-                return;
-
-            var t = typeof(T);
-            var properties = t.GetProperties();
-
-            foreach (var prop in properties)
             {
-                var sourceVal = prop.GetValue(source, null);
+                return;
+            }
+
+            Type? t = typeof(T);
+            System.Reflection.PropertyInfo[]? properties = t.GetProperties();
+
+            foreach (System.Reflection.PropertyInfo? prop in properties)
+            {
+                object? sourceVal = prop.GetValue(source, null);
                 if (sourceVal != null)
                 {
-                    var targetVal = prop.GetValue(target, null);
+                    object? targetVal = prop.GetValue(target, null);
                     if (targetVal == null || overwrite)
+                    {
                         prop.SetValue(target, sourceVal, null);
+                    }
                 }
             }
         }

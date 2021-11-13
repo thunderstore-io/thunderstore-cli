@@ -19,7 +19,7 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(EqualValues))]
         public void ReturnZero_WhenValuesAreEqual(int[] a, int[] b)
         {
-            var result = _semVer.Compare(a, b);
+            int result = _semVer.Compare(a, b);
 
             Assert.Equal(0, result);
         }
@@ -37,7 +37,7 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(GreaterValueFirst))]
         public void ReturnOne_WhenGreaterValueIsFirst(int[] a, int[] b)
         {
-            var result = _semVer.Compare(a, b);
+            int result = _semVer.Compare(a, b);
 
             Assert.Equal(1, result);
         }
@@ -55,7 +55,7 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(GreaterValueLast))]
         public void ReturnNegativeOne_WhenGreaterValueIsLast(int[] a, int[] b)
         {
-            var result = _semVer.Compare(a, b);
+            int result = _semVer.Compare(a, b);
 
             Assert.Equal(-1, result);
         }

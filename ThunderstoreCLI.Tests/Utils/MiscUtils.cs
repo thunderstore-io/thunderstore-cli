@@ -8,7 +8,7 @@ namespace ThunderstoreCLI.Tests
         [Fact]
         public void GetCurrentVersion_WhenCalled_ReturnsCorrectNumberOfValues()
         {
-            var actual = MiscUtils.GetCurrentVersion();
+            int[] actual = MiscUtils.GetCurrentVersion();
 
             // Since we can't know what the version actually is (without
             // duplicating most of the code inside GetCurrentVersion),
@@ -25,7 +25,7 @@ namespace ThunderstoreCLI.Tests
         [Fact]
         public void ParseLatestVersion_WhenFindsOneMatch_ReturnsIt()
         {
-            var actual = MiscUtils.ParseLatestVersion(@"[{""tag_name"":""1.0.0""}]");
+            int[] actual = MiscUtils.ParseLatestVersion(@"[{""tag_name"":""1.0.0""}]");
 
             Assert.Equal(new[] { 1, 0, 0 }, actual);
         }
@@ -40,7 +40,7 @@ namespace ThunderstoreCLI.Tests
         [MemberData(nameof(MultipleReleases))]
         public void ParseLatestVersion_WhenFindsMultipleMatches_ReturnsLatest(string value, int[] expected)
         {
-            var actual = MiscUtils.ParseLatestVersion(value);
+            int[] actual = MiscUtils.ParseLatestVersion(value);
 
             Assert.Equal(expected, actual);
         }
@@ -48,7 +48,7 @@ namespace ThunderstoreCLI.Tests
         [Fact]
         public void ParseLatestVersion_WhenFindsPrerelease_IgnoresIt()
         {
-            var actual = MiscUtils.ParseLatestVersion(@"[{""tag_name"":""2.0.0-alpha.1""},{""tag_name"":""1.0.0""}]");
+            int[] actual = MiscUtils.ParseLatestVersion(@"[{""tag_name"":""2.0.0-alpha.1""},{""tag_name"":""1.0.0""}]");
 
             Assert.Equal(new[] { 1, 0, 0 }, actual);
         }

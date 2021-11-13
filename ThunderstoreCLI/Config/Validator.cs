@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-
 namespace ThunderstoreCLI.Config
 {
     /// <summary>Helper for validating command-specific configurations</summary>
     public class Validator
     {
-        private List<string> _errors;
-        private string _name;
+        private readonly List<string> _errors;
+        private readonly string _name;
 
         public Validator(string commandName, List<string>? errors = null)
         {
@@ -31,7 +28,7 @@ namespace ThunderstoreCLI.Config
         public bool AddIfEmpty(string? value, string settingName)
         {
             return Add(
-                String.IsNullOrWhiteSpace(value),
+                string.IsNullOrWhiteSpace(value),
                 $"{settingName} setting can't be empty"
             );
         }
@@ -59,7 +56,10 @@ namespace ThunderstoreCLI.Config
             );
         }
 
-        public List<string> GetErrors() => _errors;
+        public List<string> GetErrors()
+        {
+            return _errors;
+        }
 
         /// <summary>Output any added error messages to Console</summary>
         /// <exception cref="CommandException">Throw if any errors were added</exception>

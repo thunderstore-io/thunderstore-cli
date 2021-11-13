@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI
@@ -10,8 +6,8 @@ namespace ThunderstoreCLI
     {
         private int _lastSeenCompleted = 0;
         private ushort _spinIndex = 0;
-        private string[] _spinChars = { "|", "/", "-", "\\" };
-        private string _label;
+        private readonly string[] _spinChars = { "|", "/", "-", "\\" };
+        private readonly string _label;
         private readonly Task[] _tasks;
 
         public ProgressSpinner(string label, Task[] tasks)
@@ -35,8 +31,8 @@ namespace ThunderstoreCLI
                     throw new SpinnerException("Some of the tasks have faulted");
                 }
 
-                var completed = _tasks.Count(static x => x.IsCompleted);
-                var spinner = completed == _tasks.Length ? "✓" : _spinChars[_spinIndex++ % _spinChars.Length];
+                int completed = _tasks.Count(static x => x.IsCompleted);
+                string? spinner = completed == _tasks.Length ? "✓" : _spinChars[_spinIndex++ % _spinChars.Length];
 
                 // Cursor operations are not always available e.g. in GitHub Actions environment.
                 try

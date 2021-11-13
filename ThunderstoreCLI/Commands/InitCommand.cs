@@ -1,4 +1,3 @@
-using System.IO;
 using ThunderstoreCLI.Config;
 using ThunderstoreCLI.Options;
 
@@ -17,8 +16,8 @@ namespace ThunderstoreCLI.Commands
                 return 1;
             }
 
-            var path = config.GetProjectConfigPath();
-            var projectDir = Path.GetDirectoryName(path);
+            string? path = config.GetProjectConfigPath();
+            string? projectDir = Path.GetDirectoryName(path);
             if (projectDir is not null && !Directory.Exists(projectDir))
             {
                 Write.Line($"Creating directory {projectDir}");
@@ -40,7 +39,7 @@ namespace ThunderstoreCLI.Commands
                 }
                 ProjectFileConfig.Write(config, path);
 
-                var iconPath = config.GetPackageIconPath();
+                string? iconPath = config.GetPackageIconPath();
                 if (File.Exists(iconPath))
                 {
                     Write.Line("Icon found, skipping creation of default");
@@ -50,7 +49,7 @@ namespace ThunderstoreCLI.Commands
                     File.WriteAllBytes(iconPath, Properties.Resources.icon);
                 }
 
-                var readmePath = config.GetPackageReadmePath();
+                string? readmePath = config.GetPackageReadmePath();
                 if (File.Exists(readmePath))
                 {
                     Write.Line("Readme found, skipping creation of default");

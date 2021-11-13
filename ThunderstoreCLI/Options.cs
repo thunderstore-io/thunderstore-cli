@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using CommandLine;
 using static Crayon.Output;
 
@@ -22,14 +20,14 @@ namespace ThunderstoreCLI.Options
 
         public virtual bool Validate()
         {
-            if (String.IsNullOrWhiteSpace(ConfigPath))
+            if (string.IsNullOrWhiteSpace(ConfigPath))
             {
                 Write.ErrorExit("Invalid value for --config-path argument");
                 return false;
             }
 
-            var isInitCommand = this is InitOptions;
-            var fullPath = Path.GetFullPath(ConfigPath);
+            bool isInitCommand = this is InitOptions;
+            string? fullPath = Path.GetFullPath(ConfigPath);
             if (!isInitCommand && !File.Exists(fullPath))
             {
                 Write.ErrorExit(
@@ -77,7 +75,7 @@ namespace ThunderstoreCLI.Options
 
             if (!(File is null))
             {
-                var filePath = Path.GetFullPath(File);
+                string? filePath = Path.GetFullPath(File);
                 if (!System.IO.File.Exists(filePath))
                 {
                     Write.ErrorExit(
