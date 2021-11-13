@@ -17,6 +17,7 @@
         <PublishReadyToRun>true</PublishReadyToRun>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
         <DebugType Condition=" '$(Configuration)' == 'Release' ">None</DebugType>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
