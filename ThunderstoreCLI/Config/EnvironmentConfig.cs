@@ -14,7 +14,7 @@ namespace ThunderstoreCLI.Config
             };
         }
 
-        private string? ReadEnv(string variableName)
+        private static string? ReadEnv(string variableName)
         {
             // Try to read the value from user-specific env variables.
             // This should result with up-to-date value on Windows, but
