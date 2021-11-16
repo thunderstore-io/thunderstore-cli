@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+
 using Tommy;
+
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Config
@@ -99,7 +101,7 @@ namespace ThunderstoreCLI.Config
                         continue;
                     }
 
-                    var node = (TomlNode) entry;
+                    var node = (TomlNode)entry;
                     if (!node.HasKey("source") || !node.HasKey("target"))
                     {
                         ThunderstoreCLI.Write.Warn(

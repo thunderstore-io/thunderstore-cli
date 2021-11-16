@@ -1,7 +1,9 @@
+using CommandLine;
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using CommandLine;
+
 using ThunderstoreCLI.Commands;
 using ThunderstoreCLI.Options;
 

@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands
