@@ -12,8 +12,11 @@ indent_style = space
 tab_width = 4
 
 # New line preferences
-end_of_line = crlf
-insert_final_newline = false
+end_of_line = lf
+insert_final_newline = true
+
+trim_trailing_whitespace = true
+charset = utf-8
 
 #### .NET Coding Conventions ####
 
@@ -75,8 +78,8 @@ dotnet_style_allow_statement_immediately_after_block_experimental = true
 #### C# Coding Conventions ####
 
 # var preferences
-csharp_style_var_elsewhere = false
-csharp_style_var_for_built_in_types = false
+csharp_style_var_elsewhere = true
+csharp_style_var_for_built_in_types = true
 csharp_style_var_when_type_is_apparent = true
 
 # Expression-bodied members
@@ -85,7 +88,7 @@ csharp_style_expression_bodied_constructors = false
 csharp_style_expression_bodied_indexers = true
 csharp_style_expression_bodied_lambdas = true
 csharp_style_expression_bodied_local_functions = false
-csharp_style_expression_bodied_methods = when_on_single_line
+csharp_style_expression_bodied_methods = null
 csharp_style_expression_bodied_operators = false
 csharp_style_expression_bodied_properties = true
 
