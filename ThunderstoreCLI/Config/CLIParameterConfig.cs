@@ -1,74 +1,73 @@
 using ThunderstoreCLI.Options;
 
-namespace ThunderstoreCLI.Config
+namespace ThunderstoreCLI.Config;
+
+public abstract class CLIParameterConfig<T> : EmptyConfig where T : PackageOptions
 {
-    public abstract class CLIParameterConfig<T> : EmptyConfig where T : PackageOptions
+    protected T options;
+
+    public CLIParameterConfig(T options)
     {
-        protected T options;
-
-        public CLIParameterConfig(T options)
-        {
-            this.options = options;
-        }
-
-        public override GeneralConfig GetGeneralConfig()
-        {
-            return new GeneralConfig()
-            {
-                ProjectConfigPath = options.ConfigPath
-            };
-        }
-
-        public override PackageMeta? GetPackageMeta()
-        {
-            if (options == null)
-                return null;
-            return new PackageMeta()
-            {
-                Namespace = options.Namespace,
-                Name = options.Name,
-                VersionNumber = options.VersionNumber
-            };
-        }
+        this.options = options;
     }
 
-    public class CLIInitCommandConfig : CLIParameterConfig<InitOptions>
+    public override GeneralConfig GetGeneralConfig()
     {
-        public CLIInitCommandConfig(InitOptions options) : base(options) { }
-
-        public override InitConfig GetInitConfig()
+        return new GeneralConfig()
         {
-            return new InitConfig()
-            {
-                Overwrite = options.Overwrite
-            };
-        }
+            ProjectConfigPath = options.ConfigPath
+        };
     }
 
-    public class CLIBuildCommandConfig : CLIParameterConfig<BuildOptions>
+    public override PackageMeta? GetPackageMeta()
     {
-        public CLIBuildCommandConfig(BuildOptions options) : base(options) { }
+        if (options == null)
+            return null;
+        return new PackageMeta()
+        {
+            Namespace = options.Namespace,
+            Name = options.Name,
+            VersionNumber = options.VersionNumber
+        };
+    }
+}
+
+public class CLIInitCommandConfig : CLIParameterConfig<InitOptions>
+{
+    public CLIInitCommandConfig(InitOptions options) : base(options) { }
+
+    public override InitConfig GetInitConfig()
+    {
+        return new InitConfig()
+        {
+            Overwrite = options.Overwrite
+        };
+    }
+}
+
+public class CLIBuildCommandConfig : CLIParameterConfig<BuildOptions>
+{
+    public CLIBuildCommandConfig(BuildOptions options) : base(options) { }
+}
+
+public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
+{
+    public CLIPublishCommandConfig(PublishOptions options) : base(options) { }
+
+    public override PublishConfig GetPublishConfig()
+    {
+        return new PublishConfig()
+        {
+            File = options.File,
+            Repository = options.Repository
+        };
     }
 
-    public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
+    public override AuthConfig GetAuthConfig()
     {
-        public CLIPublishCommandConfig(PublishOptions options) : base(options) { }
-
-        public override PublishConfig GetPublishConfig()
+        return new AuthConfig()
         {
-            return new PublishConfig()
-            {
-                File = options.File,
-                Repository = options.Repository
-            };
-        }
-
-        public override AuthConfig GetAuthConfig()
-        {
-            return new AuthConfig()
-            {
-                AuthToken = options.Token
-            };
-        }
+            AuthToken = options.Token
+        };
     }
 }

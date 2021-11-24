@@ -2,164 +2,163 @@ using System;
 using System.IO;
 using Xunit;
 
-namespace ThunderstoreCLI.Tests
+namespace ThunderstoreCLI.Tests;
+
+public class FakeConsole : IDisposable
 {
-    public class FakeConsole : IDisposable
+    private StringWriter _stringWriter = new StringWriter();
+    private TextWriter _originalOutput = Console.Out;
+
+    public FakeConsole()
     {
-        private StringWriter _stringWriter = new StringWriter();
-        private TextWriter _originalOutput = Console.Out;
-
-        public FakeConsole()
-        {
-            Console.SetOut(_stringWriter);
-        }
-
-        public string GetOuput()
-        {
-            return _stringWriter.ToString();
-        }
-
-        public void Dispose()
-        {
-            Console.SetOut(_originalOutput);
-            _stringWriter.Dispose();
-        }
+        Console.SetOut(_stringWriter);
     }
 
-    public class ThunderstoreCLI_Write
+    public string GetOuput()
     {
-        // ANSI escape codes
-        public static string Dim = "\u001b[2m";
-        public static string Green = "\u001b[32m";
-        public static string Red = "\u001b[31m";
-        public static string Reset = "\u001b[0m";
-        public static string Yellow = "\u001b[33m";
+        return _stringWriter.ToString();
+    }
 
-        public static string NL = Environment.NewLine;
+    public void Dispose()
+    {
+        Console.SetOut(_originalOutput);
+        _stringWriter.Dispose();
+    }
+}
 
-        [Fact]
-        public void Empty_WritesEmptyLine()
-        {
-            using var mockConsole = new FakeConsole();
+public class ThunderstoreCLI_Write
+{
+    // ANSI escape codes
+    public static string Dim = "\u001b[2m";
+    public static string Green = "\u001b[32m";
+    public static string Red = "\u001b[31m";
+    public static string Reset = "\u001b[0m";
+    public static string Yellow = "\u001b[33m";
 
-            Write.Empty();
+    public static string NL = Environment.NewLine;
 
-            Assert.Equal($"{NL}", mockConsole.GetOuput());
-        }
+    [Fact]
+    public void Empty_WritesEmptyLine()
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void Error_WritesErrorMessage()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.Empty();
 
-            Write.Error("MyError");
+        Assert.Equal($"{NL}", mockConsole.GetOuput());
+    }
 
-            Assert.Equal($"{Red}ERROR: MyError{Reset}{NL}", mockConsole.GetOuput());
-        }
+    [Fact]
+    public void Error_WritesErrorMessage()
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void ErrorExit_WritesExtraLine()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.Error("MyError");
 
-            Write.ErrorExit("MyError");
+        Assert.Equal($"{Red}ERROR: MyError{Reset}{NL}", mockConsole.GetOuput());
+    }
 
-            Assert.Equal(
-                $"{Red}ERROR: MyError{Reset}{NL}{Red}Exiting{Reset}{NL}",
-                mockConsole.GetOuput()
-            );
-        }
+    [Fact]
+    public void ErrorExit_WritesExtraLine()
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void Header_WritesAHeader()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.ErrorExit("MyError");
 
-            Write.Header("Header");
+        Assert.Equal(
+            $"{Red}ERROR: MyError{Reset}{NL}{Red}Exiting{Reset}{NL}",
+            mockConsole.GetOuput()
+        );
+    }
 
-            Assert.Equal($"{NL}Header{NL}------{NL}", mockConsole.GetOuput());
-        }
+    [Fact]
+    public void Header_WritesAHeader()
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void Light_UsesDimmerColor()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.Header("Header");
 
-            Write.Light("Light");
+        Assert.Equal($"{NL}Header{NL}------{NL}", mockConsole.GetOuput());
+    }
 
-            Assert.Equal($"{Dim}Light{Reset}{NL}", mockConsole.GetOuput());
-        }
+    [Fact]
+    public void Light_UsesDimmerColor()
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void Line_UsesStandardColor()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.Light("Light");
 
-            Write.Line("Line");
+        Assert.Equal($"{Dim}Light{Reset}{NL}", mockConsole.GetOuput());
+    }
 
-            Assert.Equal($"Line{NL}", mockConsole.GetOuput());
-        }
+    [Fact]
+    public void Line_UsesStandardColor()
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void Note_UsesNotificationColor()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.Line("Line");
 
-            Write.Note("Note");
+        Assert.Equal($"Line{NL}", mockConsole.GetOuput());
+    }
 
-            Assert.Equal($"{Yellow}Note{Reset}{NL}", mockConsole.GetOuput());
-        }
+    [Fact]
+    public void Note_UsesNotificationColor()
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void Success_UsesSuccessColor()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.Note("Note");
 
-            Write.Success("Great success!");
+        Assert.Equal($"{Yellow}Note{Reset}{NL}", mockConsole.GetOuput());
+    }
 
-            Assert.Equal($"{Green}Great success!{Reset}{NL}", mockConsole.GetOuput());
-        }
+    [Fact]
+    public void Success_UsesSuccessColor()
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void Warn_WritesWarningMessage()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.Success("Great success!");
 
-            Write.Warn("MyWarning");
+        Assert.Equal($"{Green}Great success!{Reset}{NL}", mockConsole.GetOuput());
+    }
 
-            Assert.Equal($"{Yellow}WARNING: MyWarning{Reset}{NL}", mockConsole.GetOuput());
-        }
+    [Fact]
+    public void Warn_WritesWarningMessage()
+    {
+        using var mockConsole = new FakeConsole();
 
-        public static TheoryData<bool, bool, string> WithNewLines => new TheoryData<bool, bool, string>
-        {
-            { false, false, $"Line{NL}" },
-            { true, false, $"{NL}Line{NL}" },
-            { false, true, $"Line{NL}{NL}" },
-            { true, true, $"{NL}Line{NL}{NL}" }
-        };
+        Write.Warn("MyWarning");
 
-        [Theory]
-        [MemberData(nameof(WithNewLines))]
-        public void WithNL_WritesNewLines(bool before, bool after, string expected)
-        {
-            using var mockConsole = new FakeConsole();
+        Assert.Equal($"{Yellow}WARNING: MyWarning{Reset}{NL}", mockConsole.GetOuput());
+    }
 
-            Write.WithNL("Line", before, after);
+    public static TheoryData<bool, bool, string> WithNewLines => new TheoryData<bool, bool, string>
+    {
+        { false, false, $"Line{NL}" },
+        { true, false, $"{NL}Line{NL}" },
+        { false, true, $"Line{NL}{NL}" },
+        { true, true, $"{NL}Line{NL}{NL}" }
+    };
 
-            Assert.Equal(expected, mockConsole.GetOuput());
-        }
+    [Theory]
+    [MemberData(nameof(WithNewLines))]
+    public void WithNL_WritesNewLines(bool before, bool after, string expected)
+    {
+        using var mockConsole = new FakeConsole();
 
-        [Fact]
-        public void MethodSupportingMultipleLines_WritesMultipleLines()
-        {
-            using var mockConsole = new FakeConsole();
+        Write.WithNL("Line", before, after);
 
-            Write.Light("1", "2", "3");
+        Assert.Equal(expected, mockConsole.GetOuput());
+    }
 
-            Assert.Equal(
-                $"{Dim}1{Reset}{NL}{Dim}2{Reset}{NL}{Dim}3{Reset}{NL}",
-                mockConsole.GetOuput()
-            );
-        }
+    [Fact]
+    public void MethodSupportingMultipleLines_WritesMultipleLines()
+    {
+        using var mockConsole = new FakeConsole();
+
+        Write.Light("1", "2", "3");
+
+        Assert.Equal(
+            $"{Dim}1{Reset}{NL}{Dim}2{Reset}{NL}{Dim}3{Reset}{NL}",
+            mockConsole.GetOuput()
+        );
     }
 }
