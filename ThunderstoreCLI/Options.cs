@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using CommandLine;
 using static Crayon.Output;
 

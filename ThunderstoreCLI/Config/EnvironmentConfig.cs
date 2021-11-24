@@ -1,4 +1,3 @@
-using System;
 using static System.Environment;
 
 namespace ThunderstoreCLI.Config;

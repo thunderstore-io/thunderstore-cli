@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace ThunderstoreCLI.Config;
 
 /// <summary>Helper for validating command-specific configurations</summary>
