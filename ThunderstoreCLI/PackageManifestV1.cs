@@ -1,9 +1,10 @@
 using System.Text.Json.Serialization;
+using ThunderstoreCLI.Models;
 
 namespace ThunderstoreCLI;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
-public class PackageManifestV1
+public class PackageManifestV1 : BaseJson<PackageManifestV1, PackageManifestV1Context>
 {
     [JsonPropertyName("namespace")]
     public string? Namespace { get; set; }
@@ -23,3 +24,6 @@ public class PackageManifestV1
     [JsonPropertyName("website_url")]
     public string? WebsiteUrl { get; set; }
 }
+
+[JsonSerializable(typeof(PackageManifestV1))]
+public partial class PackageManifestV1Context : JsonSerializerContext { }
