@@ -60,6 +60,11 @@ jobs:
 
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             7z a -tzip "${release_name}.zip" "./${release_name}/*"
+
+            # create .nupkg for NuGet
+            dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "nuget/" -p:SelfContained=false -p:PublishTrimmed=false -p:PublishSingleFile=false -p:StartupObject="" -p:RuntimeIdentifier="" -p:PublishReadyToRun=false -p:PackAsTool=true
+            cp "nuget/*" "."
+            rm -r "nuget"
           else
             tar czvf "${release_name}.tar.gz" "$release_name"
           fi
