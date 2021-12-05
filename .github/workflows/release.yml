@@ -62,9 +62,7 @@ jobs:
             7z a -tzip "${release_name}.zip" "./${release_name}/*"
 
             # create .nupkg for NuGet
-            dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "nuget/" -p:SelfContained=false -p:PublishTrimmed=false -p:PublishSingleFile=false -p:StartupObject="" -p:RuntimeIdentifier="" -p:PublishReadyToRun=false -p:PackAsTool=true
-            cp "nuget/*" "."
-            rm -r "nuget"
+            dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "." -p:SelfContained=false -p:PublishTrimmed=false -p:PublishSingleFile=false -p:StartupObject="" -p:RuntimeIdentifier="" -p:PublishReadyToRun=false -p:PackAsTool=true
           else
             tar czvf "${release_name}.tar.gz" "$release_name"
           fi
