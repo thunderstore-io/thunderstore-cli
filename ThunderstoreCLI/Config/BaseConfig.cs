@@ -1,61 +1,60 @@
-namespace ThunderstoreCLI.Config
+namespace ThunderstoreCLI.Config;
+
+class BaseConfig : EmptyConfig
 {
-    class BaseConfig : EmptyConfig
+    public override GeneralConfig GetGeneralConfig()
     {
-        public override GeneralConfig GetGeneralConfig()
+        return new GeneralConfig()
         {
-            return new GeneralConfig()
-            {
-                ProjectConfigPath = Defaults.PROJECT_CONFIG_PATH
-            };
-        }
+            ProjectConfigPath = Defaults.PROJECT_CONFIG_PATH
+        };
+    }
 
-        public override PackageMeta GetPackageMeta()
+    public override PackageMeta GetPackageMeta()
+    {
+        return new PackageMeta()
         {
-            return new PackageMeta()
+            Namespace = "AuthorName",
+            Name = "PackageName",
+            VersionNumber = "0.0.1",
+            Description = "Example mod description",
+            WebsiteUrl = "",
+            ContainsNsfwContent = false,
+            Dependencies = new()
             {
-                Namespace = "AuthorName",
-                Name = "PackageName",
-                VersionNumber = "0.0.1",
-                Description = "Example mod description",
-                WebsiteUrl = "",
-                ContainsNsfwContent = false,
-                Dependencies = new()
-                {
-                    { "Example-Dependency", "1.0.0" }
-                }
-            };
-        }
+                { "Example-Dependency", "1.0.0" }
+            }
+        };
+    }
 
-        public override InitConfig GetInitConfig()
+    public override InitConfig GetInitConfig()
+    {
+        return new InitConfig()
         {
-            return new InitConfig()
-            {
-                Overwrite = false
-            };
-        }
+            Overwrite = false
+        };
+    }
 
-        public override BuildConfig GetBuildConfig()
+    public override BuildConfig GetBuildConfig()
+    {
+        return new BuildConfig()
         {
-            return new BuildConfig()
+            IconPath = "./icon.png",
+            ReadmePath = "./README.md",
+            OutDir = "./build",
+            CopyPaths = new()
             {
-                IconPath = "./icon.png",
-                ReadmePath = "./README.md",
-                OutDir = "./build",
-                CopyPaths = new()
-                {
-                    { new("./dist", "") }
-                }
-            };
-        }
+                { new("./dist", "") }
+            }
+        };
+    }
 
-        public override PublishConfig GetPublishConfig()
+    public override PublishConfig GetPublishConfig()
+    {
+        return new PublishConfig()
         {
-            return new PublishConfig()
-            {
-                File = null,
-                Repository = Defaults.REPOSITORY_URL
-            };
-        }
+            File = null,
+            Repository = Defaults.REPOSITORY_URL
+        };
     }
 }
