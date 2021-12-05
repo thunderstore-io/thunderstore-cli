@@ -20,6 +20,7 @@
         <DebugType Condition=" '$(Configuration)' == 'Release' ">None</DebugType>
         <LangVersion>latest</LangVersion>
         <ToolCommandName>$(AssemblyName)</ToolCommandName>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
