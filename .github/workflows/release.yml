@@ -24,7 +24,7 @@ jobs:
         with:
           script: core.setFailed('Tag is invalid')
 
-  release:
+  platform-binary:
     needs: validate-tag
     if: github.event.base_ref == 'refs/heads/master'
     name: Create binary ${{ matrix.os }}
@@ -66,7 +66,7 @@ jobs:
 
           rm -r "$release_name"
 
-      - name: Publish
+      - name: Publish to GitHub
         uses: softprops/action-gh-release@v1
         with:
           files: "tcli*"
@@ -74,3 +74,28 @@ jobs:
           body_path: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
           draft: true
           prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
+
+  nupkg:
+    needs: validate-tag
+    if: github.event.base_ref == 'refs/heads/master'
+    name: Create .nupkg
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+      - id: tag
+        uses: dawidd6/action-get-tag@v1
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build
+        shell: bash
+        run: dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "." -p:SelfContained=false -p:PublishTrimmed=false -p:PublishSingleFile=false -p:StartupObject="" -p:RuntimeIdentifier="" -p:PublishReadyToRun=false -p:PackAsTool=true
+
+      - name: Publish to GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "tcli*"
+          draft: true

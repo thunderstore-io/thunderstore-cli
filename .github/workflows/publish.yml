@@ -1,0 +1,27 @@
+name: Publish
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  nuget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Fetch Latest .nupkg
+        uses: dsaltares/fetch-gh-release-asset@0efe227dedb360b09ea0e533795d584b61c461a9
+        with:
+          token: "{{ secrets.GITHUB_TOKEN }}"
+          version: "tags/${{ env.GITHUB_REF_NAME }}"
+          file: "tcli.${{ env.GITHUB_REF_NAME }}.nupkg"
+          target: "tcli.nupkg"
+
+
+      - name: Publish to NuGet
+        shell: bash
+        run: dotnet nuget push tcli.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --skip-duplicate
