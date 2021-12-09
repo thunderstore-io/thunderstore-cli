@@ -1,8 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using ThunderstoreCLI.Models;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands;
@@ -72,7 +71,7 @@ public static class PublishCommand
             return 1;
         }
 
-        Task<CompletedPartData>[] uploadTasks;
+        Task<CompletedUpload.CompletedPartData>[] uploadTasks;
 
         try
         {
@@ -135,7 +134,7 @@ public static class PublishCommand
 
         using var responseReader = new StreamReader(response.Content.ReadAsStream());
         var responseContent = responseReader.ReadToEnd();
-        var uploadData = JsonSerializer.Deserialize<UploadInitiateData>(responseContent);
+        var uploadData = UploadInitiateData.Deserialize(responseContent);
 
         if (uploadData is null)
         {
@@ -178,15 +177,15 @@ public static class PublishCommand
         HttpClient.Send(request);
     }
 
-    private static void FinishUploadRequest(Config.Config config, string uploadUuid, CompletedPartData[] uploadedParts)
+    private static void FinishUploadRequest(Config.Config config, string uploadUuid, CompletedUpload.CompletedPartData[] uploadedParts)
     {
         var url = config.GetUserMediaUploadFinishUrl(uploadUuid);
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = config.GetAuthHeader();
-        var requestContent = JsonSerializer.Serialize(new CompletedUpload()
+        var requestContent = new CompletedUpload()
         {
             Parts = uploadedParts
-        });
+        }.Serialize();
         request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
         var response = HttpClient.Send(request);
 
@@ -208,7 +207,7 @@ public static class PublishCommand
 
         using var responseReader = new StreamReader(response.Content.ReadAsStream());
         var responseContent = responseReader.ReadToEnd();
-        var jsonData = JsonSerializer.Deserialize<PublishData>(responseContent);
+        var jsonData = PublishData.Deserialize(responseContent);
 
         if (jsonData?.PackageVersion?.DownloadUrl is null)
         {
@@ -223,7 +222,7 @@ public static class PublishCommand
         Write.Line($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
     }
 
-    private static async Task<CompletedPartData> UploadChunk(UploadInitiateData.UploadPartData part, string filepath)
+    private static async Task<CompletedUpload.CompletedPartData> UploadChunk(UploadInitiateData.UploadPartData part, string filepath)
     {
         try
         {
@@ -290,7 +289,7 @@ public static class PublishCommand
                 throw new PublishCommandException();
             }
 
-            return new CompletedPartData()
+            return new CompletedUpload.CompletedPartData()
             {
                 ETag = response.Headers.ETag.Tag,
                 PartNumber = part.PartNumber
@@ -326,24 +325,23 @@ public static class PublishCommand
 
     public static string SerializeUploadMeta(Config.Config config, string fileUuid)
     {
-        var meta = new PackageUploadMetadata()
+        return new PackageUploadMetadata()
         {
             AuthorName = config.PackageMeta.Namespace,
             Categories = config.PublishConfig.Categories,
             Communities = config.PublishConfig.Communities,
             HasNsfwContent = config.PackageMeta.ContainsNsfwContent == true,
             UploadUUID = fileUuid
-        };
-        return JsonSerializer.Serialize(meta);
+        }.Serialize();
     }
 
     public static string SerializeFileData(string filePath)
     {
-        return JsonSerializer.Serialize(new FileData()
+        return new FileData()
         {
             Filename = Path.GetFileName(filePath),
             Filesize = new FileInfo(filePath).Length
-        });
+        }.Serialize();
     }
 
     private static void ValidateConfig(Config.Config config, bool justReturnErrors = false)
@@ -352,178 +350,6 @@ public static class PublishCommand
         var v = new Config.Validator("publish", buildConfigErrors);
         v.AddIfEmpty(config.AuthConfig.AuthToken, "Auth AuthToken");
         v.ThrowIfErrors();
-    }
-
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
-    public class FileData
-    {
-        [JsonPropertyName("filename")]
-        public string? Filename { get; set; }
-
-        [JsonPropertyName("file_size_bytes")]
-        public long Filesize { get; set; }
-    }
-
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
-    public class CompletedUpload
-    {
-        [JsonPropertyName("parts")]
-        public CompletedPartData[]? Parts { get; set; }
-    }
-
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
-    public class CompletedPartData
-    {
-        [JsonPropertyName("ETag")]
-        public string? ETag { get; set; }
-
-        [JsonPropertyName("PartNumber")]
-        public int PartNumber { get; set; }
-    }
-
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
-    public class UploadInitiateData
-    {
-        public class UserMediaData
-        {
-            [JsonPropertyName("uuid")]
-            public string? UUID { get; set; }
-
-            [JsonPropertyName("filename")]
-            public string? Filename { get; set; }
-
-            [JsonPropertyName("size")]
-            public long Size { get; set; }
-
-            [JsonPropertyName("datetime_created")]
-            public DateTime TimeCreated { get; set; }
-
-            [JsonPropertyName("expiry")]
-            public DateTime? ExpireTime { get; set; }
-
-            [JsonPropertyName("status")]
-            public string? Status { get; set; }
-        }
-        public class UploadPartData
-        {
-            [JsonPropertyName("part_number")]
-            public int PartNumber { get; set; }
-
-            [JsonPropertyName("url")]
-            public string? Url { get; set; }
-
-            [JsonPropertyName("offset")]
-            public long Offset { get; set; }
-
-            [JsonPropertyName("length")]
-            public int Length { get; set; }
-        }
-
-        [JsonPropertyName("user_media")]
-        public UserMediaData? Metadata { get; set; }
-
-        [JsonPropertyName("upload_urls")]
-        public UploadPartData[]? UploadUrls { get; set; }
-    }
-
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
-    public class PackageUploadMetadata
-    {
-        [JsonPropertyName("author_name")]
-        public string? AuthorName { get; set; }
-
-        [JsonPropertyName("categories")]
-        public string[]? Categories { get; set; }
-
-        [JsonPropertyName("communities")]
-        public string[]? Communities { get; set; }
-
-        [JsonPropertyName("has_nsfw_content")]
-        public bool HasNsfwContent { get; set; }
-
-        [JsonPropertyName("upload_uuid")]
-        public string? UploadUUID { get; set; }
-    }
-
-    // JSON response structure for publish package request.
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
-    public class PublishData
-    {
-        public class AvailableCommunityData
-        {
-            public class CommunityData
-            {
-                [JsonPropertyName("identifier")]
-                public string? Identifier { get; set; }
-
-                [JsonPropertyName("name")]
-                public string? Name { get; set; }
-
-                [JsonPropertyName("discord_url")]
-                public string? DiscordUrl { get; set; }
-
-                [JsonPropertyName("wiki_url")]
-                public object? WikiUrl { get; set; }
-
-                [JsonPropertyName("require_package_listing_approval")]
-                public bool RequirePackageListingApproval { get; set; }
-            }
-
-            [JsonPropertyName("community")]
-            public CommunityData? Community { get; set; }
-
-            [JsonPropertyName("categories")]
-            public List<string>? Categories { get; set; }
-
-            [JsonPropertyName("url")]
-            public string? Url { get; set; }
-        }
-
-        public class PackageVersionData
-        {
-            [JsonPropertyName("namespace")]
-            public string? Namespace { get; set; }
-
-            [JsonPropertyName("name")]
-            public string? Name { get; set; }
-
-            [JsonPropertyName("version_number")]
-            public string? VersionNumber { get; set; }
-
-            [JsonPropertyName("full_name")]
-            public string? FullName { get; set; }
-
-            [JsonPropertyName("description")]
-            public string? Description { get; set; }
-
-            [JsonPropertyName("icon")]
-            public string? Icon { get; set; }
-
-            [JsonPropertyName("dependencies")]
-            public List<string>? Dependencies { get; set; }
-
-            [JsonPropertyName("download_url")]
-            public string? DownloadUrl { get; set; }
-
-            [JsonPropertyName("downloads")]
-            public int Downloads { get; set; }
-
-            [JsonPropertyName("date_created")]
-            public DateTime DateCreated { get; set; }
-
-            [JsonPropertyName("website_url")]
-            public string? WebsiteUrl { get; set; }
-
-            [JsonPropertyName("is_active")]
-            public bool IsActive { get; set; }
-        }
-
-        [JsonPropertyName("available_communities")]
-        public List<AvailableCommunityData>? AvailableCommunities { get; set; }
-
-        [JsonPropertyName("package_version")]
-        public PackageVersionData? PackageVersion { get; set; }
-
     }
 }
 

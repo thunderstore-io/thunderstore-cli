@@ -1,2 +1,0 @@
-[*.cs]
-dotnet_diagnostic.IL2026.severity = none # disables warning about types missing at runtime due to trimming, repeats for every JsonSerializer call unless we move to using JsonSerializerContext/JsonTypeInfo<T> (maybe after more IDEs get support for .NET 6 features)

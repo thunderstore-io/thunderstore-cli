@@ -298,7 +298,7 @@ public static class BuildCommand
         {
             WriteIndented = true
         };
-        return JsonSerializer.Serialize(manifest, serializerOptions);
+        return manifest.Serialize(serializerOptions);
     }
 
     public static List<string> ValidateConfig(Config.Config config, bool throwIfErrors = true)
