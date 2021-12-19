@@ -179,10 +179,17 @@ public static class BuildCommand
         {
             using (var archive = new ZipArchive(outputFile, ZipArchiveMode.Create))
             {
+                var isWindows = OperatingSystem.IsWindows();
                 foreach (var entry in plan)
                 {
                     Write.Light($"Writing /{entry.Key}");
                     var archiveEntry = archive.CreateEntry(entry.Key, CompressionLevel.Optimal);
+                    if (!isWindows)
+                    {
+                        // https://github.com/dotnet/runtime/issues/17912#issuecomment-641594638
+                        // modifed solution to use a constant instead of a string conversion
+                        archiveEntry.ExternalAttributes |= 0b110110100 << 16; // rw-rw-r-- permissions
+                    }
                     using (var writer = new BinaryWriter(archiveEntry.Open()))
                     {
                         writer.Write(entry.Value());
