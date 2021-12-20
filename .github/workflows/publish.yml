@@ -16,9 +16,9 @@ jobs:
       - name: Fetch Latest .nupkg
         uses: dsaltares/fetch-gh-release-asset@0efe227dedb360b09ea0e533795d584b61c461a9
         with:
-          token: "{{ secrets.GITHUB_TOKEN }}"
-          version: "tags/${{ env.GITHUB_REF_NAME }}"
-          file: "tcli.${{ env.GITHUB_REF_NAME }}.nupkg"
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          version: "tags/${{ github.ref_name }}"
+          file: "tcli.${{ github.ref_name }}.nupkg"
           target: "tcli.nupkg"
 
 
