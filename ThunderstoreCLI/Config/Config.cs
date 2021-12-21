@@ -1,18 +1,26 @@
 using System.Net.Http.Headers;
+using ThunderstoreCLI.API;
+using ThunderstoreCLI.Models;
 
 namespace ThunderstoreCLI.Config;
 
 public class Config
 {
+    // ReSharper disable AutoPropertyCanBeMadeGetOnly.Local
     public GeneralConfig GeneralConfig { get; private set; }
     public PackageMeta PackageMeta { get; private set; }
     public InitConfig InitConfig { get; private set; }
     public BuildConfig BuildConfig { get; private set; }
     public PublishConfig PublishConfig { get; private set; }
     public AuthConfig AuthConfig { get; private set; }
+    // ReSharper restore AutoPropertyCanBeMadeGetOnly.Local
+
+    private readonly Lazy<ApiHelper> api;
+    public ApiHelper Api => api.Value;
 
     private Config(GeneralConfig generalConfig, PackageMeta packageMeta, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
     {
+        api = new Lazy<ApiHelper>(() => new ApiHelper(this));
         GeneralConfig = generalConfig;
         PackageMeta = packageMeta;
         InitConfig = initConfig;
@@ -77,39 +85,16 @@ public class Config
         return Path.GetFullPath(Path.Join(GetBuildOutputDir(), $"{GetPackageId()}.zip"));
     }
 
-    public string GetRepositoryBaseUrl()
+    public PackageUploadMetadata GetUploadMetadata(string fileUuid)
     {
-        if (PublishConfig.Repository is null)
+        return new PackageUploadMetadata()
         {
-            throw new Exception("PublishConfig.Repository can't be null");
-        }
-        var repo = PublishConfig.Repository.TrimEnd('/');
-        return $"{repo}/api/experimental/";
-    }
-
-    public string GetPackageSubmitUrl()
-    {
-        return $"{this.GetRepositoryBaseUrl()}submission/submit/";
-    }
-
-    public string GetUserMediaUploadInitiateUrl()
-    {
-        return $"{this.GetRepositoryBaseUrl()}usermedia/initiate-upload/";
-    }
-
-    public string GetUserMediaUploadAbortUrl(string uploadUuid)
-    {
-        return $"{this.GetRepositoryBaseUrl()}usermedia/{uploadUuid}/abort-upload/";
-    }
-
-    public string GetUserMediaUploadFinishUrl(string uploadUuid)
-    {
-        return $"{this.GetRepositoryBaseUrl()}usermedia/{uploadUuid}/finish-upload/";
-    }
-
-    public AuthenticationHeaderValue GetAuthHeader()
-    {
-        return new AuthenticationHeaderValue("Bearer", AuthConfig.AuthToken);
+            AuthorName = PackageMeta.Namespace,
+            Categories = PublishConfig.Categories,
+            Communities = PublishConfig.Communities,
+            HasNsfwContent = PackageMeta.ContainsNsfwContent ?? false,
+            UploadUUID = fileUuid
+        };
     }
 
     public static Config Parse(params IConfigProvider[] configProviders)
@@ -142,7 +127,7 @@ public class Config
         var t = typeof(T);
         var properties = t.GetProperties();
 
-        foreach (var prop in properties)
+        foreach (var prop in properties.Where(x => x.SetMethod is not null))
         {
             var sourceVal = prop.GetValue(source, null);
             if (sourceVal != null)
