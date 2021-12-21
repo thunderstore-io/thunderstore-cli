@@ -93,7 +93,7 @@ public static class PublishCommand
         }
         catch (SpinnerException)
         {
-            AbortUploadRequest(config, uploadUuid);
+            HttpClient.Send(config.Api.AbortUploadMedia(uploadUuid));
             return 1;
         }
 
@@ -101,7 +101,18 @@ public static class PublishCommand
 
         try
         {
-            FinishUploadRequest(config, uploadUuid, uploadedParts);
+            var response = HttpClient.Send(
+                config.Api.FinishUploadMedia(
+                    new CompletedUpload
+                    {
+                        Parts = uploadedParts
+                    },
+                    uploadUuid
+                )
+            );
+
+            HandleRequestError("Finishing usermedia upload", response);
+            Write.Success("Successfully finalized the upload");
         }
         catch (PublishCommandException)
         {
@@ -122,13 +133,7 @@ public static class PublishCommand
 
     private static UploadInitiateData InitiateUploadRequest(Config.Config config, string filepath)
     {
-        var url = config.GetUserMediaUploadInitiateUrl();
-        var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = new StringContent(SerializeFileData(filepath), Encoding.UTF8, "application/json")
-        };
-        request.Headers.Authorization = config.GetAuthHeader();
-        var response = HttpClient.Send(request);
+        var response = HttpClient.Send(config.Api.StartUploadMedia(filepath));
 
         HandleRequestError("initializing the upload", response, HttpStatusCode.Created);
 
@@ -169,39 +174,9 @@ public static class PublishCommand
         return uploadData;
     }
 
-    private static void AbortUploadRequest(Config.Config config, string uploadUuid)
-    {
-        var url = config.GetUserMediaUploadAbortUrl(uploadUuid);
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Headers.Authorization = config.GetAuthHeader();
-        HttpClient.Send(request);
-    }
-
-    private static void FinishUploadRequest(Config.Config config, string uploadUuid, CompletedUpload.CompletedPartData[] uploadedParts)
-    {
-        var url = config.GetUserMediaUploadFinishUrl(uploadUuid);
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Headers.Authorization = config.GetAuthHeader();
-        var requestContent = new CompletedUpload()
-        {
-            Parts = uploadedParts
-        }.Serialize();
-        request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
-        var response = HttpClient.Send(request);
-
-        HandleRequestError("finishing the upload", response);
-
-        Write.Success("Successfully finalized the upload");
-    }
-
     private static void PublishPackageRequest(Config.Config config, string uploadUuid)
     {
-        var url = config.GetPackageSubmitUrl();
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Headers.Authorization = config.GetAuthHeader();
-        var requestContent = SerializeUploadMeta(config, uploadUuid);
-        request.Content = new StringContent(requestContent, Encoding.UTF8, "application/json");
-        var response = HttpClient.Send(request);
+        var response = HttpClient.Send(config.Api.SubmitPackage(uploadUuid));
 
         HandleRequestError("publishing package", response);
 
@@ -232,7 +207,7 @@ public static class PublishCommand
 
             byte[] hash;
             var chunk = new MemoryStream();
-            var blocksize = 65536;
+            const int blocksize = 65536;
 
             using (var reader = new BinaryReader(stream, Encoding.Default, true))
             {
@@ -321,27 +296,6 @@ public static class PublishCommand
             Dim(responseReader.ReadToEnd())
         );
         throw new PublishCommandException();
-    }
-
-    public static string SerializeUploadMeta(Config.Config config, string fileUuid)
-    {
-        return new PackageUploadMetadata()
-        {
-            AuthorName = config.PackageMeta.Namespace,
-            Categories = config.PublishConfig.Categories,
-            Communities = config.PublishConfig.Communities,
-            HasNsfwContent = config.PackageMeta.ContainsNsfwContent == true,
-            UploadUUID = fileUuid
-        }.Serialize();
-    }
-
-    public static string SerializeFileData(string filePath)
-    {
-        return new FileData()
-        {
-            Filename = Path.GetFileName(filePath),
-            Filesize = new FileInfo(filePath).Length
-        }.Serialize();
     }
 
     private static void ValidateConfig(Config.Config config, bool justReturnErrors = false)
