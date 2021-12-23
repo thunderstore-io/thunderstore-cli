@@ -1,10 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 
 namespace ThunderstoreCLI.Models;
 
-public abstract class BaseJson<T, Context>
+public abstract class BaseJson<T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Context>
     where T : BaseJson<T, Context>
     where Context : JsonSerializerContext
 {
