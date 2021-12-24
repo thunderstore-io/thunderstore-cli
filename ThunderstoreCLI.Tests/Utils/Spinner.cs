@@ -17,9 +17,9 @@ public class ThunderstoreCLI_ProgresSpinner
     }
 
     [Fact]
-    public void WhenInitiatedWithoutTasks_ThrowsSpinnerException()
+    public void WhenInitiatedWithoutTasks_ThrowsArgumentException()
     {
-        Assert.Throws<SpinnerException>(() => new ProgressSpinner("", new Task[] { }));
+        Assert.Throws<ArgumentException>(() => new ProgressSpinner("", new Task[] { }));
     }
 
     [Fact]
