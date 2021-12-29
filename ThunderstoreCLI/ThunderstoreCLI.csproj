@@ -9,6 +9,7 @@
         <Company>Thunderstore</Company>
         <Product>Thunderstore CLI</Product>
         <PackageProjectUrl>https://thunderstore.io/</PackageProjectUrl>
+        <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
         <Description>Thunderstore CLI is a command-line utility for building and uploading packages to Thunderstore</Description>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <PublishSingleFile>true</PublishSingleFile>
