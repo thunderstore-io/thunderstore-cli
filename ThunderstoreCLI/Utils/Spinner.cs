@@ -1,3 +1,5 @@
+using static Crayon.Output;
+
 namespace ThunderstoreCLI;
 
 public class ProgressSpinner
@@ -21,7 +23,8 @@ public class ProgressSpinner
 
     public async Task Start()
     {
-        // Cursor operations are not always available e.g. in GitHub Actions environment. Done up here to minimize exception usage (throws and catches are expensive and all)
+        // Cursor operations are not always available e.g. in GitHub Actions environment.
+        // Done up here to minimize exception usage (throws and catches are expensive and all)
         bool canUseCursor;
         try
         {
@@ -49,7 +52,7 @@ public class ProgressSpinner
             {
                 var spinner = completed == _tasks.Length ? '✓' : _spinChars[_spinIndex++ % _spinChars.Length];
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Write.Success($"{completed}/{_tasks.Length} {_label} {spinner}");
+                Console.Write(Green($"{completed}/{_tasks.Length} {_label} {spinner}"));
             }
             else
             {
