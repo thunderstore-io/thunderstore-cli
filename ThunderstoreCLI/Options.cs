@@ -1,10 +1,12 @@
 using CommandLine;
+using ThunderstoreCLI.Commands;
+using ThunderstoreCLI.Models.Interaction;
 using static Crayon.Output;
 
-/// Options are arguments passed from command line.
 namespace ThunderstoreCLI.Options;
 
-public class PackageOptions
+/// Options are arguments passed from command line.
+public abstract class PackageOptions
 {
     [Option("config-path", Required = false, Default = Defaults.PROJECT_CONFIG_PATH, HelpText = "Path for the project configuration file")]
     public string? ConfigPath { get; set; }
@@ -17,6 +19,15 @@ public class PackageOptions
 
     [Option("package-version", SetName = "build", Required = false, HelpText = "Version number for the package")]
     public string? VersionNumber { get; set; }
+
+    [Option("output", Required = false, HelpText = "The output format for all output. Valid options are HUMAN and JSON.")]
+    public InteractionOutputType? OutputType { get; set; }
+
+    public virtual void Init()
+    {
+        if (OutputType.HasValue)
+            InteractionOptions.OutputType = OutputType.Value;
+    }
 
     public virtual bool Validate()
     {
@@ -40,6 +51,8 @@ public class PackageOptions
 
         return true;
     }
+
+    public abstract int Execute();
 }
 
 [Verb("init", HelpText = "Initialize a new project configuration")]
@@ -49,10 +62,27 @@ public class InitOptions : PackageOptions
 
     [Option(OVERWRITE_FLAG, Required = false, Default = false, HelpText = "If present, overwrite current configuration")]
     public bool Overwrite { get; set; }
+
+    public override int Execute()
+    {
+        var updateChecker = UpdateChecker.CheckForUpdates();
+        var exitCode = InitCommand.Run(Config.Config.FromCLI(new Config.CLIInitCommandConfig(this)));
+        UpdateChecker.WriteUpdateNotification(updateChecker);
+        return exitCode;
+    }
 }
 
 [Verb("build", HelpText = "Build a package")]
-public class BuildOptions : PackageOptions { }
+public class BuildOptions : PackageOptions
+{
+    public override int Execute()
+    {
+        var updateChecker = UpdateChecker.CheckForUpdates();
+        var exitCode = BuildCommand.Run(Config.Config.FromCLI(new Config.CLIBuildCommandConfig(this)));
+        UpdateChecker.WriteUpdateNotification(updateChecker);
+        return exitCode;
+    }
+}
 
 [Verb("publish", HelpText = "Publish a package. By default will also build a new package.")]
 public class PublishOptions : PackageOptions
@@ -87,5 +117,13 @@ public class PublishOptions : PackageOptions
         }
 
         return true;
+    }
+
+    public override int Execute()
+    {
+        var updateChecker = UpdateChecker.CheckForUpdates();
+        var exitCode = PublishCommand.Run(Config.Config.FromCLI(new Config.CLIPublishCommandConfig(this)));
+        UpdateChecker.WriteUpdateNotification(updateChecker);
+        return exitCode;
     }
 }
