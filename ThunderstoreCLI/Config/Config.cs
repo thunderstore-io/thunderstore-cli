@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using ThunderstoreCLI.API;
 using ThunderstoreCLI.Models.Publish;
 
@@ -27,6 +26,15 @@ public class Config
         BuildConfig = buildConfig;
         PublishConfig = publishConfig;
         AuthConfig = authConfig;
+    }
+    public static Config FromCLI(IConfigProvider cliConfig)
+    {
+        return Parse(
+            cliConfig,
+            new EnvironmentConfig(),
+            new ProjectFileConfig(),
+            new BaseConfig()
+        );
     }
 
     public string? GetProjectBasePath()
