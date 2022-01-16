@@ -1,9 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace ThunderstoreCLI.Models;
+namespace ThunderstoreCLI.Models.Publish;
 
-[ExcludeFromCodeCoverageAttribute]
+[ExcludeFromCodeCoverage]
 public class PackageUploadMetadata : BaseJson<PackageUploadMetadata, PackageUploadMetadataContext>
 {
     [JsonPropertyName("author_name")]
@@ -23,10 +23,10 @@ public class PackageUploadMetadata : BaseJson<PackageUploadMetadata, PackageUplo
 }
 
 [JsonSerializable(typeof(PackageUploadMetadata))]
-[ExcludeFromCodeCoverageAttribute]
+[ExcludeFromCodeCoverage]
 public partial class PackageUploadMetadataContext : JsonSerializerContext { }
 
-[ExcludeFromCodeCoverageAttribute]
+[ExcludeFromCodeCoverage]
 public class UploadInitiateData : BaseJson<UploadInitiateData, UploadInitiateDataContext>
 {
     public class UserMediaData
@@ -76,7 +76,7 @@ public class UploadInitiateData : BaseJson<UploadInitiateData, UploadInitiateDat
 [ExcludeFromCodeCoverage]
 public partial class UploadInitiateDataContext : JsonSerializerContext { }
 
-[ExcludeFromCodeCoverageAttribute]
+[ExcludeFromCodeCoverage]
 public class FileData : BaseJson<FileData, FileDataContext>
 {
     [JsonPropertyName("filename")]
@@ -90,7 +90,7 @@ public class FileData : BaseJson<FileData, FileDataContext>
 [ExcludeFromCodeCoverage]
 public partial class FileDataContext : JsonSerializerContext { }
 
-[ExcludeFromCodeCoverageAttribute]
+[ExcludeFromCodeCoverage]
 public class CompletedUpload : BaseJson<CompletedUpload, CompletedUploadContext>
 {
     public class CompletedPartData
@@ -110,7 +110,7 @@ public class CompletedUpload : BaseJson<CompletedUpload, CompletedUploadContext>
 public partial class CompletedUploadContext : JsonSerializerContext { }
 
 // JSON response structure for publish package request.
-[ExcludeFromCodeCoverageAttribute]
+[ExcludeFromCodeCoverage]
 public class PublishData : BaseJson<PublishData, PublishDataContext>
 {
     public class AvailableCommunityData
