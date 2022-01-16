@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
-using ThunderstoreCLI.Models;
+using ThunderstoreCLI.Models.Publish;
 using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI.API;
