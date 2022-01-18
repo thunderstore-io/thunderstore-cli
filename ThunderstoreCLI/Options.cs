@@ -6,6 +6,7 @@ using static Crayon.Output;
 namespace ThunderstoreCLI.Options;
 
 /// Options are arguments passed from command line.
+// TODO: Rename and refactor these options classes, PackageOptions should not be the root
 public abstract class PackageOptions
 {
     [Option("config-path", Required = false, Default = Defaults.PROJECT_CONFIG_PATH, HelpText = "Path for the project configuration file")]
@@ -23,10 +24,16 @@ public abstract class PackageOptions
     [Option("output", Required = false, HelpText = "The output format for all output. Valid options are HUMAN and JSON.")]
     public InteractionOutputType? OutputType { get; set; }
 
+    [Option("tcli-directory", Required = false, HelpText = "Directory where TCLI keeps its data, %APPDATA%/ThunderstoreCLI on Windows and ~/.config/ThunderstoreCLI on Linux")]
+    // will be initialized in Init
+    public string? TcliDirectory { get; set; }
+
     public virtual void Init()
     {
         if (OutputType.HasValue)
             InteractionOptions.OutputType = OutputType.Value;
+
+        TcliDirectory ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ThunderstoreCLI");
     }
 
     public virtual bool Validate()
@@ -47,6 +54,11 @@ public abstract class PackageOptions
                 "You can initialize one with the 'init' command or define its location with --config-path argument."
             );
             return false;
+        }
+
+        if (!Directory.Exists(TcliDirectory))
+        {
+            Directory.CreateDirectory(TcliDirectory!);
         }
 
         return true;
