@@ -10,4 +10,5 @@ public interface IConfigProvider
     BuildConfig? GetBuildConfig();
     PublishConfig? GetPublishConfig();
     AuthConfig? GetAuthConfig();
+    InstallConfig? GetInstallConfig();
 }

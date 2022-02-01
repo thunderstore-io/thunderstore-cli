@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThunderstoreCLI.API;
 using ThunderstoreCLI.Models.Publish;
 
@@ -12,12 +13,13 @@ public class Config
     public BuildConfig BuildConfig { get; private set; }
     public PublishConfig PublishConfig { get; private set; }
     public AuthConfig AuthConfig { get; private set; }
+    public InstallConfig InstallConfig { get; private set; }
     // ReSharper restore AutoPropertyCanBeMadeGetOnly.Local
 
     private readonly Lazy<ApiHelper> api;
     public ApiHelper Api => api.Value;
 
-    private Config(GeneralConfig generalConfig, PackageMeta packageMeta, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
+    private Config(GeneralConfig generalConfig, PackageMeta packageMeta, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig, InstallConfig installConfig)
     {
         api = new Lazy<ApiHelper>(() => new ApiHelper(this));
         GeneralConfig = generalConfig;
@@ -26,6 +28,7 @@ public class Config
         BuildConfig = buildConfig;
         PublishConfig = publishConfig;
         AuthConfig = authConfig;
+        InstallConfig = installConfig;
     }
     public static Config FromCLI(IConfigProvider cliConfig)
     {
@@ -113,7 +116,8 @@ public class Config
         var buildConfig = new BuildConfig();
         var publishConfig = new PublishConfig();
         var authConfig = new AuthConfig();
-        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig);
+        var installConfig = new InstallConfig();
+        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig, installConfig);
         foreach (var provider in configProviders)
         {
             provider.Parse(result);
@@ -127,7 +131,7 @@ public class Config
         return result;
     }
 
-    public static void Merge<T>(T target, T source, bool overwrite)
+    public static void Merge<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T target, T source, bool overwrite)
     {
         if (source == null)
             return;
@@ -205,4 +209,9 @@ public class PublishConfig
 public class AuthConfig
 {
     public string? AuthToken { get; set; }
+}
+
+public class InstallConfig
+{
+    public string? ManagerIdentifier { get; set; }
 }
