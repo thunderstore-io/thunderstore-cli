@@ -33,4 +33,9 @@ public abstract class EmptyConfig : IConfigProvider
     {
         return null;
     }
+
+    public virtual InstallConfig? GetInstallConfig()
+    {
+        return null;
+    }
 }

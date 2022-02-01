@@ -149,3 +149,14 @@ public class PublishOptions : PackageOptions
         return PublishCommand.Run(Config.FromCLI(new CLIPublishCommandConfig(this)));
     }
 }
+
+[Verb("install", HelpText = "Installs a modloader or mod")]
+public class InstallOptions : PackageOptions
+{
+    public string? ManagerId { get; set; }
+
+    public override int Execute()
+    {
+        return InstallCommand.Run(Config.FromCLI(new CLIInstallCommandConfig(this)));
+    }
+}

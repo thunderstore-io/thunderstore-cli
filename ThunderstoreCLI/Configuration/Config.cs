@@ -13,12 +13,13 @@ public class Config
     public BuildConfig BuildConfig { get; private set; }
     public PublishConfig PublishConfig { get; private set; }
     public AuthConfig AuthConfig { get; private set; }
+    public InstallConfig InstallConfig { get; private set; }
     // ReSharper restore AutoPropertyCanBeMadeGetOnly.Local
 
     private readonly Lazy<ApiHelper> api;
     public ApiHelper Api => api.Value;
 
-    private Config(GeneralConfig generalConfig, PackageConfig packageConfig, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
+    private Config(GeneralConfig generalConfig, PackageConfig packageConfig, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig, InstallConfig installConfig)
     {
         api = new Lazy<ApiHelper>(() => new ApiHelper(this));
         GeneralConfig = generalConfig;
@@ -27,6 +28,7 @@ public class Config
         BuildConfig = buildConfig;
         PublishConfig = publishConfig;
         AuthConfig = authConfig;
+        InstallConfig = installConfig;
     }
     public static Config FromCLI(IConfigProvider cliConfig)
     {
@@ -115,7 +117,8 @@ public class Config
         var buildConfig = new BuildConfig();
         var publishConfig = new PublishConfig();
         var authConfig = new AuthConfig();
-        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig);
+        var installConfig = new InstallConfig();
+        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig, installConfig);
         foreach (var provider in configProviders)
         {
             provider.Parse(result);
@@ -209,4 +212,9 @@ public class PublishConfig
 public class AuthConfig
 {
     public string? AuthToken { get; set; }
+}
+
+public class InstallConfig
+{
+    public string? ManagerIdentifier { get; set; }
 }

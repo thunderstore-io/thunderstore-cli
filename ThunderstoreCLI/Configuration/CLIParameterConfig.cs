@@ -77,3 +77,16 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
         };
     }
 }
+
+public class CLIInstallCommandConfig : CLIParameterConfig<InstallOptions>
+{
+    public CLIInstallCommandConfig(InstallOptions options) : base(options) { }
+
+    public override InstallConfig? GetInstallConfig()
+    {
+        return new InstallConfig()
+        {
+
+        };
+    }
+}
