@@ -77,10 +77,7 @@ public class InitOptions : PackageOptions
 
     public override int Execute()
     {
-        var updateChecker = UpdateChecker.CheckForUpdates();
-        var exitCode = InitCommand.Run(Config.Config.FromCLI(new Config.CLIInitCommandConfig(this)));
-        UpdateChecker.WriteUpdateNotification(updateChecker);
-        return exitCode;
+        return InitCommand.Run(Config.Config.FromCLI(new Config.CLIInitCommandConfig(this)));
     }
 }
 
@@ -89,10 +86,7 @@ public class BuildOptions : PackageOptions
 {
     public override int Execute()
     {
-        var updateChecker = UpdateChecker.CheckForUpdates();
-        var exitCode = BuildCommand.Run(Config.Config.FromCLI(new Config.CLIBuildCommandConfig(this)));
-        UpdateChecker.WriteUpdateNotification(updateChecker);
-        return exitCode;
+        return BuildCommand.Run(Config.Config.FromCLI(new Config.CLIBuildCommandConfig(this)));
     }
 }
 
@@ -133,9 +127,6 @@ public class PublishOptions : PackageOptions
 
     public override int Execute()
     {
-        var updateChecker = UpdateChecker.CheckForUpdates();
-        var exitCode = PublishCommand.Run(Config.Config.FromCLI(new Config.CLIPublishCommandConfig(this)));
-        UpdateChecker.WriteUpdateNotification(updateChecker);
-        return exitCode;
+        return PublishCommand.Run(Config.Config.FromCLI(new Config.CLIPublishCommandConfig(this)));
     }
 }
