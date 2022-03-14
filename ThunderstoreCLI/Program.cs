@@ -15,19 +15,18 @@ internal static class Program
 #endif
 
         var updateChecker = UpdateChecker.CheckForUpdates();
-        var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions, InstallOptions>(args)
+        var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions>(args)
             .MapResult(
                 (InitOptions o) => HandleParsed(o),
                 (BuildOptions o) => HandleParsed(o),
                 (PublishOptions o) => HandleParsed(o),
-                (InstallOptions o) => HandleParsed(o),
                 _ => 1 // failure to parse
             );
         UpdateChecker.WriteUpdateNotification(updateChecker);
         return exitCode;
     }
 
-    private static int HandleParsed(PackageOptions parsed)
+    private static int HandleParsed(BaseOptions parsed)
     {
         parsed.Init();
         if (!parsed.Validate())
@@ -36,7 +35,7 @@ internal static class Program
     }
 }
 
-class CommandException : Exception
+internal class CommandException : Exception
 {
     public CommandException(string message) : base(message) { }
 }

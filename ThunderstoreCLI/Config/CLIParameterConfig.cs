@@ -2,14 +2,19 @@ using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI.Config;
 
-public abstract class CLIParameterConfig<T> : EmptyConfig where T : PackageOptions
+public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
 {
     protected T options;
 
-    public CLIParameterConfig(T options)
+    public BaseConfig(T options)
     {
         this.options = options;
     }
+}
+
+public abstract class CLIParameterConfig<T> : BaseConfig<T> where T : PackageOptions
+{
+    public CLIParameterConfig(T opts) : base(opts) { }
 
     public override GeneralConfig GetGeneralConfig()
     {
