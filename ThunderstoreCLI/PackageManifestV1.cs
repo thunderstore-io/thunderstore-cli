@@ -1,5 +1,5 @@
-using ThunderstoreCLI.Models;
 using Newtonsoft.Json;
+using ThunderstoreCLI.Models;
 
 namespace ThunderstoreCLI;
 
