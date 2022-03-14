@@ -1,10 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 using ThunderstoreCLI.Models;
 
 namespace ThunderstoreCLI.Game;
 
-public class GameDefinition : BaseJson<GameDefinition, GameDefinitionContext>
+public class GameDefinition : BaseJson<GameDefinition>
 {
     public string Identifier { get; }
     public string Name { get; }
@@ -23,7 +21,3 @@ public class GameDefinition : BaseJson<GameDefinition, GameDefinitionContext>
         // yes im lazy
     }
 }
-
-[JsonSerializable(typeof(GameDefinition))]
-[ExcludeFromCodeCoverage]
-public partial class GameDefinitionContext : JsonSerializerContext { }

@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace ThunderstoreCLI.Models.Interaction;
 
 public enum InteractionOutputType
@@ -13,9 +11,8 @@ public static class InteractionOptions
     public static InteractionOutputType OutputType { get; set; } = InteractionOutputType.HUMAN;
 }
 
-public abstract class BaseInteraction<T, Context> : BaseJson<T, Context>
-    where T : BaseInteraction<T, Context>
-    where Context : JsonSerializerContext
+public abstract class BaseInteraction<T> : BaseJson<T>
+    where T : BaseInteraction<T>
 {
     public abstract string GetHumanString();
 

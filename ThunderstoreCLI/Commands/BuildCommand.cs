@@ -1,6 +1,6 @@
 using System.IO.Compression;
 using System.Text;
-using System.Text.Json;
+using Newtonsoft.Json;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands;
@@ -301,9 +301,9 @@ public static class BuildCommand
             WebsiteUrl = config.PackageMeta.WebsiteUrl,
             Dependencies = dependencies.Select(x => $"{x.Key}-{x.Value}").ToArray()
         };
-        var serializerOptions = new JsonSerializerOptions
+        var serializerOptions = new JsonSerializerSettings
         {
-            WriteIndented = true
+            Formatting = Formatting.Indented
         };
         return manifest.Serialize(serializerOptions);
     }

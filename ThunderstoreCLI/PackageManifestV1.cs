@@ -1,29 +1,25 @@
-using System.Text.Json.Serialization;
 using ThunderstoreCLI.Models;
+using Newtonsoft.Json;
 
 namespace ThunderstoreCLI;
 
-[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
-public class PackageManifestV1 : BaseJson<PackageManifestV1, PackageManifestV1Context>
+public class PackageManifestV1 : BaseJson<PackageManifestV1>
 {
-    [JsonPropertyName("namespace")]
+    [JsonProperty("namespace")]
     public string? Namespace { get; set; }
 
-    [JsonPropertyName("name")]
+    [JsonProperty("name")]
     public string? Name { get; set; }
 
-    [JsonPropertyName("description")]
+    [JsonProperty("description")]
     public string? Description { get; set; }
 
-    [JsonPropertyName("version_number")]
+    [JsonProperty("version_number")]
     public string? VersionNumber { get; set; }
 
-    [JsonPropertyName("dependencies")]
+    [JsonProperty("dependencies")]
     public string[]? Dependencies { get; set; }
 
-    [JsonPropertyName("website_url")]
+    [JsonProperty("website_url")]
     public string? WebsiteUrl { get; set; }
 }
-
-[JsonSerializable(typeof(PackageManifestV1))]
-public partial class PackageManifestV1Context : JsonSerializerContext { }

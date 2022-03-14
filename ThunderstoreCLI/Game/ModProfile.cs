@@ -1,10 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 using ThunderstoreCLI.Models;
 
 namespace ThunderstoreCLI.Game;
 
-public class ModProfile : BaseJson<ModProfile, ModProfileContext>
+public class ModProfile : BaseJson<ModProfile>
 {
     public bool IsGlobal { get; }
     public string Name { get; }
@@ -24,7 +22,3 @@ public class ModProfile : BaseJson<ModProfile, ModProfileContext>
         ProfileDirectory = directory;
     }
 }
-
-[JsonSerializable(typeof(ModProfile))]
-[ExcludeFromCodeCoverage]
-public partial class ModProfileContext : JsonSerializerContext { }

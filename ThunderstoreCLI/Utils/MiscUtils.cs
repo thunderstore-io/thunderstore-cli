@@ -14,7 +14,7 @@ public static class MiscUtils
 
         try
         {
-            version = Assembly.GetEntryAssembly()!
+            version = typeof(Program).Assembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
                 .InformationalVersion;
         }

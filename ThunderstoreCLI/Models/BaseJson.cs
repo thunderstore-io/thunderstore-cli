@@ -1,29 +1,22 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace ThunderstoreCLI.Models;
 
-public abstract class BaseJson<T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Context>
-    where T : BaseJson<T, Context>
-    where Context : JsonSerializerContext
+public abstract class BaseJson<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>
+    where T : BaseJson<T>
 {
-    public string Serialize(JsonSerializerOptions? options = null)
+    public string Serialize(JsonSerializerSettings? options = null)
     {
-        var context = (Context) Activator.CreateInstance(typeof(Context), options)!;
-
-        return JsonSerializer.Serialize(this, typeof(T), context);
+        return JsonConvert.SerializeObject(this, options);
     }
-    public static T? Deserialize(string json, JsonSerializerOptions? options = null)
+    public static T? Deserialize(string json, JsonSerializerSettings? options = null)
     {
-        var context = (Context) Activator.CreateInstance(typeof(Context), options)!;
-
-        return (T?) JsonSerializer.Deserialize(json, typeof(T), context);
+        return JsonConvert.DeserializeObject<T>(json);
     }
-    public static T? Deserialize(Stream json, JsonSerializerOptions? options)
+    public static async Task<T?> Deserialize(Stream json, JsonSerializerSettings? options = null)
     {
-        var context = (Context) Activator.CreateInstance(typeof(Context), options)!;
-
-        return (T?) JsonSerializer.Deserialize(json, typeof(T), context);
+        using StreamReader reader = new(json);
+        return Deserialize(await reader.ReadToEndAsync(), options);
     }
 }
