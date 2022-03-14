@@ -6,8 +6,37 @@ using static Crayon.Output;
 namespace ThunderstoreCLI.Options;
 
 /// Options are arguments passed from command line.
-// TODO: Rename and refactor these options classes, PackageOptions should not be the root
-public abstract class PackageOptions
+public abstract class BaseOptions
+{
+    [Option("output", Required = false, HelpText = "The output format for all output. Valid options are HUMAN and JSON.")]
+    public InteractionOutputType OutputType { get; set; } = InteractionOutputType.HUMAN;
+
+    [Option("tcli-directory", Required = false, HelpText = "Directory where TCLI keeps its data, %APPDATA%/ThunderstoreCLI on Windows and ~/.config/ThunderstoreCLI on Linux")]
+    // will be initialized in Init if null
+    public string TcliDirectory { get; set; } = null!;
+
+    public virtual void Init()
+    {
+        InteractionOptions.OutputType = OutputType;
+
+        // ReSharper disable once ConstantNullCoalescingCondition
+        TcliDirectory ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ThunderstoreCLI");
+    }
+
+    public virtual bool Validate()
+    {
+        if (!Directory.Exists(TcliDirectory))
+        {
+            Directory.CreateDirectory(TcliDirectory!);
+        }
+
+        return true;
+    }
+
+    public abstract int Execute();
+}
+
+public abstract class PackageOptions : BaseOptions
 {
     [Option("config-path", Required = false, Default = Defaults.PROJECT_CONFIG_PATH, HelpText = "Path for the project configuration file")]
     public string? ConfigPath { get; set; }
@@ -21,24 +50,14 @@ public abstract class PackageOptions
     [Option("package-version", SetName = "build", Required = false, HelpText = "Version number for the package")]
     public string? VersionNumber { get; set; }
 
-    [Option("output", Required = false, HelpText = "The output format for all output. Valid options are HUMAN and JSON.")]
-    public InteractionOutputType? OutputType { get; set; }
-
-    [Option("tcli-directory", Required = false, HelpText = "Directory where TCLI keeps its data, %APPDATA%/ThunderstoreCLI on Windows and ~/.config/ThunderstoreCLI on Linux")]
-    // will be initialized in Init
-    public string? TcliDirectory { get; set; }
-
-    public virtual void Init()
+    public override bool Validate()
     {
-        if (OutputType.HasValue)
-            InteractionOptions.OutputType = OutputType.Value;
+        if (!base.Validate())
+        {
+            return false;
+        }
 
-        TcliDirectory ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ThunderstoreCLI");
-    }
-
-    public virtual bool Validate()
-    {
-        if (String.IsNullOrWhiteSpace(ConfigPath))
+        if (string.IsNullOrWhiteSpace(ConfigPath))
         {
             Write.ErrorExit("Invalid value for --config-path argument");
             return false;
@@ -56,15 +75,8 @@ public abstract class PackageOptions
             return false;
         }
 
-        if (!Directory.Exists(TcliDirectory))
-        {
-            Directory.CreateDirectory(TcliDirectory!);
-        }
-
         return true;
     }
-
-    public abstract int Execute();
 }
 
 [Verb("init", HelpText = "Initialize a new project configuration")]
@@ -132,7 +144,7 @@ public class PublishOptions : PackageOptions
 }
 
 [Verb("install", HelpText = "Installs a modloader or mod")]
-public class InstallOptions : PackageOptions
+public class InstallOptions : BaseOptions
 {
     public string? ManagerId { get; set; }
 

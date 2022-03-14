@@ -27,7 +27,7 @@ internal static class Program
         return exitCode;
     }
 
-    private static int HandleParsed(PackageOptions parsed)
+    private static int HandleParsed(BaseOptions parsed)
     {
         parsed.Init();
         if (!parsed.Validate())
@@ -36,7 +36,7 @@ internal static class Program
     }
 }
 
-class CommandException : Exception
+internal class CommandException : Exception
 {
     public CommandException(string message) : base(message) { }
 }
