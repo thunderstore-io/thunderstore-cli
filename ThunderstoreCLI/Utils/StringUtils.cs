@@ -4,6 +4,8 @@ namespace ThunderstoreCLI;
 
 public static class StringUtils
 {
+    private static readonly Regex SemVerRegex = new(@"^[0-9]+\.[0-9]+\.[0-9]+$");
+
     /// <summary>
     /// Validate the given string adheres to MAJOR.MINOR.PATCH format
     /// </summary>
@@ -13,7 +15,6 @@ public static class StringUtils
     /// </remarks>
     public static bool IsSemVer(string version)
     {
-        var regex = new Regex(@"^[0-9]+\.[0-9]+\.[0-9]+$");
-        return regex.IsMatch(version);
+        return SemVerRegex.IsMatch(version);
     }
 }
