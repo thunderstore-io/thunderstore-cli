@@ -10,26 +10,27 @@ public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
     {
         this.options = options;
     }
+
+    public override GeneralConfig GetGeneralConfig()
+    {
+        return new GeneralConfig()
+        {
+            TcliConfig = options.TcliDirectory
+        };
+    }
 }
 
 public abstract class CLIParameterConfig<T> : BaseConfig<T> where T : PackageOptions
 {
     public CLIParameterConfig(T opts) : base(opts) { }
 
-    public override GeneralConfig GetGeneralConfig()
-    {
-        return new GeneralConfig()
-        {
-            ProjectConfigPath = options.ConfigPath
-        };
-    }
-
-    public override PackageMeta? GetPackageMeta()
+    public override PackageConfig? GetPackageMeta()
     {
         if (options == null)
             return null;
-        return new PackageMeta()
+        return new PackageConfig()
         {
+            ProjectConfigPath = options.ConfigPath,
             Namespace = options.Namespace,
             Name = options.Name,
             VersionNumber = options.VersionNumber

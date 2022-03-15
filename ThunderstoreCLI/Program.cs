@@ -9,7 +9,7 @@ internal static class Program
     private static int Main(string[] args)
     {
 #if DEBUG
-        if (Environment.GetEnvironmentVariable("TCLI_WAIT_DEBUGGER") is not null)
+        if (Environment.GetEnvironmentVariable("TCLI_WAIT_DEBUGGER") == "1")
             while (!Debugger.IsAttached)
             { }
 #endif

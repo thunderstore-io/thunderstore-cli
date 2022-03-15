@@ -7,7 +7,7 @@ public class Config
 {
     // ReSharper disable AutoPropertyCanBeMadeGetOnly.Local
     public GeneralConfig GeneralConfig { get; private set; }
-    public PackageMeta PackageMeta { get; private set; }
+    public PackageConfig PackageConfig { get; private set; }
     public InitConfig InitConfig { get; private set; }
     public BuildConfig BuildConfig { get; private set; }
     public PublishConfig PublishConfig { get; private set; }
@@ -17,11 +17,11 @@ public class Config
     private readonly Lazy<ApiHelper> api;
     public ApiHelper Api => api.Value;
 
-    private Config(GeneralConfig generalConfig, PackageMeta packageMeta, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
+    private Config(GeneralConfig generalConfig, PackageConfig packageConfig, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
     {
         api = new Lazy<ApiHelper>(() => new ApiHelper(this));
         GeneralConfig = generalConfig;
-        PackageMeta = packageMeta;
+        PackageConfig = packageConfig;
         InitConfig = initConfig;
         BuildConfig = buildConfig;
         PublishConfig = publishConfig;
@@ -29,12 +29,13 @@ public class Config
     }
     public static Config FromCLI(IConfigProvider cliConfig)
     {
-        return Parse(
-            cliConfig,
-            new EnvironmentConfig(),
-            new ProjectFileConfig(),
-            new BaseConfig()
-        );
+        List<IConfigProvider> providers = new();
+        providers.Add(cliConfig);
+        providers.Add(new EnvironmentConfig());
+        if (cliConfig.GetType().IsSubclassOf(typeof(CLIParameterConfig<>)))
+            providers.Add(new ProjectFileConfig());
+        providers.Add(new BaseConfig());
+        return Parse(providers.ToArray());
     }
 
     public string? GetProjectBasePath()
@@ -67,11 +68,11 @@ public class Config
 
     public string GetProjectConfigPath()
     {
-        if (GeneralConfig.ProjectConfigPath is null)
+        if (PackageConfig.ProjectConfigPath is null)
         {
             throw new Exception("GeneralConfig.ProjectConfigPath can't be null");
         }
-        return Path.GetFullPath(GeneralConfig.ProjectConfigPath);
+        return Path.GetFullPath(PackageConfig.ProjectConfigPath);
     }
 
     public string GetBuildOutputDir()
@@ -85,7 +86,7 @@ public class Config
 
     public string GetPackageId()
     {
-        return $"{PackageMeta.Namespace}-{PackageMeta.Name}-{PackageMeta.VersionNumber}";
+        return $"{PackageConfig.Namespace}-{PackageConfig.Name}-{PackageConfig.VersionNumber}";
     }
 
     public string GetBuildOutputFile()
@@ -97,18 +98,18 @@ public class Config
     {
         return new PackageUploadMetadata()
         {
-            AuthorName = PackageMeta.Namespace,
+            AuthorName = PackageConfig.Namespace,
             Categories = PublishConfig.Categories,
             Communities = PublishConfig.Communities,
-            HasNsfwContent = PackageMeta.ContainsNsfwContent ?? false,
+            HasNsfwContent = PackageConfig.ContainsNsfwContent ?? false,
             UploadUUID = fileUuid
         };
     }
 
-    public static Config Parse(params IConfigProvider[] configProviders)
+    public static Config Parse(IConfigProvider[] configProviders)
     {
         var generalConfig = new GeneralConfig();
-        var packageMeta = new PackageMeta();
+        var packageMeta = new PackageConfig();
         var initConfig = new InitConfig();
         var buildConfig = new BuildConfig();
         var publishConfig = new PublishConfig();
@@ -150,11 +151,12 @@ public class Config
 
 public class GeneralConfig
 {
-    public string? ProjectConfigPath { get; set; }
+    public string TcliConfig { get; set; } = null!;
 }
 
-public class PackageMeta
+public class PackageConfig
 {
+    public string? ProjectConfigPath { get; set; }
     public string? Namespace { get; set; }
     public string? Name { get; set; }
     public string? VersionNumber { get; set; }

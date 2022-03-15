@@ -193,7 +193,7 @@ public static class PublishCommand
             throw new PublishCommandException();
         }
 
-        Write.Success($"Successfully published {Cyan($"{config.PackageMeta.Namespace}-{config.PackageMeta.Name}")}");
+        Write.Success($"Successfully published {Cyan($"{config.PackageConfig.Namespace}-{config.PackageConfig.Name}")}");
         Write.Line($"It's available at {Cyan(jsonData.PackageVersion.DownloadUrl)}");
     }
 

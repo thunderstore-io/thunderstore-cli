@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Newtonsoft.Json;
 
 namespace ThunderstoreCLI.Models.Publish;
