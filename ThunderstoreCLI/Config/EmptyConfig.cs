@@ -9,7 +9,7 @@ public abstract class EmptyConfig : IConfigProvider
         return null;
     }
 
-    public virtual PackageMeta? GetPackageMeta()
+    public virtual PackageConfig? GetPackageMeta()
     {
         return null;
     }

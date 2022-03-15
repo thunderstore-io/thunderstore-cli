@@ -6,7 +6,7 @@ namespace ThunderstoreCLI.Config;
 class ProjectFileConfig : EmptyConfig
 {
 
-    private PackageMeta? PackageMeta { get; set; }
+    private PackageConfig? PackageMeta { get; set; }
 
     private BuildConfig? BuildConfig { get; set; }
 
@@ -38,7 +38,7 @@ class ProjectFileConfig : EmptyConfig
         PublishConfig = ParsePublishConfig(tomlData);
     }
 
-    protected static PackageMeta? ParsePackageMeta(TomlTable tomlData)
+    protected static PackageConfig? ParsePackageMeta(TomlTable tomlData)
     {
         if (!tomlData.HasKey("package"))
             return null;
@@ -46,7 +46,7 @@ class ProjectFileConfig : EmptyConfig
         var packageMeta = tomlData["package"];
 
         // TODO: Add warnings on missing values
-        var result = new PackageMeta()
+        var result = new PackageConfig()
         {
             Namespace = TomlUtils.SafegetString(packageMeta, "namespace"),
             Name = TomlUtils.SafegetString(packageMeta, "name"),
@@ -128,7 +128,7 @@ class ProjectFileConfig : EmptyConfig
         };
     }
 
-    public override PackageMeta? GetPackageMeta()
+    public override PackageConfig? GetPackageMeta()
     {
         return PackageMeta;
     }
@@ -160,7 +160,7 @@ class ProjectFileConfig : EmptyConfig
 
     public static void Write(Config config, string path)
     {
-        var dependencies = config.PackageMeta.Dependencies ?? new Dictionary<string, string>();
+        var dependencies = config.PackageConfig.Dependencies ?? new Dictionary<string, string>();
         var copyPaths = config.BuildConfig.CopyPaths ?? new List<CopyPathMap>();
         var toml = new TomlTable
         {
@@ -171,12 +171,12 @@ class ProjectFileConfig : EmptyConfig
 
             ["package"] = new TomlTable
             {
-                ["namespace"] = config.PackageMeta.Namespace,
-                ["name"] = config.PackageMeta.Name,
-                ["versionNumber"] = config.PackageMeta.VersionNumber,
-                ["description"] = config.PackageMeta.Description,
-                ["websiteUrl"] = config.PackageMeta.WebsiteUrl,
-                ["containsNsfwContent"] = config.PackageMeta.ContainsNsfwContent,
+                ["namespace"] = config.PackageConfig.Namespace,
+                ["name"] = config.PackageConfig.Name,
+                ["versionNumber"] = config.PackageConfig.VersionNumber,
+                ["description"] = config.PackageConfig.Description,
+                ["websiteUrl"] = config.PackageConfig.WebsiteUrl,
+                ["containsNsfwContent"] = config.PackageConfig.ContainsNsfwContent,
                 ["dependencies"] = TomlUtils.DictToTomlTable(dependencies)
             },
 

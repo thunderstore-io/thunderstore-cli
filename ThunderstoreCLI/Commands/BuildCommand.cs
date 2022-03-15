@@ -1,6 +1,6 @@
 using System.IO.Compression;
 using System.Text;
-using Newtonsoft.Json;
+using ThunderstoreCLI.Models;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands;
@@ -291,14 +291,14 @@ public static class BuildCommand
 
     public static string SerializeManifest(Config.Config config)
     {
-        var dependencies = config.PackageMeta.Dependencies ?? new Dictionary<string, string>();
+        var dependencies = config.PackageConfig.Dependencies ?? new Dictionary<string, string>();
         var manifest = new PackageManifestV1()
         {
-            Namespace = config.PackageMeta.Namespace,
-            Name = config.PackageMeta.Name,
-            Description = config.PackageMeta.Description,
-            VersionNumber = config.PackageMeta.VersionNumber,
-            WebsiteUrl = config.PackageMeta.WebsiteUrl,
+            Namespace = config.PackageConfig.Namespace,
+            Name = config.PackageConfig.Name,
+            Description = config.PackageConfig.Description,
+            VersionNumber = config.PackageConfig.VersionNumber,
+            WebsiteUrl = config.PackageConfig.WebsiteUrl,
             Dependencies = dependencies.Select(x => $"{x.Key}-{x.Value}").ToArray()
         };
         var serializerOptions = new JsonSerializerSettings
@@ -311,9 +311,9 @@ public static class BuildCommand
     public static List<string> ValidateConfig(Config.Config config, bool throwIfErrors = true)
     {
         var v = new Config.Validator("build");
-        v.AddIfEmpty(config.PackageMeta.Namespace, "Package Namespace");
-        v.AddIfEmpty(config.PackageMeta.Name, "Package Name");
-        v.AddIfNotSemver(config.PackageMeta.VersionNumber, "Package VersionNumber");
+        v.AddIfEmpty(config.PackageConfig.Namespace, "Package Namespace");
+        v.AddIfEmpty(config.PackageConfig.Name, "Package Name");
+        v.AddIfNotSemver(config.PackageConfig.VersionNumber, "Package VersionNumber");
         v.AddIfEmpty(config.BuildConfig.OutDir, "Build OutDir");
 
         if (throwIfErrors)

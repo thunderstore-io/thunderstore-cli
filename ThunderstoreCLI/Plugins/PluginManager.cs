@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace ThunderstoreCLI.Plugins;
 
 public static class PluginManager
