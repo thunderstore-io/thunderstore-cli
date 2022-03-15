@@ -301,11 +301,8 @@ public static class BuildCommand
             WebsiteUrl = config.PackageConfig.WebsiteUrl,
             Dependencies = dependencies.Select(x => $"{x.Key}-{x.Value}").ToArray()
         };
-        var serializerOptions = new JsonSerializerSettings
-        {
-            Formatting = Formatting.Indented
-        };
-        return manifest.Serialize(serializerOptions);
+
+        return manifest.Serialize(BaseJson.IndentedSettings);
     }
 
     public static List<string> ValidateConfig(Config.Config config, bool throwIfErrors = true)

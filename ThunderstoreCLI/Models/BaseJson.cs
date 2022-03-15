@@ -19,4 +19,26 @@ public abstract class BaseJson<[DynamicallyAccessedMembers(DynamicallyAccessedMe
         using StreamReader reader = new(json);
         return Deserialize(await reader.ReadToEndAsync(), options);
     }
+
+    public static List<T>? DeserializeList(string json, JsonSerializerSettings? options = null)
+    {
+        return JsonConvert.DeserializeObject<List<T>>(json, options);
+    }
+}
+
+public static class BaseJson
+{
+    public static readonly JsonSerializerSettings IndentedSettings = new()
+    {
+        Formatting = Formatting.Indented
+    };
+}
+
+public static class BaseJsonExtensions
+{
+    public static string SerializeList<T>(this List<T> list, JsonSerializerSettings? options = null)
+        where T : BaseJson<T>
+    {
+        return JsonConvert.SerializeObject(list, options);
+    }
 }

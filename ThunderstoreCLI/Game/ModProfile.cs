@@ -14,6 +14,12 @@ public class ModProfile : BaseJson<ModProfile>
         IsGlobal = global;
         Name = name;
 
+        if (IsGlobal)
+        {
+            ProfileDirectory = gameDef.InstallDirectory;
+            return;
+        }
+
         var directory = Path.Combine(tcliDirectory, "Profiles", gameDef.Identifier, name);
         if (!Directory.Exists(directory))
         {
