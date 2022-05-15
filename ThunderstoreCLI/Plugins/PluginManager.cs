@@ -1,9 +1,25 @@
+using ThunderstoreCLI.Config;
+
 namespace ThunderstoreCLI.Plugins;
 
-public static class PluginManager
+public class PluginManager
 {
-    public static List<Type> GetAllOfType<T>()
+    private class Plugin
     {
-        return typeof(PluginManager).Assembly.GetTypes().Where(x => x.IsAssignableTo(typeof(T))).ToList();
+
+    }
+
+    private class PluginInfo
+    {
+
+    }
+
+    public string PluginDirectory { get; }
+
+    private List<Plugin> LoadedPlugins = new();
+
+    public PluginManager(GeneralConfig config)
+    {
+        PluginDirectory = Path.Combine(config.TcliConfig, "Plugins");
     }
 }

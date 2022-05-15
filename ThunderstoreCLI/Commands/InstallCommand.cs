@@ -9,11 +9,4 @@ public static class InstallCommand
     {
         throw new NotImplementedException();
     }
-
-    public static int InstallLoader(Config.Config config)
-    {
-        var managerTypes = PluginManager.GetAllOfType<ModManager>();
-
-        throw new NotImplementedException();
-    }
 }
