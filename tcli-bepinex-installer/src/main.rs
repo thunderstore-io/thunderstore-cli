@@ -42,8 +42,12 @@ pub enum Error {
     InvalidManifest,
     #[error("Malformed zip")]
     MalformedZip,
-    #[error("Manifest does not contain namespace in manifest, which is required for mod installs")]
+    #[error("Manifest does not contain a namespace, which is required for mod installs")]
     MissingNamespace,
+    #[error("Mod name is invalid (eg doesn't use a - between namespace and name)")]
+    InvalidModName,
+    #[error("Mod either is not installed or is not accessable to the uninstaller. Tried directory: {0}")]
+    ModNotInstalled(PathBuf),
 }
 
 #[derive(Deserialize)]
@@ -218,7 +222,38 @@ fn install_mod(
 }
 
 fn uninstall(game_dir: PathBuf, bep_dir: PathBuf, name: String) -> Result<()> {
-    todo!();
+    if name.split_once('-').ok_or(Error::InvalidModName)?.1.starts_with("BepInExPack") {
+        uninstall_bepinex(game_dir, bep_dir)
+    } else {
+        uninstall_mod(bep_dir, name)
+    }
+}
+
+fn uninstall_bepinex(game_dir: PathBuf, bep_dir: PathBuf) -> Result<()> {
+    delete_file_if_not_deleted(game_dir.join("winhttp.dll"))?;
+    delete_file_if_not_deleted(game_dir.join("doorstop_config.ini"))?;
+    delete_file_if_not_deleted(game_dir.join("run_bepinex.sh"))?;
+    delete_dir_if_not_deleted(game_dir.join("doorstop_libs"))?;
+    delete_dir_if_not_deleted(bep_dir.join("BepInEx"))?;
+
+    Ok(())
+}
+
+fn uninstall_mod(bep_dir: PathBuf, name: String) -> Result<()> {
+    let actual_bep = bep_dir.join("BepInEx");
+
+    let main_dir = actual_bep.join("plugins").join(&name);
+
+    if !main_dir.exists() {
+        bail!(Error::ModNotInstalled(main_dir));
+    }
+
+    fs::remove_dir_all(main_dir)?;
+
+    delete_dir_if_not_deleted(actual_bep.join("patchers"))?;
+    delete_dir_if_not_deleted(actual_bep.join("monomod").join(&name))?;
+
+    Ok(())
 }
 
 fn top_level_directory_name(path: &Path) -> Option<String> {
@@ -229,7 +264,7 @@ fn top_level_directory_name(path: &Path) -> Option<String> {
         .map(|root| root.to_string_lossy().to_string())
 }
 
-// removes the first n directories from a path, eg a/b/c/d.txt with an n of 2 gives c/d.txt
+/// removes the first n directories from a path, eg a/b/c/d.txt with an n of 2 gives c/d.txt
 fn remove_first_n_directories(path: &Path, n: usize) -> PathBuf {
     PathBuf::from_iter(
         path.ancestors()
@@ -240,4 +275,24 @@ fn remove_first_n_directories(path: &Path, n: usize) -> PathBuf {
             .skip(n)
             .map(|part| part.file_name().unwrap()),
     )
+}
+
+fn delete_file_if_not_deleted<T: AsRef<Path>>(path: T) -> io::Result<()> {
+    match fs::remove_file(path) {
+        Ok(_) => Ok(()),
+        Err(e) => match e.kind() {
+            io::ErrorKind::NotFound => Ok(()),
+            _ => Err(e),
+        },
+    }
+}
+
+fn delete_dir_if_not_deleted<T: AsRef<Path>>(path: T) -> io::Result<()> {
+    match fs::remove_dir_all(path) {
+        Ok(_) => Ok(()),
+        Err(e) => match e.kind() {
+            io::ErrorKind::NotFound => Ok(()),
+            _ => Err(e),
+        },
+    }
 }
