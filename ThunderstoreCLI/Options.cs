@@ -10,12 +10,15 @@ namespace ThunderstoreCLI;
 /// Options are arguments passed from command line.
 public abstract class BaseOptions
 {
-    [Option("output", Required = false, HelpText = "The output format for all output. Valid options are HUMAN and JSON.")]
+    [Option("output", Required = false, HelpText = "The output format for all output. Valid options are HUMAN and JSON. (does nothing)")]
     public InteractionOutputType OutputType { get; set; } = InteractionOutputType.HUMAN;
 
     [Option("tcli-directory", Required = false, HelpText = "Directory where TCLI keeps its data, %APPDATA%/ThunderstoreCLI on Windows and ~/.config/ThunderstoreCLI on Linux")]
     // will be initialized in Init if null
     public string TcliDirectory { get; set; } = null!;
+
+    [Option("repository", Required = false, HelpText = "URL of the default repository")]
+    public string Repository { get; set; } = null!;
 
     public virtual void Init()
     {
@@ -118,9 +121,6 @@ public class PublishOptions : PackageOptions
     [Option("token", Required = false, HelpText = "Authentication token to use for publishing.")]
     public string? Token { get; set; }
 
-    [Option("repository", Required = false, HelpText = "URL of the repository where to publish.")]
-    public string? Repository { get; set; }
-
     public override bool Validate()
     {
         if (!base.Validate())
@@ -150,10 +150,32 @@ public class PublishOptions : PackageOptions
     }
 }
 
-[Verb("install", HelpText = "Installs a modloader or mod")]
-public class InstallOptions : PackageOptions
+[Verb("install", HelpText = "Installs a mod")]
+public class InstallOptions : BaseOptions
 {
-    public string? ManagerId { get; set; }
+    //public string? ManagerId { get; set; }
+
+    [Value(0, MetaName = "Game Name", Required = true, HelpText = "Can be any of: ror2, vrising, vrising_dedicated, vrising_builtin")]
+    public string GameName { get; set; } = null!;
+
+    [Value(1, MetaName = "Package", Required = true, HelpText = "Path to package zip or package name in the format namespace-name")]
+    public string Package { get; set; } = null!;
+
+    [Option(HelpText = "Profile to install to", Default = "Default")]
+    public string? Profile { get; set; }
+
+    [Option(HelpText = "Set to install mods globally instead of into a profile", Default = false)]
+    public bool Global { get; set; }
+
+    public override bool Validate()
+    {
+#if NOINSTALLERS
+        Write.ErrorExit("Installers are not supported when installed through dotnet tool (yet) (i hate nuget)");
+        return false;
+#endif
+
+        return base.Validate();
+    }
 
     public override int Execute()
     {

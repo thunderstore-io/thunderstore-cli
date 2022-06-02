@@ -87,7 +87,7 @@ public static class InitCommand
         v.AddIfEmpty(config.BuildConfig.IconPath, "Build IconPath");
         v.AddIfEmpty(config.BuildConfig.ReadmePath, "Build ReadmePath");
         v.AddIfEmpty(config.BuildConfig.OutDir, "Build OutDir");
-        v.AddIfEmpty(config.PublishConfig.Repository, "Publish Repository");
+        v.AddIfEmpty(config.GeneralConfig.Repository, "Publish Repository");
         v.ThrowIfErrors();
     }
 }

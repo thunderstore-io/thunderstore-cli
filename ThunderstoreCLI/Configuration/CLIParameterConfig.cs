@@ -64,8 +64,7 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
     {
         return new PublishConfig()
         {
-            File = options.File,
-            Repository = options.Repository
+            File = options.File
         };
     }
 
@@ -78,7 +77,7 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
     }
 }
 
-public class CLIInstallCommandConfig : CLIParameterConfig<InstallOptions>
+public class CLIInstallCommandConfig : BaseConfig<InstallOptions>
 {
     public CLIInstallCommandConfig(InstallOptions options) : base(options) { }
 
@@ -86,7 +85,11 @@ public class CLIInstallCommandConfig : CLIParameterConfig<InstallOptions>
     {
         return new InstallConfig()
         {
-
+            //ManagerIdentifier = options.ManagerId
+            GameIdentifer = options.GameName,
+            Global = options.Global,
+            ProfileName = options.Profile,
+            Package = options.Package
         };
     }
 }

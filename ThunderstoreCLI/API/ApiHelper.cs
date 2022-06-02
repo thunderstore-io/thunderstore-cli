@@ -18,7 +18,7 @@ public class ApiHelper
     public ApiHelper(Config config)
     {
         Config = config;
-        BaseRequestBuilder = new RequestBuilder(config.PublishConfig.Repository ?? throw new Exception("The target repository cannot be empty"));
+        BaseRequestBuilder = new RequestBuilder(config.GeneralConfig.Repository ?? throw new Exception("Repository can't be empty"));
         authHeader = new Lazy<AuthenticationHeaderValue>(() =>
         {
             if (string.IsNullOrEmpty(Config.AuthConfig.AuthToken))
@@ -70,6 +70,14 @@ public class ApiHelper
             .WithEndpoint(EXPERIMENTAL + $"usermedia/{uuid}/abort-upload/")
             .WithMethod(HttpMethod.Post)
             .WithAuth(AuthHeader)
+            .GetRequest();
+    }
+
+    public HttpRequestMessage GetPackageMetadata(string author, string name)
+    {
+        return BaseRequestBuilder
+            .StartNew()
+            .WithEndpoint(EXPERIMENTAL + $"package/{author}/{name}/")
             .GetRequest();
     }
 

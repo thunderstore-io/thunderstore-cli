@@ -204,7 +204,6 @@ public class BuildConfig
 public class PublishConfig
 {
     public string? File { get; set; }
-    public string? Repository { get; set; }
     public string[]? Communities { get; set; }
     public string[]? Categories { get; set; }
 }
@@ -216,5 +215,9 @@ public class AuthConfig
 
 public class InstallConfig
 {
-    public string? ManagerIdentifier { get; set; }
+    public string? GameIdentifer { get; set; }
+    //public string? ManagerIdentifier { get; set; }
+    public string? Package { get; set; }
+    public bool? Global { get; set; }
+    public string? ProfileName { get; set; }
 }
