@@ -10,13 +10,14 @@
         <Product>Thunderstore CLI</Product>
         <PackageProjectUrl>https://thunderstore.io/</PackageProjectUrl>
         <Description>Thunderstore CLI is a command-line utility for building and uploading packages to Thunderstore</Description>
-        <PublishSingleFile>true</PublishSingleFile>
+        <PublishTrimmed>true</PublishTrimmed>
         <PublishReadyToRun>true</PublishReadyToRun>
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <Nullable>enable</Nullable>
         <DebugType Condition=" '$(Configuration)' == 'Release' ">None</DebugType>
         <LangVersion>preview</LangVersion>
         <EnablePreviewFeatures>true</EnablePreviewFeatures>
+        <PackAsTool>true</PackAsTool>
         <ToolCommandName>$(AssemblyName)</ToolCommandName>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
@@ -51,5 +52,34 @@
             <LastGenOutput>Resources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
     </ItemGroup>
+
+    <!-- Compile bepinex installer with TCLI -->
+    <Target Name="BuildBepInExInstaller" BeforeTargets="BeforeBuild" Condition="'$(DontBuildInstallers)' != 'true'">
+        <PropertyGroup>
+            <CargoFlags Condition=" '$(Configuration)' == 'Release' ">--release</CargoFlags>
+            <TargetSubdirectory Condition=" '$(Configuration)' == 'Debug' ">debug</TargetSubdirectory>
+            <TargetSubdirectory Condition=" '$(Configuration)' == 'Release' ">release</TargetSubdirectory>
+        </PropertyGroup>
+        <Message Text="Building tcli-bepinex-installer..." IsCritical="true" />
+        <Exec Command="cargo build --manifest-path ../tcli-bepinex-installer/Cargo.toml $(CargoFlags)" ConsoleToMSBuild="true" />
+        <ItemGroup>
+            <None
+                Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer.exe"
+                Condition="$([MSBuild]::IsOSPlatform('Windows'))"
+                CopyToOutputDirectory="Always"
+                CopyToPublishDirectory="Always"
+            />
+            <None
+                Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer"
+                Condition="!$([MSBuild]::IsOSPlatform('Windows'))"
+                ContinueOnError="true"
+                CopyToOutputDirectory="Always"
+                CopyToPublishDirectory="Always"
+            />
+        </ItemGroup>
+    </Target>
+    <PropertyGroup Condition="'$(DontBuildInstallers)' == 'true'">
+        <DefineConstants>NOINSTALLERS</DefineConstants>
+    </PropertyGroup>
 
 </Project>

@@ -2,6 +2,14 @@ namespace ThunderstoreCLI.Config;
 
 class BaseConfig : EmptyConfig
 {
+    public override GeneralConfig? GetGeneralConfig()
+    {
+        return new GeneralConfig()
+        {
+            Repository = Defaults.REPOSITORY_URL
+        };
+    }
+
     public override PackageConfig GetPackageMeta()
     {
         return new PackageConfig()
@@ -46,8 +54,7 @@ class BaseConfig : EmptyConfig
     {
         return new PublishConfig()
         {
-            File = null,
-            Repository = Defaults.REPOSITORY_URL
+            File = null
         };
     }
 }

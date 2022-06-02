@@ -3,7 +3,6 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <IsPackable>false</IsPackable>
-        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <LangVersion>preview</LangVersion>
         <EnablePreviewFeatures>true</EnablePreviewFeatures>
     </PropertyGroup>

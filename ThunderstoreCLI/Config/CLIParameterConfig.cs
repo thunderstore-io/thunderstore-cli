@@ -64,8 +64,7 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
     {
         return new PublishConfig()
         {
-            File = options.File,
-            Repository = options.Repository
+            File = options.File
         };
     }
 
@@ -86,7 +85,11 @@ public class CLIInstallCommandConfig : BaseConfig<InstallOptions>
     {
         return new InstallConfig()
         {
-            ManagerIdentifier = options.ManagerId
+            //ManagerIdentifier = options.ManagerId
+            GameIdentifer = options.GameName,
+            Global = options.Global,
+            ProfileName = options.Profile,
+            Package = options.Package
         };
     }
 }

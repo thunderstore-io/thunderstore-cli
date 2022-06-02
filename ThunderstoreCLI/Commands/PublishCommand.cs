@@ -1,7 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using ThunderstoreCLI.Models.Publish;
+using ThunderstoreCLI.Models;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands;

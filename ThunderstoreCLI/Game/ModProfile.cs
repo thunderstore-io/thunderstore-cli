@@ -7,7 +7,10 @@ public class ModProfile : BaseJson<ModProfile>
     public bool IsGlobal { get; }
     public string Name { get; }
     public string ProfileDirectory { get; }
-    public List<PackageManifestV1> InstalledMods { get; set; } = new();
+
+#pragma warning disable CS8618
+    private ModProfile() { }
+#pragma warning restore CS8618
 
     internal ModProfile(GameDefinition gameDef, bool global, string name, string tcliDirectory)
     {
@@ -26,5 +29,6 @@ public class ModProfile : BaseJson<ModProfile>
             Directory.CreateDirectory(directory);
         }
         ProfileDirectory = directory;
+        gameDef.Profiles.Add(this);
     }
 }

@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using ThunderstoreCLI.API;
-using ThunderstoreCLI.Models.Publish;
+using ThunderstoreCLI.Models;
 
 namespace ThunderstoreCLI.Config;
 
@@ -157,6 +157,7 @@ public class Config
 public class GeneralConfig
 {
     public string TcliConfig { get; set; } = null!;
+    public string Repository { get; set; } = null!;
 }
 
 public class PackageConfig
@@ -204,7 +205,6 @@ public class BuildConfig
 public class PublishConfig
 {
     public string? File { get; set; }
-    public string? Repository { get; set; }
     public string[]? Communities { get; set; }
     public string[]? Categories { get; set; }
 }
@@ -216,5 +216,9 @@ public class AuthConfig
 
 public class InstallConfig
 {
-    public string? ManagerIdentifier { get; set; }
+    public string? GameIdentifer { get; set; }
+    //public string? ManagerIdentifier { get; set; }
+    public string? Package { get; set; }
+    public bool? Global { get; set; }
+    public string? ProfileName { get; set; }
 }

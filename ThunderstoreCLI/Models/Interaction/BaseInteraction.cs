@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThunderstoreCLI.Models.Interaction;
 
 public enum InteractionOutputType
@@ -11,7 +13,7 @@ public static class InteractionOptions
     public static InteractionOutputType OutputType { get; set; } = InteractionOutputType.HUMAN;
 }
 
-public abstract class BaseInteraction<T> : BaseJson<T>
+public abstract class BaseInteraction<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : BaseJson<T>
     where T : BaseInteraction<T>
 {
     public abstract string GetHumanString();

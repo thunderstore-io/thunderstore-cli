@@ -5,6 +5,7 @@ namespace ThunderstoreCLI.Config;
 
 class ProjectFileConfig : EmptyConfig
 {
+    private GeneralConfig? GeneralConfig { get; set; }
 
     private PackageConfig? PackageMeta { get; set; }
 
@@ -33,9 +34,21 @@ class ProjectFileConfig : EmptyConfig
             );
         }
 
+        GeneralConfig = ParseGeneralConfig(tomlData);
         PackageMeta = ParsePackageMeta(tomlData);
         BuildConfig = ParseBuildConfig(tomlData);
         PublishConfig = ParsePublishConfig(tomlData);
+    }
+
+    protected static GeneralConfig? ParseGeneralConfig(TomlTable tomlData)
+    {
+        if (!tomlData.HasKey("publish"))
+            return null;
+
+        return new GeneralConfig()
+        {
+            Repository = TomlUtils.SafegetString(tomlData["publish"], "repository")!
+        };
     }
 
     protected static PackageConfig? ParsePackageMeta(TomlTable tomlData)
@@ -122,10 +135,14 @@ class ProjectFileConfig : EmptyConfig
 
         return new PublishConfig
         {
-            Repository = TomlUtils.SafegetString(publishConfig, "repository"),
             Communities = TomlUtils.SafegetStringArray(publishConfig, "communities", Array.Empty<string>()),
             Categories = TomlUtils.SafegetStringArray(publishConfig, "categories", Array.Empty<string>())
         };
+    }
+
+    public override GeneralConfig? GetGeneralConfig()
+    {
+        return GeneralConfig;
     }
 
     public override PackageConfig? GetPackageMeta()
@@ -190,7 +207,7 @@ class ProjectFileConfig : EmptyConfig
 
             ["publish"] = new TomlTable
             {
-                ["repository"] = config.PublishConfig.Repository,
+                ["repository"] = config.GeneralConfig.Repository,
                 ["communities"] = TomlUtils.FromArray(config.PublishConfig.Communities ?? new string[0]),
                 ["categories"] = TomlUtils.FromArray(config.PublishConfig.Categories ?? new string[0])
             }
