@@ -3,18 +3,24 @@ using Newtonsoft.Json;
 
 namespace ThunderstoreCLI.Models;
 
-public abstract class BaseJson<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>
+public abstract class BaseJson<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : ISerialize<T>
     where T : BaseJson<T>
 {
-    public string Serialize(JsonSerializerSettings? options = null)
+    public string Serialize() => Serialize(null);
+    public string Serialize(JsonSerializerSettings? options)
     {
         return JsonConvert.SerializeObject(this, options);
     }
-    public static T? Deserialize(string json, JsonSerializerSettings? options = null)
+
+    public static T? Deserialize(string json) => Deserialize(json, null);
+    public static T? Deserialize(string json, JsonSerializerSettings? options)
     {
-        return JsonConvert.DeserializeObject<T>(json);
+        return JsonConvert.DeserializeObject<T>(json, options);
     }
-    public static async Task<T?> Deserialize(Stream json, JsonSerializerSettings? options = null)
+
+    public static ValueTask<T?> DeserializeAsync(string json) => new(Deserialize(json));
+    public static ValueTask<T?> DeserializeAsync(Stream json) => new(DeserializeAsync(json, null));
+    public static async Task<T?> DeserializeAsync(Stream json, JsonSerializerSettings? options)
     {
         using StreamReader reader = new(json);
         return Deserialize(await reader.ReadToEndAsync(), options);

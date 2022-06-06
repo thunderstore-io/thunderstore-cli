@@ -1,4 +1,4 @@
-using Tommy;
+using ThunderstoreCLI.Models;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Config;
@@ -15,25 +15,6 @@ class ProjectFileConfig : EmptyConfig
 
     public override void Parse(Config currentConfig)
     {
-        var tomlData = Read(currentConfig);
-        if (tomlData == null)
-            return;
-
-        if (!tomlData.HasKey("config") || !tomlData["config"].HasKey("schemaVersion"))
-        {
-            ThunderstoreCLI.Write.Warn(
-                "Project configuration is lacking schema version",
-                "Might not be able to parse configuration as expected"
-            );
-        }
-        if (tomlData["config"]["schemaVersion"] != "0.0.1")
-        {
-            ThunderstoreCLI.Write.Warn(
-                "Unknown project configuration schema version",
-                "Might not be able to parse configuration as expected"
-            );
-        }
-
         GeneralConfig = ParseGeneralConfig(tomlData);
         PackageMeta = ParsePackageMeta(tomlData);
         BuildConfig = ParseBuildConfig(tomlData);
@@ -160,7 +141,7 @@ class ProjectFileConfig : EmptyConfig
         return PublishConfig;
     }
 
-    public static TomlTable? Read(Config config)
+    public static ThunderstoreProject? Read(Config config)
     {
         var configPath = config.GetProjectConfigPath();
         if (!File.Exists(configPath))
@@ -171,8 +152,7 @@ class ProjectFileConfig : EmptyConfig
             );
             return null;
         }
-        using var reader = new StreamReader(File.OpenRead(configPath));
-        return TOML.Parse(reader);
+        return ThunderstoreProject.Deserialize(configPath);
     }
 
     public static void Write(Config config, string path)
