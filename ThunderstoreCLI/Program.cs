@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using CommandLine;
+using ThunderstoreCLI.Models;
 using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI;
@@ -13,6 +14,8 @@ internal static class Program
             while (!Debugger.IsAttached)
             { }
 #endif
+        Console.WriteLine(ThunderstoreProject.Deserialize(File.ReadAllText("thunderstore.toml"))!.Serialize());
+        return 0;
 
         var updateChecker = UpdateChecker.CheckForUpdates();
         var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions>(args)
