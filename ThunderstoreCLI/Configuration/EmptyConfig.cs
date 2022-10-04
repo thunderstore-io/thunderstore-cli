@@ -1,4 +1,4 @@
-namespace ThunderstoreCLI.Config;
+namespace ThunderstoreCLI.Configuration;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute]
 public abstract class EmptyConfig : IConfigProvider
@@ -34,7 +34,7 @@ public abstract class EmptyConfig : IConfigProvider
         return null;
     }
 
-    public virtual InstallConfig? GetInstallConfig()
+    public virtual ModManagementConfig? GetInstallConfig()
     {
         return null;
     }

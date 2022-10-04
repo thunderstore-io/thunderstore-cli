@@ -1,4 +1,4 @@
-namespace ThunderstoreCLI.Config;
+namespace ThunderstoreCLI.Configuration;
 
 public interface IConfigProvider
 {
@@ -10,5 +10,5 @@ public interface IConfigProvider
     BuildConfig? GetBuildConfig();
     PublishConfig? GetPublishConfig();
     AuthConfig? GetAuthConfig();
-    InstallConfig? GetInstallConfig();
+    ModManagementConfig? GetInstallConfig();
 }

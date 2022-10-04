@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using CommandLine;
-using ThunderstoreCLI.Models;
 using ThunderstoreCLI.Options;
+using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI;
 
@@ -14,16 +14,15 @@ internal static class Program
             while (!Debugger.IsAttached)
             { }
 #endif
-        Console.WriteLine(ThunderstoreProject.Deserialize(File.ReadAllText("thunderstore.toml"))!.Serialize());
-        return 0;
 
         var updateChecker = UpdateChecker.CheckForUpdates();
-        var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions, InstallOptions>(args)
+        var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions, InstallOptions, UninstallOptions>(args)
             .MapResult(
                 (InitOptions o) => HandleParsed(o),
                 (BuildOptions o) => HandleParsed(o),
                 (PublishOptions o) => HandleParsed(o),
                 (InstallOptions o) => HandleParsed(o),
+                (UninstallOptions o) => HandleParsed(o),
                 _ => 1 // failure to parse
             );
         UpdateChecker.WriteUpdateNotification(updateChecker);
@@ -34,8 +33,22 @@ internal static class Program
     {
         parsed.Init();
         if (!parsed.Validate())
+        {
             return 1;
-        return parsed.Execute();
+        }
+        try
+        {
+            return parsed.Execute();
+        }
+        catch (CommandFatalException cfe)
+        {
+            Write.Error(cfe.ErrorMessage);
+#if DEBUG
+            throw;
+#else
+            return 1;
+#endif
+        }
     }
 }
 

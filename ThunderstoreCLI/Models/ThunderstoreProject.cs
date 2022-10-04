@@ -1,3 +1,4 @@
+using ThunderstoreCLI.Configuration;
 using Tomlet.Attributes;
 
 namespace ThunderstoreCLI.Models;
@@ -11,8 +12,9 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
         [TomlProperty("schemaVersion")]
         public string SchemaVersion { get; set; } = "0.0.1";
     }
+
     [TomlProperty("config")]
-    public ConfigData? Config { get; set; }
+    public ConfigData? Config { get; set; } = new();
 
     [TomlDoNotInlineObject]
     public class PackageData
@@ -57,10 +59,7 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
             public string Target { get; set; } = "";
         }
         [TomlProperty("copy")]
-        public CopyPath[] CopyPaths { get; set; } =
-        {
-            new()
-        };
+        public CopyPath[] CopyPaths { get; set; } = Array.Empty<CopyPath>();
     }
     [TomlProperty("build")]
     public BuildData? Build { get; set; }
@@ -91,9 +90,30 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
         if (!initialize)
             return;
 
-        Config = new();
-        Package = new();
-        Build = new();
-        Publish = new();
+        Package = new PackageData();
+        Build = new BuildData();
+        Publish = new PublishData();
+    }
+
+    public ThunderstoreProject(Config config)
+    {
+        Package = new PackageData()
+        {
+            Namespace = config.PackageConfig.Namespace!,
+            Name = config.PackageConfig.Name!
+        };
+        Build = new BuildData()
+        {
+            Icon = config.GetPackageIconPath(),
+            OutDir = config.GetBuildOutputDir(),
+            Readme = config.GetPackageReadmePath(),
+            CopyPaths = config.BuildConfig.CopyPaths!.Select(x => new BuildData.CopyPath { Source = x.From, Target = x.To }).ToArray()!
+        };
+        Publish = new PublishData()
+        {
+            Categories = config.PublishConfig.Categories!,
+            Communities = config.PublishConfig.Communities!,
+            Repository = config.GeneralConfig.Repository
+        };
     }
 }

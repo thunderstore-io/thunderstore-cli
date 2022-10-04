@@ -1,4 +1,4 @@
-using ThunderstoreCLI.Config;
+using ThunderstoreCLI.Configuration;
 
 namespace ThunderstoreCLI.Plugins;
 

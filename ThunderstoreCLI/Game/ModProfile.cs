@@ -7,6 +7,7 @@ public class ModProfile : BaseJson<ModProfile>
     public bool IsGlobal { get; }
     public string Name { get; }
     public string ProfileDirectory { get; }
+    public List<string> InstalledMods { get; }
 
 #pragma warning disable CS8618
     private ModProfile() { }
@@ -16,6 +17,7 @@ public class ModProfile : BaseJson<ModProfile>
     {
         IsGlobal = global;
         Name = name;
+        InstalledMods = new();
 
         if (IsGlobal)
         {

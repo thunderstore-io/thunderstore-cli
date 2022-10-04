@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Models;
 using static Crayon.Output;
 
@@ -18,7 +19,7 @@ public static class PublishCommand
         HttpClient.Timeout = TimeSpan.FromHours(1);
     }
 
-    public static int Run(Config.Config config)
+    public static int Run(Config config)
     {
         try
         {
@@ -47,7 +48,7 @@ public static class PublishCommand
         return PublishFile(config, packagePath);
     }
 
-    public static int PublishFile(Config.Config config, string filepath)
+    public static int PublishFile(Config config, string filepath)
     {
         Write.WithNL($"Publishing {Cyan(filepath)}", before: true, after: true);
 
@@ -131,7 +132,7 @@ public static class PublishCommand
         return 0;
     }
 
-    private static UploadInitiateData InitiateUploadRequest(Config.Config config, string filepath)
+    private static UploadInitiateData InitiateUploadRequest(Config config, string filepath)
     {
         var response = HttpClient.Send(config.Api.StartUploadMedia(filepath));
 
@@ -174,7 +175,7 @@ public static class PublishCommand
         return uploadData;
     }
 
-    private static void PublishPackageRequest(Config.Config config, string uploadUuid)
+    private static void PublishPackageRequest(Config config, string uploadUuid)
     {
         var response = HttpClient.Send(config.Api.SubmitPackage(uploadUuid));
 
@@ -206,41 +207,14 @@ public static class PublishCommand
             stream.Seek(part.Offset, SeekOrigin.Begin);
 
             byte[] hash;
-            var chunk = new MemoryStream();
-            const int blocksize = 65536;
-
-            using (var reader = new BinaryReader(stream, Encoding.Default, true))
+            using (var md5 = MD5.Create())
             {
-                using (var md5 = MD5.Create())
-                {
-                    md5.Initialize();
-                    var length = part.Length;
-
-                    while (length > blocksize)
-                    {
-                        length -= blocksize;
-                        var bytes = reader.ReadBytes(blocksize);
-                        md5.TransformBlock(bytes, 0, blocksize, null, 0);
-                        await chunk.WriteAsync(bytes);
-                    }
-
-                    var finalBytes = reader.ReadBytes(length);
-                    md5.TransformFinalBlock(finalBytes, 0, length);
-
-                    if (md5.Hash is null)
-                    {
-                        Write.ErrorExit($"MD5 hashing failed for part #{part.PartNumber})");
-                        throw new PublishCommandException();
-                    }
-
-                    hash = md5.Hash;
-                    await chunk.WriteAsync(finalBytes);
-                    chunk.Position = 0;
-                }
+                hash = await md5.ComputeHashAsync(stream);
             }
 
             var request = new HttpRequestMessage(HttpMethod.Put, part.Url);
-            request.Content = new StreamContent(chunk);
+            stream.Seek(part.Offset, SeekOrigin.Begin);
+            request.Content = new StreamContent(stream);
             request.Content.Headers.ContentMD5 = hash;
             request.Content.Headers.ContentLength = part.Length;
 
@@ -298,10 +272,10 @@ public static class PublishCommand
         throw new PublishCommandException();
     }
 
-    private static void ValidateConfig(Config.Config config, bool justReturnErrors = false)
+    private static void ValidateConfig(Config config, bool justReturnErrors = false)
     {
         var buildConfigErrors = BuildCommand.ValidateConfig(config, false);
-        var v = new Config.Validator("publish", buildConfigErrors);
+        var v = new Validator("publish", buildConfigErrors);
         v.AddIfEmpty(config.AuthConfig.AuthToken, "Auth AuthToken");
         v.ThrowIfErrors();
     }

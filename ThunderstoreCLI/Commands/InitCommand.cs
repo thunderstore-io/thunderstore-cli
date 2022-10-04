@@ -1,11 +1,11 @@
-using ThunderstoreCLI.Config;
+using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI.Commands;
 
 public static class InitCommand
 {
-    public static int Run(Config.Config config)
+    public static int Run(Config config)
     {
         try
         {
@@ -64,7 +64,7 @@ public static class InitCommand
         }
     }
 
-    public static string BuildReadme(Config.Config config)
+    public static string BuildReadme(Config config)
     {
         return $@"
 # {config.PackageConfig.Namespace}-{config.PackageConfig.Name}
@@ -73,9 +73,9 @@ public static class InitCommand
 ".Trim();
     }
 
-    private static void ValidateConfig(Config.Config config)
+    private static void ValidateConfig(Config config)
     {
-        var v = new Config.Validator("init");
+        var v = new Validator("init");
         v.AddIfEmpty(config.PackageConfig.Namespace, "Package Namespace");
         v.AddIfEmpty(config.PackageConfig.Name, "Package Name");
         v.AddIfNotSemver(config.PackageConfig.VersionNumber, "Package VersionNumber");

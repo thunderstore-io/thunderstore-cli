@@ -1,6 +1,6 @@
 using ThunderstoreCLI.Options;
 
-namespace ThunderstoreCLI.Config;
+namespace ThunderstoreCLI.Configuration;
 
 public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
 {
@@ -15,12 +15,15 @@ public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
     {
         return new GeneralConfig()
         {
-            TcliConfig = options.TcliDirectory
+            TcliConfig = options.TcliDirectory,
+            Repository = options.Repository
         };
     }
 }
 
-public abstract class CLIParameterConfig<T> : BaseConfig<T> where T : PackageOptions
+internal interface CLIConfig { }
+
+public abstract class CLIParameterConfig<T> : BaseConfig<T>, CLIConfig where T : PackageOptions
 {
     public CLIParameterConfig(T opts) : base(opts) { }
 
@@ -77,13 +80,13 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
     }
 }
 
-public class CLIInstallCommandConfig : BaseConfig<InstallOptions>
+public class ModManagementCommandConfig : BaseConfig<ModManagementOptions>
 {
-    public CLIInstallCommandConfig(InstallOptions options) : base(options) { }
+    public ModManagementCommandConfig(ModManagementOptions options) : base(options) { }
 
-    public override InstallConfig? GetInstallConfig()
+    public override ModManagementConfig? GetInstallConfig()
     {
-        return new InstallConfig()
+        return new ModManagementConfig()
         {
             //ManagerIdentifier = options.ManagerId
             GameIdentifer = options.GameName,
