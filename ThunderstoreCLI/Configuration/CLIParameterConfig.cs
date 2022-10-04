@@ -13,7 +13,8 @@ public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
     {
         return new GeneralConfig()
         {
-            TcliConfig = options.TcliDirectory
+            TcliConfig = options.TcliDirectory,
+            Repository = options.Repository
         };
     }
 }
@@ -77,13 +78,13 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
     }
 }
 
-public class CLIInstallCommandConfig : BaseConfig<InstallOptions>
+public class ModManagementCommandConfig : BaseConfig<ModManagementOptions>
 {
-    public CLIInstallCommandConfig(InstallOptions options) : base(options) { }
+    public ModManagementCommandConfig(ModManagementOptions options) : base(options) { }
 
-    public override InstallConfig? GetInstallConfig()
+    public override ModManagementConfig? GetInstallConfig()
     {
-        return new InstallConfig()
+        return new ModManagementConfig()
         {
             //ManagerIdentifier = options.ManagerId
             GameIdentifer = options.GameName,

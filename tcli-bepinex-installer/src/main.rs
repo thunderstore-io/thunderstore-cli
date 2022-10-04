@@ -13,7 +13,7 @@ use zip::ZipArchive;
 
 #[derive(Parser)]
 #[clap(author, version, about)]
-struct Args {
+struct ClapArgs {
     #[clap(subcommand)]
     pub command: Commands,
 }
@@ -24,6 +24,8 @@ enum Commands {
         game_directory: PathBuf,
         bepinex_directory: PathBuf,
         zip_path: PathBuf,
+        #[arg(long)]
+        namespace_backup: Option<String>,
     },
     Uninstall {
         game_directory: PathBuf,
@@ -42,7 +44,7 @@ pub enum Error {
     InvalidManifest,
     #[error("Malformed zip")]
     MalformedZip,
-    #[error("Manifest does not contain a namespace, which is required for mod installs")]
+    #[error("Manifest does not contain a namespace and no backup was given, namespaces are required for mod installs")]
     MissingNamespace,
     #[error("Mod name is invalid (eg doesn't use a - between namespace and name)")]
     InvalidModName,
@@ -62,13 +64,14 @@ struct ManifestV1 {
 }
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args = ClapArgs::parse();
 
     match args.command {
         Commands::Install {
             game_directory,
             bepinex_directory,
             zip_path,
+            namespace_backup,
         } => {
             if !game_directory.exists() {
                 bail!(Error::PathDoesNotExist(game_directory));
@@ -79,7 +82,7 @@ fn main() -> Result<()> {
             if !zip_path.exists() {
                 bail!(Error::PathDoesNotExist(zip_path));
             }
-            install(game_directory, bepinex_directory, zip_path)
+            install(game_directory, bepinex_directory, zip_path, namespace_backup)
         }
         Commands::Uninstall {
             game_directory,
@@ -97,7 +100,7 @@ fn main() -> Result<()> {
     }
 }
 
-fn install(game_dir: PathBuf, bep_dir: PathBuf, zip_path: PathBuf) -> Result<()> {
+fn install(game_dir: PathBuf, bep_dir: PathBuf, zip_path: PathBuf, namespace_backup: Option<String>) -> Result<()> {
     let mut zip = ZipArchive::new(std::fs::File::open(zip_path)?)?;
 
     if !zip.file_names().any(|name| name == "manifest.json") {
@@ -112,7 +115,7 @@ fn install(game_dir: PathBuf, bep_dir: PathBuf, zip_path: PathBuf) -> Result<()>
     if manifest.name.starts_with("BepInExPack") {
         install_bepinex(game_dir, bep_dir, zip)
     } else {
-        install_mod(bep_dir, zip, manifest)
+        install_mod(bep_dir, zip, manifest, namespace_backup)
     }
 }
 
@@ -169,12 +172,13 @@ fn install_mod(
     bep_dir: PathBuf,
     mut zip: ZipArchive<impl Read + Seek>,
     manifest: ManifestV1,
+    namespace_backup: Option<String>,
 ) -> Result<()> {
     let write_opts = OpenOptions::new().write(true).create(true).clone();
 
     let full_name = format!(
         "{}-{}",
-        manifest.namespace.ok_or(Error::MissingNamespace)?,
+        manifest.namespace.or(namespace_backup).ok_or(Error::MissingNamespace)?,
         manifest.name
     );
 

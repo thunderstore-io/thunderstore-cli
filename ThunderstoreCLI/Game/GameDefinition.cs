@@ -42,7 +42,6 @@ public class GameDefinition : BaseJson<GameDefinition>
             HardcodedGame.ROR2 => FromSteamId(tcliDir, 632360, "ror2", "Risk of Rain 2"),
             HardcodedGame.VRISING => FromSteamId(tcliDir, 1604030, "vrising", "V Rising"),
             HardcodedGame.VRISING_SERVER => FromSteamId(tcliDir, 1829350, "vrising_server", "V Rising Dedicated Server"),
-            HardcodedGame.VRISING_SERVER_BUILTIN => FromSteamId(tcliDir, 1604030, "VRising_Server", "virsing_server_builtin", "V Rising Built-in Server"),
             _ => throw new ArgumentException("Invalid enum value", nameof(game))
         };
     }
@@ -69,6 +68,5 @@ internal enum HardcodedGame
 {
     ROR2,
     VRISING,
-    VRISING_SERVER,
-    VRISING_SERVER_BUILTIN
+    VRISING_SERVER
 }

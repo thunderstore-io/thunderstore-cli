@@ -34,7 +34,7 @@ public abstract class EmptyConfig : IConfigProvider
         return null;
     }
 
-    public virtual InstallConfig? GetInstallConfig()
+    public virtual ModManagementConfig? GetInstallConfig()
     {
         return null;
     }

@@ -23,6 +23,7 @@
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>$(AssemblyName)</ToolCommandName>
         <ImplicitUsings>enable</ImplicitUsings>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>

@@ -209,41 +209,14 @@ public static class PublishCommand
             stream.Seek(part.Offset, SeekOrigin.Begin);
 
             byte[] hash;
-            var chunk = new MemoryStream();
-            const int blocksize = 65536;
-
-            using (var reader = new BinaryReader(stream, Encoding.Default, true))
+            using (var md5 = MD5.Create())
             {
-                using (var md5 = MD5.Create())
-                {
-                    md5.Initialize();
-                    var length = part.Length;
-
-                    while (length > blocksize)
-                    {
-                        length -= blocksize;
-                        var bytes = reader.ReadBytes(blocksize);
-                        md5.TransformBlock(bytes, 0, blocksize, null, 0);
-                        await chunk.WriteAsync(bytes);
-                    }
-
-                    var finalBytes = reader.ReadBytes(length);
-                    md5.TransformFinalBlock(finalBytes, 0, length);
-
-                    if (md5.Hash is null)
-                    {
-                        Write.ErrorExit($"MD5 hashing failed for part #{part.PartNumber})");
-                        throw new PublishCommandException();
-                    }
-
-                    hash = md5.Hash;
-                    await chunk.WriteAsync(finalBytes);
-                    chunk.Position = 0;
-                }
+                hash = await md5.ComputeHashAsync(stream);
             }
 
             var request = new HttpRequestMessage(HttpMethod.Put, part.Url);
-            request.Content = new StreamContent(chunk);
+            stream.Seek(part.Offset, SeekOrigin.Begin);
+            request.Content = new StreamContent(stream);
             request.Content.Headers.ContentMD5 = hash;
             request.Content.Headers.ContentLength = part.Length;
 

@@ -1,7 +1,6 @@
 using CommandLine;
 using ThunderstoreCLI.Commands;
 using ThunderstoreCLI.Configuration;
-using ThunderstoreCLI.Models.Interaction;
 using ThunderstoreCLI.Utils;
 using static Crayon.Output;
 
@@ -10,9 +9,6 @@ namespace ThunderstoreCLI;
 /// Options are arguments passed from command line.
 public abstract class BaseOptions
 {
-    [Option("output", Required = false, HelpText = "The output format for all output. Valid options are HUMAN and JSON. (does nothing)")]
-    public InteractionOutputType OutputType { get; set; } = InteractionOutputType.HUMAN;
-
     [Option("tcli-directory", Required = false, HelpText = "Directory where TCLI keeps its data, %APPDATA%/ThunderstoreCLI on Windows and ~/.config/ThunderstoreCLI on Linux")]
     // will be initialized in Init if null
     public string TcliDirectory { get; set; } = null!;
@@ -20,11 +16,13 @@ public abstract class BaseOptions
     [Option("repository", Required = false, HelpText = "URL of the default repository")]
     public string Repository { get; set; } = null!;
 
+    [Option("config-path", Required = false, Default = Defaults.PROJECT_CONFIG_PATH, HelpText = "Path for the project configuration file")]
+    public string? ConfigPath { get; set; }
+
     public virtual void Init()
     {
-        InteractionOptions.OutputType = OutputType;
-
         // ReSharper disable once ConstantNullCoalescingCondition
+        // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         TcliDirectory ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ThunderstoreCLI");
     }
 
@@ -43,9 +41,6 @@ public abstract class BaseOptions
 
 public abstract class PackageOptions : BaseOptions
 {
-    [Option("config-path", Required = false, Default = Defaults.PROJECT_CONFIG_PATH, HelpText = "Path for the project configuration file")]
-    public string? ConfigPath { get; set; }
-
     [Option("package-name", SetName = "build", Required = false, HelpText = "Name for the package")]
     public string? Name { get; set; }
 
@@ -150,8 +145,7 @@ public class PublishOptions : PackageOptions
     }
 }
 
-[Verb("install", HelpText = "Installs a mod")]
-public class InstallOptions : BaseOptions
+public abstract class ModManagementOptions : BaseOptions
 {
     //public string? ManagerId { get; set; }
 
@@ -167,6 +161,14 @@ public class InstallOptions : BaseOptions
     [Option(HelpText = "Set to install mods globally instead of into a profile", Default = false)]
     public bool Global { get; set; }
 
+    protected enum CommandInner
+    {
+        Install,
+        Uninstall
+    }
+
+    protected abstract CommandInner CommandType { get; }
+
     public override bool Validate()
     {
 #if NOINSTALLERS
@@ -179,6 +181,24 @@ public class InstallOptions : BaseOptions
 
     public override int Execute()
     {
-        return InstallCommand.Run(Config.FromCLI(new CLIInstallCommandConfig(this)));
+        var config = Config.FromCLI(new ModManagementCommandConfig(this));
+        return CommandType switch
+        {
+            CommandInner.Install => InstallCommand.Run(config).GetAwaiter().GetResult(),
+            CommandInner.Uninstall => UninstallCommand.Run(config),
+            _ => throw new NotSupportedException()
+        };
     }
+}
+
+[Verb("install")]
+public class InstallOptions : ModManagementOptions
+{
+    protected override CommandInner CommandType => CommandInner.Install;
+}
+
+[Verb("uninstall")]
+public class UninstallOptions : ModManagementOptions
+{
+    protected override CommandInner CommandType => CommandInner.Uninstall;
 }

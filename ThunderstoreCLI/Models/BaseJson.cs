@@ -13,6 +13,11 @@ public abstract class BaseJson<[DynamicallyAccessedMembers(DynamicallyAccessedMe
     }
 
     public static T? Deserialize(string json) => Deserialize(json, null);
+    public static T? Deserialize(Stream stream)
+    {
+        using var reader = new StreamReader(stream);
+        return JsonConvert.DeserializeObject<T>(reader.ReadToEnd());
+    }
     public static T? Deserialize(string json, JsonSerializerSettings? options)
     {
         return JsonConvert.DeserializeObject<T>(json, options);
