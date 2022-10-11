@@ -22,6 +22,11 @@ public static class UninstallCommand
             throw new CommandFatalException($"No profile with the name {config.ModManagementConfig.ProfileName}");
         }
 
+        if (!profile.InstalledModVersions.ContainsKey(config.ModManagementConfig.Package!))
+        {
+            throw new CommandFatalException($"The package {config.ModManagementConfig.Package} is not installed in the profile {profile.Name}");
+        }
+
         HashSet<string> modsToRemove = new() { config.ModManagementConfig.Package! };
         Queue<string> modsToSearch = new();
         modsToSearch.Enqueue(config.ModManagementConfig.Package!);
@@ -55,7 +60,8 @@ public static class UninstallCommand
         }
         while (key is not 'y' and not 'n');
 
-        if (key == 'n') return 0;
+        if (key == 'n')
+            return 0;
 
         List<string> failedMods = new();
         foreach (var toRemove in modsToRemove)

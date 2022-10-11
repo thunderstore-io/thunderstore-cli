@@ -12,6 +12,7 @@ namespace ThunderstoreCLI.Commands;
 
 public static class InstallCommand
 {
+    // TODO: stop hardcoding this, ecosystem-schema (also applies to logic in GameDefintion)
     internal static readonly Dictionary<string, HardcodedGame> IDToHardcoded = new()
     {
         { "ror2", HardcodedGame.ROR2 },
@@ -59,7 +60,8 @@ public static class InstallCommand
             throw new CommandFatalException($"Package given does not exist as a zip and is not a valid package identifier (namespace-name): {package}");
         }
 
-        if (returnCode == 0) defCollection.Validate();
+        if (returnCode == 0)
+            defCollection.Validate();
 
         return returnCode;
     }
@@ -113,8 +115,15 @@ public static class InstallCommand
             {
                 int returnCode = RunInstaller(game, profile, tempZipPath, package.Namespace);
                 File.Delete(tempZipPath);
-                if (returnCode != 0)
+                if (returnCode == 0)
+                {
+                    Write.Success($"Installed mod: {package.Fullname}-{package.LatestVersion!.VersionNumber}");
+                }
+                else
+                {
+                    Write.Error($"Failed to install mod: {package.Fullname}-{package.LatestVersion!.VersionNumber}");
                     return returnCode;
+                }
                 profile.InstalledModVersions[package.Fullname!] = new PackageManifestV1(package.LatestVersion!);
             }
         }
@@ -122,11 +131,17 @@ public static class InstallCommand
         var exitCode = RunInstaller(game, profile, zipPath, backupNamespace);
         if (exitCode == 0)
         {
-            profile.InstalledModVersions[$"{manifest.Namespace ?? backupNamespace}-{manifest.Name}"] = manifest;
+            profile.InstalledModVersions[manifest.FullName] = manifest;
+            Write.Success($"Installed mod: {manifest.FullName}-{manifest.VersionNumber}");
+        }
+        else
+        {
+            Write.Error($"Failed to install mod: {manifest.FullName}-{manifest.VersionNumber}");
         }
         return exitCode;
     }
 
+    // TODO: replace with a mod cache
     private static async Task<string> DownloadTemp(HttpClient http, PackageVersionData version)
     {
         string path = Path.GetTempFileName();
@@ -138,8 +153,10 @@ public static class InstallCommand
         return path;
     }
 
+    // TODO: conflict handling
     private static int RunInstaller(GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace)
     {
+        // TODO: how to decide which installer to run?
         string installerName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "tcli-bepinex-installer.exe" : "tcli-bepinex-installer";
         var bepinexInstallerPath = Path.Combine(AppContext.BaseDirectory, installerName);
 

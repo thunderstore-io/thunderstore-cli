@@ -37,13 +37,6 @@ public class GameDefinition : BaseJson<GameDefinition>
     {
         return new GameDefinition(id, name, SteamUtils.FindInstallDirectory(steamId)!, tcliDir);
     }
-
-    internal static GameDefinition FromSteamId(string tcliDir, uint steamId, string subdirectory, string id, string name)
-    {
-        var gameDef = FromSteamId(tcliDir, steamId, id, name);
-        gameDef.InstallDirectory = Path.Combine(gameDef.InstallDirectory, subdirectory);
-        return gameDef;
-    }
 }
 
 public sealed class GameDefintionCollection : IEnumerable<GameDefinition>, IDisposable
@@ -73,7 +66,8 @@ public sealed class GameDefintionCollection : IEnumerable<GameDefinition>, IDisp
 
     public void Dispose()
     {
-        if (!shouldWrite) return;
+        if (!shouldWrite)
+            return;
         File.WriteAllText(Path.Combine(tcliDirectory, FILE_NAME), List.SerializeList(BaseJson.IndentedSettings));
         shouldWrite = false;
     }
