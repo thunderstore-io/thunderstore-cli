@@ -9,8 +9,9 @@ public class ProgressSpinner
     private static readonly char[] _spinChars = { '|', '/', '-', '\\' };
     private readonly string _label;
     private readonly Task[] _tasks;
+    private readonly int _offset;
 
-    public ProgressSpinner(string label, Task[] tasks)
+    public ProgressSpinner(string label, Task[] tasks, int offset = 0)
     {
         if (tasks.Length == 0)
         {
@@ -19,9 +20,10 @@ public class ProgressSpinner
 
         _label = label;
         _tasks = tasks;
+        _offset = offset;
     }
 
-    public async Task Start()
+    public async Task Spin()
     {
         // Cursor operations are not always available e.g. in GitHub Actions environment.
         // Done up here to minimize exception usage (throws and catches are expensive and all)
@@ -35,6 +37,14 @@ public class ProgressSpinner
         catch
         {
             canUseCursor = false;
+        }
+
+        if (!canUseCursor && _offset != 0)
+        {
+            for (int i = 1; i <= _offset; i++)
+            {
+                Console.Write(Green($"{0}/{_tasks.Length + _offset} {_label}"));
+            }
         }
 
         while (true)
@@ -52,13 +62,13 @@ public class ProgressSpinner
             {
                 var spinner = completed == _tasks.Length ? '✓' : _spinChars[_spinIndex++ % _spinChars.Length];
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write(Green($"{completed}/{_tasks.Length} {_label} {spinner}"));
+                Console.Write(Green($"{completed + _offset}/{_tasks.Length + _offset} {_label} {spinner}"));
             }
             else
             {
                 if (completed > _lastSeenCompleted)
                 {
-                    Write.Success($"{completed}/{_tasks.Length} {_label}");
+                    Write.Success($"{completed + _offset}/{_tasks.Length + _offset} {_label}");
                     _lastSeenCompleted = completed;
                 }
             }

@@ -86,9 +86,7 @@ public class ModManagementCommandConfig : BaseConfig<ModManagementOptions>
     {
         return new ModManagementConfig()
         {
-            //ManagerIdentifier = options.ManagerId
             GameIdentifer = options.GameName,
-            Global = options.Global,
             ProfileName = options.Profile,
             Package = options.Package
         };

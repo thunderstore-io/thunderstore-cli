@@ -1,5 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
+using System.Collections;
 using ThunderstoreCLI.Models;
 using ThunderstoreCLI.Utils;
 
@@ -7,12 +6,10 @@ namespace ThunderstoreCLI.Game;
 
 public class GameDefinition : BaseJson<GameDefinition>
 {
-    private const string FILE_NAME = "GameDefintions.json";
-    public string Identifier { get; }
-    public string Name { get; }
-    public string InstallDirectory { get; private set; }
+    public string Identifier { get; set; }
+    public string Name { get; set; }
+    public string InstallDirectory { get; set; }
     public List<ModProfile> Profiles { get; private set; } = new();
-    public ModProfile GlobalProfile { get; }
 
 #pragma warning disable CS8618
     private GameDefinition() { }
@@ -23,16 +20,6 @@ public class GameDefinition : BaseJson<GameDefinition>
         Identifier = id;
         Name = name;
         InstallDirectory = installDirectory;
-        GlobalProfile = new ModProfile(this, true, "Global", tcliDirectory);
-    }
-
-    internal static List<GameDefinition> GetGameDefinitions(string tcliDirectory)
-    {
-        var filename = Path.Combine(tcliDirectory, FILE_NAME);
-        if (File.Exists(filename))
-            return DeserializeList(File.ReadAllText(filename)) ?? new();
-        else
-            return new();
     }
 
     internal static GameDefinition FromHardcodedIdentifier(string tcliDir, HardcodedGame game)
@@ -48,7 +35,7 @@ public class GameDefinition : BaseJson<GameDefinition>
 
     internal static GameDefinition FromSteamId(string tcliDir, uint steamId, string id, string name)
     {
-        return new GameDefinition(id, name, SteamUtils.FindInstallDirectory(steamId), tcliDir);
+        return new GameDefinition(id, name, SteamUtils.FindInstallDirectory(steamId)!, tcliDir);
     }
 
     internal static GameDefinition FromSteamId(string tcliDir, uint steamId, string subdirectory, string id, string name)
@@ -57,10 +44,38 @@ public class GameDefinition : BaseJson<GameDefinition>
         gameDef.InstallDirectory = Path.Combine(gameDef.InstallDirectory, subdirectory);
         return gameDef;
     }
+}
 
-    internal static void SetGameDefinitions(string tcliDirectory, List<GameDefinition> list)
+public sealed class GameDefintionCollection : IEnumerable<GameDefinition>, IDisposable
+{
+    private const string FILE_NAME = "GameDefintions.json";
+
+    private readonly string tcliDirectory;
+    private bool shouldWrite = true;
+    public List<GameDefinition> List { get; }
+
+    internal static GameDefintionCollection FromDirectory(string tcliDirectory) => new(tcliDirectory);
+
+    private GameDefintionCollection(string tcliDir)
     {
-        File.WriteAllText(Path.Combine(tcliDirectory, FILE_NAME), list.SerializeList(BaseJson.IndentedSettings));
+        tcliDirectory = tcliDir;
+        var filename = Path.Combine(tcliDirectory, FILE_NAME);
+        if (File.Exists(filename))
+            List = GameDefinition.DeserializeList(File.ReadAllText(filename)) ?? new();
+        else
+            List = new();
+    }
+
+    public void Validate() => shouldWrite = true;
+
+    public IEnumerator<GameDefinition> GetEnumerator() => List.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => List.GetEnumerator();
+
+    public void Dispose()
+    {
+        if (!shouldWrite) return;
+        File.WriteAllText(Path.Combine(tcliDirectory, FILE_NAME), List.SerializeList(BaseJson.IndentedSettings));
+        shouldWrite = false;
     }
 }
 

@@ -6,20 +6,18 @@ namespace ThunderstoreCLI.Game;
 
 public class ModProfile : BaseJson<ModProfile>
 {
-    public bool IsGlobal { get; }
-    public string Name { get; }
-    public string ProfileDirectory { get; }
-    public List<string> InstalledMods { get; }
+    public string Name { get; set; }
+    public string ProfileDirectory { get; set; }
+    public Dictionary<string, PackageManifestV1> InstalledModVersions { get; } = new();
 
 #pragma warning disable CS8618
     private ModProfile() { }
 #pragma warning restore CS8618
 
-    internal ModProfile(GameDefinition gameDef, bool global, string name, string tcliDirectory)
+    internal ModProfile(GameDefinition gameDef, string name, string tcliDirectory)
     {
-        IsGlobal = global;
         Name = name;
-        InstalledMods = new();
+        InstalledModVersions = new();
 
         var directory = Path.Combine(tcliDirectory, "Profiles", gameDef.Identifier, name);
         if (!Directory.Exists(directory))

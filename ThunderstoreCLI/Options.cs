@@ -158,9 +158,6 @@ public abstract class ModManagementOptions : BaseOptions
     [Option(HelpText = "Profile to install to", Default = "Default")]
     public string? Profile { get; set; }
 
-    [Option(HelpText = "Set to install mods globally instead of into a profile", Default = false)]
-    public bool Global { get; set; }
-
     protected enum CommandInner
     {
         Install,

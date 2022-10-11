@@ -216,8 +216,6 @@ public class AuthConfig
 public class ModManagementConfig
 {
     public string? GameIdentifer { get; set; }
-    //public string? ManagerIdentifier { get; set; }
     public string? Package { get; set; }
-    public bool? Global { get; set; }
     public string? ProfileName { get; set; }
 }

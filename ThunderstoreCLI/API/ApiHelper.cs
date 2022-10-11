@@ -81,6 +81,14 @@ public class ApiHelper
             .GetRequest();
     }
 
+    public HttpRequestMessage GetPackageVersionMetadata(string author, string name, string version)
+    {
+        return BaseRequestBuilder
+            .StartNew()
+            .WithEndpoint(EXPERIMENTAL + $"package/{author}/{name}/{version}/")
+            .GetRequest();
+    }
+
     private static string SerializeFileData(string filePath)
     {
         return new FileData()
