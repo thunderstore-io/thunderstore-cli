@@ -17,9 +17,6 @@ public class TestJson : BaseJson<TestJson>
     public Location home { get; set; }
 }
 
-[JsonSerializable(typeof(TestJson))]
-public partial class TestJsonContext : JsonSerializerContext { }
-
 public class ThunderstoreCLI_BaseJson
 {
     [Fact]

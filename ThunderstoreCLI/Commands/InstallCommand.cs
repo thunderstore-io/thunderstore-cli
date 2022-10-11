@@ -19,33 +19,27 @@ public static class InstallCommand
         { "vrising_dedicated", HardcodedGame.VRISING_SERVER }
     };
 
-    internal static readonly Regex FullPackageNameRegex = new(@"^([a-zA-Z0-9_]+)-([a-zA-Z0-9_]+)$");
+    // will match either ab-cd or ab-cd-123.456.7890
+    internal static readonly Regex FullPackageNameRegex = new(@"^(\w+)-(\w+)(?:|-(\d+\.\d+\.\d+))$");
 
     public static async Task<int> Run(Config config)
     {
-        List<GameDefinition> defs = GameDefinition.GetGameDefinitions(config.GeneralConfig.TcliConfig);
+        using var defCollection = GameDefintionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
+        var defs = defCollection.List;
         GameDefinition? def = defs.FirstOrDefault(x => x.Identifier == config.ModManagementConfig.GameIdentifer);
         if (def == null && IDToHardcoded.TryGetValue(config.ModManagementConfig.GameIdentifer!, out var hardcoded))
         {
             def = GameDefinition.FromHardcodedIdentifier(config.GeneralConfig.TcliConfig, hardcoded);
             defs.Add(def);
         }
-        else
+        else if (def == null)
         {
             Write.ErrorExit($"Not configured for the game: {config.ModManagementConfig.GameIdentifer}");
             return 1;
         }
 
-        ModProfile? profile;
-        if (config.ModManagementConfig.Global!.Value)
-        {
-            profile = def.GlobalProfile;
-        }
-        else
-        {
-            profile = def.Profiles.FirstOrDefault(x => x.Name == config.ModManagementConfig.ProfileName);
-        }
-        profile ??= new ModProfile(def, false, config.ModManagementConfig.ProfileName!, config.GeneralConfig.TcliConfig);
+        ModProfile? profile = def.Profiles.FirstOrDefault(x => x.Name == config.ModManagementConfig.ProfileName);
+        profile ??= new ModProfile(def, config.ModManagementConfig.ProfileName!, config.GeneralConfig.TcliConfig);
 
         string package = config.ModManagementConfig.Package!;
 
@@ -65,22 +59,32 @@ public static class InstallCommand
             throw new CommandFatalException($"Package given does not exist as a zip and is not a valid package identifier (namespace-name): {package}");
         }
 
-        if (returnCode != 0)
-            return returnCode;
+        if (returnCode == 0) defCollection.Validate();
 
-        GameDefinition.SetGameDefinitions(config.GeneralConfig.TcliConfig, defs);
-
-        return 0;
+        return returnCode;
     }
 
     private static async Task<int> InstallFromRepository(Config config, HttpClient http, GameDefinition game, ModProfile profile, string packageId)
     {
         var packageParts = packageId.Split('-');
-        var packageResponse = await http.SendAsync(config.Api.GetPackageMetadata(packageParts[0], packageParts[1]));
-        packageResponse.EnsureSuccessStatusCode();
-        var package = (await PackageData.DeserializeAsync(await packageResponse.Content.ReadAsStreamAsync()))!;
-        var tempZipPath = await DownloadTemp(http, package);
-        var returnCode = await InstallZip(config, http, game, profile, tempZipPath, package.Namespace);
+
+        PackageVersionData version;
+        if (packageParts.Length == 3)
+        {
+            var versionResponse = await http.SendAsync(config.Api.GetPackageVersionMetadata(packageParts[0], packageParts[1], packageParts[2]));
+            versionResponse.EnsureSuccessStatusCode();
+            version = (await PackageVersionData.DeserializeAsync(await versionResponse.Content.ReadAsStreamAsync()))!;
+        }
+        else
+        {
+            var packageResponse = await http.SendAsync(config.Api.GetPackageMetadata(packageParts[0], packageParts[1]));
+            packageResponse.EnsureSuccessStatusCode();
+            version = (await PackageData.DeserializeAsync(await packageResponse.Content.ReadAsStreamAsync()))!.LatestVersion!;
+        }
+
+
+        var tempZipPath = await DownloadTemp(http, version);
+        var returnCode = await InstallZip(config, http, game, profile, tempZipPath, version.Namespace!);
         File.Delete(tempZipPath);
         return returnCode;
     }
@@ -92,28 +96,42 @@ public static class InstallCommand
         var manifest = await PackageManifestV1.DeserializeAsync(manifestFile.Open())
             ?? throw new CommandFatalException("Package manifest.json is invalid! Please check against https://thunderstore.io/tools/manifest-v1-validator/");
 
-        var modsToInstall = ModDependencyTree.Generate(config, http, manifest).ToArray();
+        manifest.Namespace ??= backupNamespace;
 
-        var downloadTasks = modsToInstall.Select(mod => DownloadTemp(http, mod)).ToArray();
-        var spinner = new ProgressSpinner("mods downloaded", downloadTasks);
-        await spinner.Start();
+        var dependenciesToInstall = ModDependencyTree.Generate(config, http, manifest)
+            .Where(dependency => !profile.InstalledModVersions.ContainsKey(dependency.Fullname!))
+            .ToArray();
 
-        foreach (var (tempZipPath, package) in downloadTasks.Select(x => x.Result).Zip(modsToInstall))
+        if (dependenciesToInstall.Length > 0)
         {
-            int returnCode = RunInstaller(game, profile, tempZipPath, package.Namespace);
-            File.Delete(tempZipPath);
-            if (returnCode != 0)
-                return returnCode;
+            var downloadTasks = dependenciesToInstall.Select(mod => DownloadTemp(http, mod.LatestVersion!)).ToArray();
+
+            var spinner = new ProgressSpinner("mods downloaded", downloadTasks);
+            await spinner.Spin();
+
+            foreach (var (tempZipPath, package) in downloadTasks.Select(x => x.Result).Zip(dependenciesToInstall))
+            {
+                int returnCode = RunInstaller(game, profile, tempZipPath, package.Namespace);
+                File.Delete(tempZipPath);
+                if (returnCode != 0)
+                    return returnCode;
+                profile.InstalledModVersions[package.Fullname!] = new PackageManifestV1(package.LatestVersion!);
+            }
         }
 
-        return RunInstaller(game, profile, zipPath, backupNamespace);
+        var exitCode = RunInstaller(game, profile, zipPath, backupNamespace);
+        if (exitCode == 0)
+        {
+            profile.InstalledModVersions[$"{manifest.Namespace ?? backupNamespace}-{manifest.Name}"] = manifest;
+        }
+        return exitCode;
     }
 
-    private static async Task<string> DownloadTemp(HttpClient http, PackageData package)
+    private static async Task<string> DownloadTemp(HttpClient http, PackageVersionData version)
     {
         string path = Path.GetTempFileName();
         await using var file = File.OpenWrite(path);
-        using var response = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, package.LatestVersion!.DownloadUrl!));
+        using var response = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, version.DownloadUrl!));
         response.EnsureSuccessStatusCode();
         var zipStream = await response.Content.ReadAsStreamAsync();
         await zipStream.CopyToAsync(file);
@@ -123,7 +141,7 @@ public static class InstallCommand
     private static int RunInstaller(GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace)
     {
         string installerName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "tcli-bepinex-installer.exe" : "tcli-bepinex-installer";
-        var bepinexInstallerPath = Path.Combine(Path.GetDirectoryName(typeof(InstallCommand).Assembly.Location)!, installerName);
+        var bepinexInstallerPath = Path.Combine(AppContext.BaseDirectory, installerName);
 
         ProcessStartInfo installerInfo = new(bepinexInstallerPath)
         {

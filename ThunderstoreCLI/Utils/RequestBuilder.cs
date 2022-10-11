@@ -40,6 +40,10 @@ public class RequestBuilder
 
     public RequestBuilder WithEndpoint(string endpoint)
     {
+        if (!endpoint.EndsWith('/'))
+        {
+            endpoint += '/';
+        }
         builder.Path = endpoint;
         return this;
     }

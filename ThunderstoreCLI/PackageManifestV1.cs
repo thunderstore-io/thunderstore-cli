@@ -22,4 +22,19 @@ public class PackageManifestV1 : BaseJson<PackageManifestV1>
 
     [JsonProperty("website_url")]
     public string? WebsiteUrl { get; set; }
+
+    private string? fullName;
+    public string FullName => fullName ??= $"{Namespace}-{Name}";
+
+    public PackageManifestV1() { }
+
+    public PackageManifestV1(PackageVersionData version)
+    {
+        Namespace = version.Namespace;
+        Name = version.Name;
+        Description = version.Description;
+        VersionNumber = version.VersionNumber;
+        Dependencies = version.Dependencies?.ToArray() ?? Array.Empty<string>();
+        WebsiteUrl = version.WebsiteUrl;
+    }
 }

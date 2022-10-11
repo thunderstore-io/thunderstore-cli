@@ -90,7 +90,7 @@ public static class PublishCommand
         try
         {
             var spinner = new ProgressSpinner("chunks uploaded", uploadTasks);
-            spinner.Start().GetAwaiter().GetResult();
+            spinner.Spin().GetAwaiter().GetResult();
         }
         catch (SpinnerException)
         {
