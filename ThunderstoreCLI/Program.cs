@@ -29,6 +29,7 @@ internal static class Program
         return exitCode;
     }
 
+    // TODO: replace return codes with exceptions completely
     private static int HandleParsed(BaseOptions parsed)
     {
         parsed.Init();
