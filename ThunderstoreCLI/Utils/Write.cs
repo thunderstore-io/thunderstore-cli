@@ -9,6 +9,7 @@ public static class Write
     private static void _Regular(string msg) => Console.WriteLine(msg);
     private static void _Success(string msg) => Console.WriteLine(Green(msg));
     private static void _Warn(string msg) => Console.WriteLine(Yellow(msg));
+    private static void _NoLine(string msg) => Console.Write(msg);
 
     private static void _WriteMultiline(Action<string> write, string msg, string[] submsgs)
     {
@@ -48,6 +49,9 @@ public static class Write
 
     /// <summary>Write regular line to stdout</summary>
     public static void Line(string message) => _Regular(message);
+
+    /// <summary>Write a string to stdout with no newline</summary>
+    public static void NoLine(string message) => _NoLine(message);
 
     /// <summary>Write message with highlight color to stdout</summary>
     public static void Note(string message, params string[] submessages)

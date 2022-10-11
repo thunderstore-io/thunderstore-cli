@@ -48,8 +48,6 @@ pub enum Error {
     MissingNamespace,
     #[error("Mod name is invalid (eg doesn't use a - between namespace and name)")]
     InvalidModName,
-    #[error("Mod either is not installed or is not accessable to the uninstaller. Tried directory: {0}")]
-    ModNotInstalled(PathBuf),
 }
 
 #[derive(Deserialize)]
@@ -245,16 +243,8 @@ fn uninstall_bepinex(game_dir: PathBuf, bep_dir: PathBuf) -> Result<()> {
 
 fn uninstall_mod(bep_dir: PathBuf, name: String) -> Result<()> {
     let actual_bep = bep_dir.join("BepInEx");
-
-    let main_dir = actual_bep.join("plugins").join(&name);
-
-    if !main_dir.exists() {
-        bail!(Error::ModNotInstalled(main_dir));
-    }
-
-    fs::remove_dir_all(main_dir)?;
-
-    delete_dir_if_not_deleted(actual_bep.join("patchers"))?;
+    delete_dir_if_not_deleted(actual_bep.join("plugins").join(&name))?;
+    delete_dir_if_not_deleted(actual_bep.join("patchers").join(&name))?;
     delete_dir_if_not_deleted(actual_bep.join("monomod").join(&name))?;
 
     Ok(())
