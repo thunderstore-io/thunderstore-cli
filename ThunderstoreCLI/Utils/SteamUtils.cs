@@ -1,13 +1,20 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using System.Security.AccessControl;
 using System.Text.RegularExpressions;
+using Microsoft.Win32;
 
 namespace ThunderstoreCLI.Utils;
 
 public static class SteamUtils
 {
-    public static string FindInstallDirectory(uint steamAppId)
+    public static string? FindInstallDirectory(uint steamAppId)
     {
-        string primarySteamApps = FindSteamAppsDirectory();
+        string? primarySteamApps = FindSteamAppsDirectory();
+        if (primarySteamApps == null)
+        {
+            return null;
+        }
         List<string> libraryPaths = new() { primarySteamApps };
         foreach (var file in Directory.EnumerateFiles(primarySteamApps))
         {
@@ -36,7 +43,7 @@ public static class SteamUtils
     private static readonly Regex SteamAppsPathsRegex = new(@"""path""\s+""(.+)""");
     private static readonly Regex ManifestInstallLocationRegex = new(@"""installdir""\s+""(.+)""");
 
-    public static string FindSteamAppsDirectory()
+    public static string? FindSteamAppsDirectory()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return FindSteamAppsDirectoryWin();
@@ -47,15 +54,24 @@ public static class SteamUtils
         else
             throw new NotSupportedException("Unknown operating system");
     }
-    private static string FindSteamAppsDirectoryWin()
+
+    [SupportedOSPlatform("Windows")]
+    private static string? FindSteamAppsDirectoryWin()
     {
-        throw new NotImplementedException();
+        return Registry.LocalMachine.OpenSubKey(@"Software\WOW6432Node\Valve\Steam", false)?.GetValue("InstallPath") as string;
     }
-    private static string FindSteamAppsDirectoryOsx()
+
+    private static string? FindSteamAppsDirectoryOsx()
     {
-        throw new NotImplementedException();
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Library",
+            "Application Support",
+            "Steam"
+        );
     }
-    private static string FindSteamAppsDirectoryLinux()
+
+    private static string? FindSteamAppsDirectoryLinux()
     {
         string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         string[] possiblePaths = {
@@ -68,17 +84,19 @@ public static class SteamUtils
             Path.Combine(homeDir, ".var", "app", "com.valvesoftware.Steam", ".steam", "root"),
             Path.Combine(homeDir, ".var", "app", "com.valvesoftware.Steam", ".steam")
         };
-        string steamPath = null!;
+        string? steamPath = null;
         foreach (var path in possiblePaths)
         {
             if (Directory.Exists(path))
             {
                 steamPath = path;
-                goto FoundSteam;
+                break;
             }
         }
-        throw new DirectoryNotFoundException($"Could not find Steam directory, tried these paths:\n{string.Join('\n', possiblePaths)}");
-FoundSteam:
+        if (steamPath == null)
+        {
+            return null;
+        }
 
         possiblePaths = new[]
         {
@@ -86,17 +104,15 @@ FoundSteam:
             Path.Combine(steamPath, "steam", "steamapps"), // ubuntu apparently
             Path.Combine(steamPath, "root", "steamapps"), // no idea
         };
-        string steamAppsPath = null!;
+        string? steamAppsPath = null;
         foreach (var path in possiblePaths)
         {
             if (Directory.Exists(path))
             {
                 steamAppsPath = path;
-                goto FoundSteamApps;
+                break;
             }
         }
-        throw new DirectoryNotFoundException($"Could not find steamapps directory, tried these paths:\n{string.Join('\n', possiblePaths)}");
-FoundSteamApps:
 
         return steamAppsPath;
     }
