@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace ThunderstoreCLI.Models.Publish;
+namespace ThunderstoreCLI.Models;
 
 public class PackageUploadMetadata : BaseJson<PackageUploadMetadata>
 {

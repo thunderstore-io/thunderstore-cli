@@ -1,7 +1,7 @@
 using ThunderstoreCLI.API;
-using ThunderstoreCLI.Models.Publish;
+using ThunderstoreCLI.Models;
 
-namespace ThunderstoreCLI.Config;
+namespace ThunderstoreCLI.Configuration;
 
 public class Config
 {
@@ -152,6 +152,7 @@ public class Config
 public class GeneralConfig
 {
     public string TcliConfig { get; set; } = null!;
+    public string Repository { get; set; } = null!;
 }
 
 public class PackageConfig

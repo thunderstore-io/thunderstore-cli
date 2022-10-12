@@ -1,7 +1,9 @@
 using System.IO.Compression;
 using System.Text;
 using Newtonsoft.Json;
+using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Models;
+using ThunderstoreCLI.Utils;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands;
@@ -10,7 +12,7 @@ public static class BuildCommand
 {
     public class ArchivePlan
     {
-        public Config.Config Config { get; protected set; }
+        public Config Config { get; protected set; }
         public bool HasWarnings { get; protected set; }
         public bool HasErrors { get; protected set; }
 
@@ -19,7 +21,7 @@ public static class BuildCommand
         protected HashSet<string> directories;
         protected HashSet<string> files;
 
-        public ArchivePlan(Config.Config config)
+        public ArchivePlan(Config config)
         {
             Config = config;
             plan = new();
@@ -103,7 +105,7 @@ public static class BuildCommand
         }
     }
 
-    public static int Run(Config.Config config)
+    public static int Run(Config config)
     {
         try
         {
@@ -117,7 +119,7 @@ public static class BuildCommand
         return DoBuild(config);
     }
 
-    public static int DoBuild(Config.Config config)
+    public static int DoBuild(Config config)
     {
         var packageId = config.GetPackageId();
         Write.WithNL($"Building {Cyan(packageId)}", after: true);
@@ -290,7 +292,7 @@ public static class BuildCommand
         return result;
     }
 
-    public static string SerializeManifest(Config.Config config)
+    public static string SerializeManifest(Config config)
     {
         var dependencies = config.PackageConfig.Dependencies ?? new Dictionary<string, string>();
         var manifest = new PackageManifestV1()
@@ -306,9 +308,9 @@ public static class BuildCommand
         return manifest.Serialize(BaseJson.IndentedSettings);
     }
 
-    public static List<string> ValidateConfig(Config.Config config, bool throwIfErrors = true)
+    public static List<string> ValidateConfig(Config config, bool throwIfErrors = true)
     {
-        var v = new Config.Validator("build");
+        var v = new Validator("build");
         v.AddIfEmpty(config.PackageConfig.Namespace, "Package Namespace");
         v.AddIfEmpty(config.PackageConfig.Name, "Package Name");
         v.AddIfNotSemver(config.PackageConfig.VersionNumber, "Package VersionNumber");

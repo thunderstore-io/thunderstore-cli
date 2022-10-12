@@ -1,9 +1,10 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
+using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Models;
 using Xunit;
 
-namespace ThunderstoreCLI.Tests;
+namespace ThunderstoreCLI.Tests.Models;
 
 public class TestJson : BaseJson<TestJson>
 {
@@ -16,9 +17,6 @@ public class TestJson : BaseJson<TestJson>
     public int age { get; set; }
     public Location home { get; set; }
 }
-
-[JsonSerializable(typeof(TestJson))]
-public partial class TestJsonContext : JsonSerializerContext { }
 
 public class ThunderstoreCLI_BaseJson
 {

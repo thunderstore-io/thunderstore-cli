@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using CommandLine;
 using ThunderstoreCLI.Models;
-using ThunderstoreCLI.Options;
 
 namespace ThunderstoreCLI;
 

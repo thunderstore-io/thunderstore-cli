@@ -1,6 +1,4 @@
-using ThunderstoreCLI.Options;
-
-namespace ThunderstoreCLI.Config;
+namespace ThunderstoreCLI.Configuration;
 
 public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
 {

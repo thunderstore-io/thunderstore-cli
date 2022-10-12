@@ -1,8 +1,9 @@
 using System;
 using System.IO;
+using ThunderstoreCLI.Utils;
 using Xunit;
 
-namespace ThunderstoreCLI.Tests;
+namespace ThunderstoreCLI.Tests.Utils;
 
 public class FakeConsole : IDisposable
 {

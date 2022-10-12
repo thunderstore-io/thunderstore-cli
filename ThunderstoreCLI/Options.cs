@@ -1,9 +1,11 @@
 using CommandLine;
 using ThunderstoreCLI.Commands;
+using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Models.Interaction;
+using ThunderstoreCLI.Utils;
 using static Crayon.Output;
 
-namespace ThunderstoreCLI.Options;
+namespace ThunderstoreCLI;
 
 /// Options are arguments passed from command line.
 public abstract class BaseOptions
@@ -89,7 +91,7 @@ public class InitOptions : PackageOptions
 
     public override int Execute()
     {
-        return InitCommand.Run(Config.Config.FromCLI(new Config.CLIInitCommandConfig(this)));
+        return InitCommand.Run(Config.FromCLI(new CLIInitCommandConfig(this)));
     }
 }
 
@@ -98,7 +100,7 @@ public class BuildOptions : PackageOptions
 {
     public override int Execute()
     {
-        return BuildCommand.Run(Config.Config.FromCLI(new Config.CLIBuildCommandConfig(this)));
+        return BuildCommand.Run(Config.FromCLI(new CLIBuildCommandConfig(this)));
     }
 }
 
@@ -139,6 +141,6 @@ public class PublishOptions : PackageOptions
 
     public override int Execute()
     {
-        return PublishCommand.Run(Config.Config.FromCLI(new Config.CLIPublishCommandConfig(this)));
+        return PublishCommand.Run(Config.FromCLI(new CLIPublishCommandConfig(this)));
     }
 }

@@ -5,6 +5,7 @@
         <IsPackable>false</IsPackable>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <LangVersion>latest</LangVersion>
+        <EnablePreviewFeatures>true</EnablePreviewFeatures>
     </PropertyGroup>
 
     <ItemGroup>

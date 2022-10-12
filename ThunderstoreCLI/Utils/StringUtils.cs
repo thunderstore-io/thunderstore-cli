@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace ThunderstoreCLI;
+namespace ThunderstoreCLI.Utils;
 
 public static class StringUtils
 {

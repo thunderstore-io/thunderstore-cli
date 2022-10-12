@@ -1,6 +1,6 @@
 using static Crayon.Output;
 
-namespace ThunderstoreCLI;
+namespace ThunderstoreCLI.Utils;
 
 public class ProgressSpinner
 {

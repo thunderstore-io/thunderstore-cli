@@ -1,7 +1,9 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using ThunderstoreCLI.Models.Publish;
+using ThunderstoreCLI.Configuration;
+using ThunderstoreCLI.Models;
+using ThunderstoreCLI.Utils;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands;
@@ -18,7 +20,7 @@ public static class PublishCommand
         HttpClient.Timeout = TimeSpan.FromHours(1);
     }
 
-    public static int Run(Config.Config config)
+    public static int Run(Config config)
     {
         try
         {
@@ -47,7 +49,7 @@ public static class PublishCommand
         return PublishFile(config, packagePath);
     }
 
-    public static int PublishFile(Config.Config config, string filepath)
+    public static int PublishFile(Config config, string filepath)
     {
         Write.WithNL($"Publishing {Cyan(filepath)}", before: true, after: true);
 
@@ -131,7 +133,7 @@ public static class PublishCommand
         return 0;
     }
 
-    private static UploadInitiateData InitiateUploadRequest(Config.Config config, string filepath)
+    private static UploadInitiateData InitiateUploadRequest(Config config, string filepath)
     {
         var response = HttpClient.Send(config.Api.StartUploadMedia(filepath));
 
@@ -174,7 +176,7 @@ public static class PublishCommand
         return uploadData;
     }
 
-    private static void PublishPackageRequest(Config.Config config, string uploadUuid)
+    private static void PublishPackageRequest(Config config, string uploadUuid)
     {
         var response = HttpClient.Send(config.Api.SubmitPackage(uploadUuid));
 
@@ -298,10 +300,10 @@ public static class PublishCommand
         throw new PublishCommandException();
     }
 
-    private static void ValidateConfig(Config.Config config, bool justReturnErrors = false)
+    private static void ValidateConfig(Config config, bool justReturnErrors = false)
     {
         var buildConfigErrors = BuildCommand.ValidateConfig(config, false);
-        var v = new Config.Validator("publish", buildConfigErrors);
+        var v = new Validator("publish", buildConfigErrors);
         v.AddIfEmpty(config.AuthConfig.AuthToken, "Auth AuthToken");
         v.ThrowIfErrors();
     }

@@ -1,3 +1,5 @@
+using ThunderstoreCLI.Utils;
+
 namespace ThunderstoreCLI;
 
 public static class UpdateChecker

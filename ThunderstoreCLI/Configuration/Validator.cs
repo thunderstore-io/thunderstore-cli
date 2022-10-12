@@ -1,4 +1,6 @@
-namespace ThunderstoreCLI.Config;
+using ThunderstoreCLI.Utils;
+
+namespace ThunderstoreCLI.Configuration;
 
 /// <summary>Helper for validating command-specific configurations</summary>
 public class Validator

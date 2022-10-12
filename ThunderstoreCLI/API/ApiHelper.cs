@@ -1,20 +1,21 @@
 using System.Net.Http.Headers;
 using System.Text;
-using ThunderstoreCLI.Models.Publish;
+using ThunderstoreCLI.Configuration;
+using ThunderstoreCLI.Models;
 using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI.API;
 
 public class ApiHelper
 {
-    private Config.Config Config { get; }
+    private Config Config { get; }
     private RequestBuilder BaseRequestBuilder { get; }
 
     private readonly Lazy<AuthenticationHeaderValue> authHeader;
 
     private AuthenticationHeaderValue AuthHeader => authHeader.Value;
 
-    public ApiHelper(Config.Config config)
+    public ApiHelper(Config config)
     {
         Config = config;
         BaseRequestBuilder = new RequestBuilder(config.PublishConfig.Repository ?? throw new Exception("The target repository cannot be empty"));

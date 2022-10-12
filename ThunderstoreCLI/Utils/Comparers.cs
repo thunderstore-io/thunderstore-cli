@@ -1,4 +1,4 @@
-namespace ThunderstoreCLI.Comparers;
+namespace ThunderstoreCLI.Utils;
 
 public class SemVer : IComparer<int[]>
 {
