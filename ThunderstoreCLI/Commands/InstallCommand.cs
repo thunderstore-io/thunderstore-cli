@@ -1,6 +1,3 @@
-using ThunderstoreCLI.Configuration;
-using ThunderstoreCLI.Game;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;

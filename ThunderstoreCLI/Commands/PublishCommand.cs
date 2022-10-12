@@ -1,10 +1,8 @@
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
 using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Models;
 using ThunderstoreCLI.Utils;
-using ThunderstoreCLI.Models;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Commands;

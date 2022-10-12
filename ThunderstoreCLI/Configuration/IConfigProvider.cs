@@ -10,5 +10,5 @@ public interface IConfigProvider
     BuildConfig? GetBuildConfig();
     PublishConfig? GetPublishConfig();
     AuthConfig? GetAuthConfig();
-    ModManagementConfig? GetInstallConfig();
+    ModManagementConfig? GetModManagementConfig();
 }

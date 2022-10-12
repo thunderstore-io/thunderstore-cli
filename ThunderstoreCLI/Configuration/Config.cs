@@ -117,8 +117,8 @@ public class Config
         var buildConfig = new BuildConfig();
         var publishConfig = new PublishConfig();
         var authConfig = new AuthConfig();
-        var installConfig = new ModManagementConfig();
-        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig, installConfig);
+        var modManagementConfig = new ModManagementConfig();
+        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig, modManagementConfig);
         foreach (var provider in configProviders)
         {
             provider.Parse(result);
@@ -128,6 +128,7 @@ public class Config
             Merge(buildConfig, provider.GetBuildConfig(), false);
             Merge(publishConfig, provider.GetPublishConfig(), false);
             Merge(authConfig, provider.GetAuthConfig(), false);
+            Merge(modManagementConfig, provider.GetModManagementConfig(), false);
         }
         return result;
     }

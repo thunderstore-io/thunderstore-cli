@@ -82,7 +82,7 @@ public class ModManagementCommandConfig : BaseConfig<ModManagementOptions>
 {
     public ModManagementCommandConfig(ModManagementOptions options) : base(options) { }
 
-    public override ModManagementConfig? GetInstallConfig()
+    public override ModManagementConfig? GetModManagementConfig()
     {
         return new ModManagementConfig()
         {

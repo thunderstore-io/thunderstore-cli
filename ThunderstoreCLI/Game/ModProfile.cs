@@ -17,7 +17,6 @@ public class ModProfile : BaseJson<ModProfile>
     internal ModProfile(GameDefinition gameDef, string name, string tcliDirectory)
     {
         Name = name;
-        InstalledModVersions = new();
 
         var directory = Path.Combine(tcliDirectory, "Profiles", gameDef.Identifier, name);
         if (!Directory.Exists(directory))
