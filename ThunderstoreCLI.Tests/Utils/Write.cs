@@ -27,6 +27,7 @@ public class FakeConsole : IDisposable
     }
 }
 
+[Collection(nameof(NoParallel))]
 public class ThunderstoreCLI_Write
 {
     // ANSI escape codes

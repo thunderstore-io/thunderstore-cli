@@ -5,6 +5,7 @@ using Xunit;
 
 namespace ThunderstoreCLI.Tests.Utils;
 
+[Collection(nameof(NoParallel))]
 public class ThunderstoreCLI_ProgresSpinner
 {
     private async Task CreateTask(bool isSuccess, int delay = 1)
