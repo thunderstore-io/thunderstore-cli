@@ -11,4 +11,6 @@ public interface IConfigProvider
     PublishConfig? GetPublishConfig();
     AuthConfig? GetAuthConfig();
     ModManagementConfig? GetModManagementConfig();
+    GameImportConfig? GetGameImportConfig();
+    RunGameConfig? GetRunGameConfig();
 }

@@ -16,13 +16,15 @@ internal static class Program
 #endif
 
         var updateChecker = UpdateChecker.CheckForUpdates();
-        var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions, InstallOptions, UninstallOptions>(args)
+        var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions, InstallOptions, UninstallOptions, GameImportOptions, RunGameOptions>(args)
             .MapResult(
                 (InitOptions o) => HandleParsed(o),
                 (BuildOptions o) => HandleParsed(o),
                 (PublishOptions o) => HandleParsed(o),
                 (InstallOptions o) => HandleParsed(o),
                 (UninstallOptions o) => HandleParsed(o),
+                (GameImportOptions o) => HandleParsed(o),
+                (RunGameOptions o) => HandleParsed(o),
                 _ => 1 // failure to parse
             );
         UpdateChecker.WriteUpdateNotification(updateChecker);

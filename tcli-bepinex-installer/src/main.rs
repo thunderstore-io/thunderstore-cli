@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     ffi::OsString,
     fs::{self, OpenOptions},
-    io::{self, Read, Seek},
+    io::{self, Read, Seek, Write},
     path::{Path, PathBuf},
 };
 
@@ -32,6 +32,12 @@ enum Commands {
         bepinex_directory: PathBuf,
         name: String,
     },
+    StartInstructions {
+        game_directory: PathBuf,
+        bepinex_directory: PathBuf,
+        #[arg(long)]
+        game_platform: Option<String>,
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -95,6 +101,14 @@ fn main() -> Result<()> {
             }
             uninstall(game_directory, bepinex_directory, name)
         }
+        Commands::StartInstructions {
+            bepinex_directory,
+            game_platform,
+            ..
+        } => {
+            output_instructions(bepinex_directory, game_platform);
+            Ok(())
+        }
     }
 }
 
@@ -110,7 +124,7 @@ fn install(game_dir: PathBuf, bep_dir: PathBuf, zip_path: PathBuf, namespace_bac
     let manifest: ManifestV1 =
         serde_json::from_reader(manifest_file).map_err(|_| Error::InvalidManifest)?;
 
-    if manifest.name.starts_with("BepInExPack") {
+    if manifest.name.starts_with("BepInEx") {
         install_bepinex(game_dir, bep_dir, zip)
     } else {
         install_mod(bep_dir, zip, manifest, namespace_backup)
@@ -134,8 +148,7 @@ fn install_bepinex(
         let filepath = file.enclosed_name().ok_or(Error::MalformedZip)?.to_owned();
 
         if !top_level_directory_name(&filepath)
-            .or(Some("".to_string()))
-            .unwrap()
+            .unwrap_or_else(|| "".to_string())
             .starts_with("BepInExPack")
         {
             continue;
@@ -143,10 +156,8 @@ fn install_bepinex(
 
         let dir_to_use = if filepath.ancestors().any(|part| {
             part.file_name()
-                .or(Some(&OsString::new()))
-                .unwrap()
-                .to_string_lossy()
-                == "BepInEx"
+                .unwrap_or(&OsString::new())
+                .to_string_lossy() == "BepInEx"
         }) {
             &bep_dir
         } else {
@@ -248,6 +259,19 @@ fn uninstall_mod(bep_dir: PathBuf, name: String) -> Result<()> {
     delete_dir_if_not_deleted(actual_bep.join("monomod").join(&name))?;
 
     Ok(())
+}
+
+fn output_instructions(bep_dir: PathBuf, platform: Option<String>) {
+    if platform.as_ref().map(|p| p == "windows").unwrap_or(true) {
+        let drive_prefix = match platform {
+            Some(_) => "Z:",
+            None => ""
+        };
+
+        println!("ARGUMENTS:--doorstop-enable true --doorstop-target {}{}", drive_prefix, bep_dir.join("BepInEx").join("core").join("BepInEx.Preloader.dll").to_string_lossy().replace('/', "\\"));
+    } else {
+        eprintln!("native linux not implmented");
+    }
 }
 
 fn top_level_directory_name(path: &Path) -> Option<String> {

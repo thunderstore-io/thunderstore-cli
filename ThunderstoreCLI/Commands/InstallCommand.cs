@@ -11,14 +11,6 @@ namespace ThunderstoreCLI.Commands;
 
 public static class InstallCommand
 {
-    // TODO: stop hardcoding this, ecosystem-schema (also applies to logic in GameDefintion)
-    internal static readonly Dictionary<string, HardcodedGame> IDToHardcoded = new()
-    {
-        { "ror2", HardcodedGame.ROR2 },
-        { "vrising", HardcodedGame.VRISING },
-        { "vrising_dedicated", HardcodedGame.VRISING_SERVER }
-    };
-
     // will match either ab-cd or ab-cd-123.456.7890
     internal static readonly Regex FullPackageNameRegex = new(@"^(\w+)-(\w+)(?:|-(\d+\.\d+\.\d+))$");
 
@@ -27,12 +19,7 @@ public static class InstallCommand
         using var defCollection = GameDefintionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
         var defs = defCollection.List;
         GameDefinition? def = defs.FirstOrDefault(x => x.Identifier == config.ModManagementConfig.GameIdentifer);
-        if (def == null && IDToHardcoded.TryGetValue(config.ModManagementConfig.GameIdentifer!, out var hardcoded))
-        {
-            def = GameDefinition.FromHardcodedIdentifier(config.GeneralConfig.TcliConfig, hardcoded);
-            defs.Add(def);
-        }
-        else if (def == null)
+        if (def == null)
         {
             Write.ErrorExit($"Not configured for the game: {config.ModManagementConfig.GameIdentifer}");
             return 1;
@@ -83,14 +70,13 @@ public static class InstallCommand
             version = (await PackageData.DeserializeAsync(await packageResponse.Content.ReadAsStreamAsync()))!.LatestVersion!;
         }
 
-
         var tempZipPath = await DownloadTemp(http, version);
-        var returnCode = await InstallZip(config, http, game, profile, tempZipPath, version.Namespace!);
+        var returnCode = await InstallZip(config, http, game, profile, tempZipPath, version.Namespace!, true);
         File.Delete(tempZipPath);
         return returnCode;
     }
 
-    private static async Task<int> InstallZip(Config config, HttpClient http, GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace)
+    private static async Task<int> InstallZip(Config config, HttpClient http, GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace, bool requiredDownload = false)
     {
         using var zip = ZipFile.OpenRead(zipPath);
         var manifestFile = zip.GetEntry("manifest.json") ?? throw new CommandFatalException("Package zip needs a manifest.json!");
@@ -107,7 +93,7 @@ public static class InstallCommand
         {
             var downloadTasks = dependenciesToInstall.Select(mod => DownloadTemp(http, mod.LatestVersion!)).ToArray();
 
-            var spinner = new ProgressSpinner("mods downloaded", downloadTasks);
+            var spinner = new ProgressSpinner("mods downloaded", downloadTasks, 1);
             await spinner.Spin();
 
             foreach (var (tempZipPath, package) in downloadTasks.Select(x => x.Result).Zip(dependenciesToInstall))

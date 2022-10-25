@@ -9,33 +9,35 @@ public class GameDefinition : BaseJson<GameDefinition>
     public string Identifier { get; set; }
     public string Name { get; set; }
     public string InstallDirectory { get; set; }
+    public GamePlatform Platform { get; set; }
+    public string PlatformId { get; set; }
     public List<ModProfile> Profiles { get; private set; } = new();
 
 #pragma warning disable CS8618
     private GameDefinition() { }
 #pragma warning restore CS8618
 
-    internal GameDefinition(string id, string name, string installDirectory, string tcliDirectory)
+    internal GameDefinition(string id, string name, string installDirectory, GamePlatform platform, string platformId, string tcliDirectory)
     {
         Identifier = id;
         Name = name;
         InstallDirectory = installDirectory;
+        Platform = platform;
+        PlatformId = platformId;
     }
 
-    internal static GameDefinition FromHardcodedIdentifier(string tcliDir, HardcodedGame game)
+    internal static GameDefinition? FromPlatformInstall(string tcliDir, GamePlatform platform, string platformId, string id, string name)
     {
-        return game switch
+        var gameDir = platform switch
         {
-            HardcodedGame.ROR2 => FromSteamId(tcliDir, 632360, "ror2", "Risk of Rain 2"),
-            HardcodedGame.VRISING => FromSteamId(tcliDir, 1604030, "vrising", "V Rising"),
-            HardcodedGame.VRISING_SERVER => FromSteamId(tcliDir, 1829350, "vrising_server", "V Rising Dedicated Server"),
-            _ => throw new ArgumentException("Invalid enum value", nameof(game))
+            GamePlatform.steam => SteamUtils.FindInstallDirectory(platformId),
+            _ => null
         };
-    }
-
-    internal static GameDefinition FromSteamId(string tcliDir, uint steamId, string id, string name)
-    {
-        return new GameDefinition(id, name, SteamUtils.FindInstallDirectory(steamId)!, tcliDir);
+        if (gameDir == null)
+        {
+            return null;
+        }
+        return new GameDefinition(id, name, gameDir, platform, platformId, tcliDir);
     }
 }
 
@@ -73,9 +75,9 @@ public sealed class GameDefintionCollection : IEnumerable<GameDefinition>, IDisp
     }
 }
 
-internal enum HardcodedGame
+public enum GamePlatform
 {
-    ROR2,
-    VRISING,
-    VRISING_SERVER
+    steam,
+    egs,
+    other
 }

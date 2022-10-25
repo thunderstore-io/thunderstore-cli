@@ -14,12 +14,14 @@ public class Config
     public PublishConfig PublishConfig { get; private set; }
     public AuthConfig AuthConfig { get; private set; }
     public ModManagementConfig ModManagementConfig { get; private set; }
+    public GameImportConfig GameImportConfig { get; private set; }
+    public RunGameConfig RunGameConfig { get; private set; }
     // ReSharper restore AutoPropertyCanBeMadeGetOnly.Local
 
     private readonly Lazy<ApiHelper> api;
     public ApiHelper Api => api.Value;
 
-    private Config(GeneralConfig generalConfig, PackageConfig packageConfig, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig, ModManagementConfig modManagementConfig)
+    private Config(GeneralConfig generalConfig, PackageConfig packageConfig, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig, ModManagementConfig modManagementConfig, GameImportConfig gameImportConfig, RunGameConfig runGameConfig)
     {
         api = new Lazy<ApiHelper>(() => new ApiHelper(this));
         GeneralConfig = generalConfig;
@@ -29,6 +31,8 @@ public class Config
         PublishConfig = publishConfig;
         AuthConfig = authConfig;
         ModManagementConfig = modManagementConfig;
+        GameImportConfig = gameImportConfig;
+        RunGameConfig = runGameConfig;
     }
     public static Config FromCLI(IConfigProvider cliConfig)
     {
@@ -118,7 +122,9 @@ public class Config
         var publishConfig = new PublishConfig();
         var authConfig = new AuthConfig();
         var modManagementConfig = new ModManagementConfig();
-        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig, modManagementConfig);
+        var gameImportConfig = new GameImportConfig();
+        var runGameConfig = new RunGameConfig();
+        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig, modManagementConfig, gameImportConfig, runGameConfig);
         foreach (var provider in configProviders)
         {
             provider.Parse(result);
@@ -129,6 +135,8 @@ public class Config
             Merge(publishConfig, provider.GetPublishConfig(), false);
             Merge(authConfig, provider.GetAuthConfig(), false);
             Merge(modManagementConfig, provider.GetModManagementConfig(), false);
+            Merge(gameImportConfig, provider.GetGameImportConfig(), false);
+            Merge(runGameConfig, provider.GetRunGameConfig(), false);
         }
         return result;
     }
@@ -218,5 +226,16 @@ public class ModManagementConfig
 {
     public string? GameIdentifer { get; set; }
     public string? Package { get; set; }
+    public string? ProfileName { get; set; }
+}
+
+public class GameImportConfig
+{
+    public string? FilePath { get; set; }
+}
+
+public class RunGameConfig
+{
+    public string? GameName { get; set; }
     public string? ProfileName { get; set; }
 }

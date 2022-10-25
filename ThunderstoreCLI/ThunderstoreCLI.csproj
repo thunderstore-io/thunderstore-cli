@@ -34,7 +34,13 @@
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <!-- needed to use some C#11 features with NET 6, like required properties. -->
+        <PackageReference Include="PolySharp" Version="1.8.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Samboy063.Tomlet" Version="5.0.0" />
+        <PackageReference Include="YamlDotNet" Version="12.0.2" />
     </ItemGroup>
 
     <!-- https://github.com/dotnet/runtime/blob/main/docs/design/features/globalization-invariant-mode.md -->

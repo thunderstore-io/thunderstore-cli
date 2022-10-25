@@ -92,3 +92,30 @@ public class ModManagementCommandConfig : BaseConfig<ModManagementOptions>
         };
     }
 }
+
+public class GameImportCommandConfig : BaseConfig<GameImportOptions>
+{
+    public GameImportCommandConfig(GameImportOptions options) : base(options) { }
+
+    public override GameImportConfig? GetGameImportConfig()
+    {
+        return new GameImportConfig()
+        {
+            FilePath = options.FilePath
+        };
+    }
+}
+
+public class RunGameCommandConfig : BaseConfig<RunGameOptions>
+{
+    public RunGameCommandConfig(RunGameOptions options) : base(options) { }
+
+    public override RunGameConfig? GetRunGameConfig()
+    {
+        return new RunGameConfig()
+        {
+            GameName = options.GameName,
+            ProfileName = options.Profile
+        };
+    }
+}

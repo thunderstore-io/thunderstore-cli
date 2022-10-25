@@ -8,7 +8,37 @@ namespace ThunderstoreCLI.Utils;
 
 public static class SteamUtils
 {
-    public static string? FindInstallDirectory(uint steamAppId)
+    public static string? FindInstallDirectory(string steamAppId)
+    {
+        var path = GetAcfPath(steamAppId);
+        if (path == null)
+        {
+            return null;
+        }
+
+        var folderName = ManifestInstallLocationRegex.Match(File.ReadAllText(path)).Groups[1].Value;
+
+        return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path)!, "common", folderName));
+    }
+
+    public static bool IsProtonGame(string steamAppId)
+    {
+        var path = GetAcfPath(steamAppId);
+        if (path == null)
+        {
+            throw new ArgumentException($"{steamAppId} is not installed!");
+        }
+
+        var source = PlatformOverrideSourceRegex.Match(File.ReadAllText(path)).Groups[1].Value;
+        return source switch
+        {
+            "" => false,
+            "linux" => false,
+            _ => true
+        };
+    }
+
+    private static string? GetAcfPath(string steamAppId)
     {
         string? primarySteamApps = FindSteamAppsDirectory();
         if (primarySteamApps == null)
@@ -29,19 +59,30 @@ public static class SteamUtils
         {
             foreach (var file in Directory.EnumerateFiles(library))
             {
-                if (!Path.GetFileName(file).Equals(acfName, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                var folderName = ManifestInstallLocationRegex.Match(File.ReadAllText(file)).Groups[1].Value;
-
-                return Path.GetFullPath(Path.Combine(library, "common", folderName));
+                if (Path.GetFileName(file).Equals(acfName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return file;
+                }
             }
         }
-        throw new FileNotFoundException($"Could not find {acfName}, tried the following paths:\n{string.Join('\n', libraryPaths)}");
+        return null;
     }
 
     private static readonly Regex SteamAppsPathsRegex = new(@"""path""\s+""(.+)""");
     private static readonly Regex ManifestInstallLocationRegex = new(@"""installdir""\s+""(.+)""");
+    private static readonly Regex PlatformOverrideSourceRegex = new(@"""platform_override_source""\s+""(.+)""");
+
+    public static string? FindSteamDirectory()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return FindSteamDirectoryWin();
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return FindSteamDirectoryOsx();
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return FindSteamDirectoryLinux();
+        else
+            throw new NotSupportedException("Unknown operating system");
+    }
 
     public static string? FindSteamAppsDirectory()
     {
@@ -56,12 +97,22 @@ public static class SteamUtils
     }
 
     [SupportedOSPlatform("Windows")]
-    private static string? FindSteamAppsDirectoryWin()
+    private static string? FindSteamDirectoryWin()
     {
         return Registry.LocalMachine.OpenSubKey(@"Software\WOW6432Node\Valve\Steam", false)?.GetValue("InstallPath") as string;
     }
 
-    private static string? FindSteamAppsDirectoryOsx()
+    private static string? FindSteamAppsDirectoryWin()
+    {
+        var steamDir = FindSteamDirectory();
+        if (steamDir == null)
+        {
+            return null;
+        }
+        return Path.Combine(steamDir, "steamapps");
+    }
+
+    private static string? FindSteamDirectoryOsx()
     {
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -71,7 +122,17 @@ public static class SteamUtils
         );
     }
 
-    private static string? FindSteamAppsDirectoryLinux()
+    private static string? FindSteamAppsDirectoryOsx()
+    {
+        var steamDir = FindSteamDirectory();
+        if (steamDir == null)
+        {
+            return null;
+        }
+        return Path.Combine(steamDir, "steamapps");
+    }
+
+    private static string? FindSteamDirectoryLinux()
     {
         string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         string[] possiblePaths = {
@@ -93,12 +154,18 @@ public static class SteamUtils
                 break;
             }
         }
+        return steamPath;
+    }
+
+    private static string? FindSteamAppsDirectoryLinux()
+    {
+        var steamPath = FindSteamDirectory();
         if (steamPath == null)
         {
             return null;
         }
 
-        possiblePaths = new[]
+        var possiblePaths = new[]
         {
             Path.Combine(steamPath, "steamapps"), // most distros
             Path.Combine(steamPath, "steam", "steamapps"), // ubuntu apparently

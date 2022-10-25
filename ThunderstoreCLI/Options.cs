@@ -147,8 +147,6 @@ public class PublishOptions : PackageOptions
 
 public abstract class ModManagementOptions : BaseOptions
 {
-    //public string? ManagerId { get; set; }
-
     [Value(0, MetaName = "Game Name", Required = true, HelpText = "Can be any of: ror2, vrising, vrising_dedicated, vrising_builtin")]
     public string GameName { get; set; } = null!;
 
@@ -198,4 +196,53 @@ public class InstallOptions : ModManagementOptions
 public class UninstallOptions : ModManagementOptions
 {
     protected override CommandInner CommandType => CommandInner.Uninstall;
+}
+
+[Verb("import-game")]
+public class GameImportOptions : BaseOptions
+{
+    [Value(0, MetaName = "File Path", Required = true, HelpText = "Path to game description file to import")]
+    public required string FilePath { get; set; }
+
+    public override bool Validate()
+    {
+        if (!File.Exists(FilePath))
+        {
+            Write.ErrorExit($"Could not locate game description file at {FilePath}");
+        }
+
+        return base.Validate();
+    }
+
+    public override int Execute()
+    {
+        var config = Config.FromCLI(new GameImportCommandConfig(this));
+        return ImportGameCommand.Run(config);
+    }
+}
+
+[Verb("run")]
+public class RunGameOptions : BaseOptions
+{
+    [Value(0, MetaName = "Game Name", Required = true, HelpText = "Can be any of: ror2, vrising, vrising_dedicated, vrising_builtin")]
+    public required string GameName { get; set; } = null!;
+
+    [Option(HelpText = "Profile to install to", Default = "Default")]
+    public required string Profile { get; set; }
+
+    public override bool Validate()
+    {
+#if NOINSTALLERS
+        Write.ErrorExit("Installers are not supported when installed through dotnet tool (yet) (i hate nuget)");
+        return false;
+#endif
+
+        return base.Validate();
+    }
+
+    public override int Execute()
+    {
+        var config = Config.FromCLI(new RunGameCommandConfig(this));
+        return RunCommand.Run(config);
+    }
 }

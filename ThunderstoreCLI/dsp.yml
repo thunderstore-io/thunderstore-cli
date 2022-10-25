@@ -1,0 +1,19 @@
+uuid: "b4ee10ce-d22c-4da3-b084-e97ced4fec85"
+label: "dsp"
+meta:
+  displayName: "Dyson Sphere Program"
+  iconUrl: "DysonSphereProgram.jpg"
+distributions:
+  - platform: "steam"
+    identifier: "1366540"
+legacy:
+  internalFolderName: "DysonSphereProgram"
+  dataFolderName: "DSPGAME_Data"
+  settingsIdentifier: "DysonSphereProgram"
+  packageIndex: "https://dsp.thunderstore.io/api/v1/package/"
+  exclusionsUrl: "https://raw.githubusercontent.com/ebkr/r2modmanPlus/master/modExclusions.md"
+  steamFolderName: "Dyson Sphere Program"
+  exeNames:
+    - "DSPGAME.exe"
+  gameInstancetype: "game"
+  gameSelectionDisplayMode: "visible"
