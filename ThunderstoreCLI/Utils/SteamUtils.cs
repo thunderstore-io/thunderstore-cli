@@ -183,4 +183,76 @@ public static class SteamUtils
 
         return steamAppsPath;
     }
+
+    public static bool ForceLoadProton(string steamAppId, string[] dllsToEnable)
+    {
+        var path = Path.Combine(Path.GetDirectoryName(GetAcfPath(steamAppId))!, "compatdata", steamAppId, "pfx", "user.reg");
+        if (!Path.Exists(path))
+        {
+            return false;
+        }
+
+        string[] lines = File.ReadAllLines(path);
+
+        int start = -1;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].StartsWith(@"[Software\\Wine\\DllOverrides]"))
+            {
+                start = i + 2;
+                break;
+            }
+        }
+        if (start == -1)
+        {
+            return false;
+        }
+
+        int end = lines.Length - 1;
+        for (int i = start; i < lines.Length; i++)
+        {
+            if (lines[i].Length == 0)
+            {
+                end = i;
+                break;
+            }
+        }
+
+        bool written = false;
+        foreach (var dll in dllsToEnable)
+        {
+            string wineOverride = $@"""{dll}""=""native,builtin""";
+            bool existed = false;
+            for (int i = start; i < end; i++)
+            {
+                if (lines[i].StartsWith($@"""{dll}"""))
+                {
+                    existed = true;
+                    if (lines[i] != wineOverride)
+                    {
+                        lines[i] = wineOverride;
+                        written = true;
+                    }
+                    break;
+                }
+            }
+
+            if (!existed)
+            {
+                // resizes then moves the end and all lines past it over by 1, this is basically a manual List<T>.Insert on an array
+                Array.Resize(ref lines, lines.Length + 1);
+                lines.AsSpan()[end..^1].CopyTo(lines.AsSpan()[(end + 1)..]);
+                lines[end] = wineOverride;
+                written = true;
+            }
+        }
+
+        if (written)
+        {
+            File.Move(path, path + ".bak", true);
+            File.WriteAllLines(path, lines);
+        }
+
+        return true;
+    }
 }

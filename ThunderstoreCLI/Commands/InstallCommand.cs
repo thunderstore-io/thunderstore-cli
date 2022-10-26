@@ -154,7 +154,6 @@ public static class InstallCommand
                 profile.ProfileDirectory,
                 zipPath
             },
-            RedirectStandardOutput = true,
             RedirectStandardError = true
         };
         if (backupNamespace != null)
@@ -166,7 +165,6 @@ public static class InstallCommand
         var installerProcess = Process.Start(installerInfo)!;
         installerProcess.WaitForExit();
 
-        Write.Light(installerProcess.StandardOutput.ReadToEnd());
         string errors = installerProcess.StandardError.ReadToEnd();
         if (!string.IsNullOrWhiteSpace(errors))
         {

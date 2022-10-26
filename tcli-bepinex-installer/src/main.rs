@@ -269,6 +269,7 @@ fn output_instructions(bep_dir: PathBuf, platform: Option<String>) {
         };
 
         println!("ARGUMENTS:--doorstop-enable true --doorstop-target {}{}", drive_prefix, bep_dir.join("BepInEx").join("core").join("BepInEx.Preloader.dll").to_string_lossy().replace('/', "\\"));
+        println!("WINEDLLOVERRIDE:winhttp")
     } else {
         eprintln!("native linux not implmented");
     }

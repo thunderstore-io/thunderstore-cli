@@ -61,7 +61,6 @@ public static class RunCommand
         }
 
         string runArguments = "";
-        List<(string key, string value)> runEnvironment = new();
         string[] wineDlls = Array.Empty<string>();
 
         string[] outputLines = installerProcess.StandardOutput.ReadToEnd().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
@@ -82,7 +81,7 @@ public static class RunCommand
                 case "WINEDLLOVERRIDE":
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     {
-                        throw new NotSupportedException();
+                        break;
                     }
                     wineDlls = args.Split(':');
                     break;
@@ -108,9 +107,12 @@ public static class RunCommand
             throw new NotImplementedException();
         }
 
-        if (gameIsProton)
+        if (gameIsProton && wineDlls.Length > 0)
         {
-            // TODO: force wine DLL overrides with registry
+            if (!SteamUtils.ForceLoadProton(def.PlatformId, wineDlls))
+            {
+                throw new CommandFatalException($"No compat files could be found for app id {def.PlatformId}, please run the game at least once.");
+            }
         }
 
         ProcessStartInfo runSteamInfo = new(Path.Combine(steamDir, steamExeName))
