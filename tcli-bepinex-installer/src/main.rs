@@ -148,7 +148,7 @@ fn install_bepinex(
         let filepath = file.enclosed_name().ok_or(Error::MalformedZip)?.to_owned();
 
         if !top_level_directory_name(&filepath)
-            .unwrap_or_else(|| "".to_string())
+            .unwrap_or("")
             .starts_with("BepInExPack")
         {
             continue;
@@ -191,20 +191,22 @@ fn install_mod(
         manifest.name
     );
 
-    let mut remaps: HashMap<&str, PathBuf> = HashMap::new();
+    let mut remaps = HashMap::new();
     remaps.insert(
-        "plugins",
+        Path::new("BepInEx").join("plugins"),
         Path::new("BepInEx").join("plugins").join(&full_name),
     );
     remaps.insert(
-        "patchers",
+        Path::new("BepInEx").join("patchers"),
         Path::new("BepInEx").join("patchers").join(&full_name),
     );
     remaps.insert(
-        "monomod",
+        Path::new("BepInEx").join("monomod"),
         Path::new("BepInEx").join("monomod").join(&full_name),
     );
-    remaps.insert("config", Path::new("BepInEx").join("config"));
+    remaps.insert(Path::new("BepInEx").join("config"), Path::new("BepInEx").join("config"));
+
+    let default_remap = &remaps[&Path::new("BepInEx").join("plugins")];
 
     for i in 0..zip.len() {
         let mut file = zip.by_index(i)?;
@@ -215,17 +217,20 @@ fn install_mod(
 
         let filepath = file.enclosed_name().ok_or(Error::MalformedZip)?.to_owned();
 
-        let out_path: PathBuf = if let Some((root, count)) = search_for_directory(&filepath, &["plugins", "patchers", "monomod", "config"]) {
-            if let Some(remap) = remaps.get(root) {
-                remap.join(remove_first_n_directories(&filepath, count))
-            } else {
-                remaps["plugins"].join(filepath.file_name().unwrap())
+        let mut out_path = None;
+        'outer: for remap in remaps.keys() {
+            for variant in get_path_variants(remap) {
+                if let Ok(p) = filepath.strip_prefix(variant) {
+                    out_path = Some(remaps[remap].join(p));
+                    break 'outer;
+                }
             }
-        } else {
-            remaps["plugins"].join(filepath.file_name().unwrap())
-        };
+        }
+        if out_path.is_none() {
+            out_path = Some(default_remap.join(filepath.file_name().unwrap()));
+        }
 
-        let full_out_path = bep_dir.join(out_path);
+        let full_out_path = bep_dir.join(out_path.unwrap());
 
         fs::create_dir_all(full_out_path.parent().unwrap())?;
         io::copy(&mut file, &mut write_opts.open(full_out_path)?)?;
@@ -235,7 +240,7 @@ fn install_mod(
 }
 
 fn uninstall(game_dir: PathBuf, bep_dir: PathBuf, name: String) -> Result<()> {
-    if name.split_once('-').ok_or(Error::InvalidModName)?.1.starts_with("BepInExPack") {
+    if name.split_once('-').ok_or(Error::InvalidModName)?.1.starts_with("BepInEx") {
         uninstall_bepinex(game_dir, bep_dir)
     } else {
         uninstall_mod(bep_dir, name)
@@ -275,42 +280,22 @@ fn output_instructions(bep_dir: PathBuf, platform: Option<String>) {
     }
 }
 
-fn top_level_directory_name(path: &Path) -> Option<String> {
-    path.ancestors()
-        .skip(1)
-        .filter(|x| !x.to_string_lossy().is_empty())
-        .last()
-        .map(|root| root.to_string_lossy().to_string())
-}
-
-fn search_for_directory<'a>(path: &Path, targets: &[&'a str]) -> Option<(&'a str, usize)> {
-    let mut path_parts = path
-        .ancestors()
-        .filter(|x| !x.to_string_lossy().is_empty())
-        .map(|x| x.file_name().unwrap())
-        .collect::<Vec<_>>();
-    path_parts.reverse();
-    for (index, part) in path_parts.into_iter().enumerate() {
-        for target in targets {
-            if part.to_string_lossy() == *target {
-                return Some((target, index + 1));
-            }
-        }
-    }
-    None
+fn top_level_directory_name(path: &Path) -> Option<&str> {
+    path.components().next().and_then(|n| n.as_os_str().to_str())
 }
 
 /// removes the first n directories from a path, eg a/b/c/d.txt with an n of 2 gives c/d.txt
 fn remove_first_n_directories(path: &Path, n: usize) -> PathBuf {
-    PathBuf::from_iter(
-        path.ancestors()
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .filter(|x| !x.to_string_lossy().is_empty())
-            .skip(n)
-            .map(|part| part.file_name().unwrap()),
-    )
+    PathBuf::from_iter(path.iter().skip(n))
+}
+
+fn get_path_variants(path: &Path) -> Vec<PathBuf> {
+    let mut res = vec![path.into()];
+    let components: Vec<_> = path.components().collect();
+    for i in 1usize..components.len() {
+        res.push(PathBuf::from_iter(components.iter().skip(i)))
+    }
+    res
 }
 
 fn delete_file_if_not_deleted<T: AsRef<Path>>(path: T) -> io::Result<()> {
