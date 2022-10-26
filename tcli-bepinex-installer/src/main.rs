@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     ffi::OsString,
     fs::{self, OpenOptions},
-    io::{self, Read, Seek, Write},
+    io::{self, Read, Seek},
     path::{Path, PathBuf},
 };
 
@@ -215,14 +215,14 @@ fn install_mod(
 
         let filepath = file.enclosed_name().ok_or(Error::MalformedZip)?.to_owned();
 
-        let out_path: PathBuf = if let Some(root) = top_level_directory_name(&filepath) {
-            if let Some(remap) = remaps.get(&root as &str) {
-                remap.join(remove_first_n_directories(&filepath, 1))
+        let out_path: PathBuf = if let Some((root, count)) = search_for_directory(&filepath, &["plugins", "patchers", "monomod", "config"]) {
+            if let Some(remap) = remaps.get(root) {
+                remap.join(remove_first_n_directories(&filepath, count))
             } else {
-                remaps["plugins"].join(filepath)
+                remaps["plugins"].join(filepath.file_name().unwrap())
             }
         } else {
-            remaps["plugins"].join(filepath)
+            remaps["plugins"].join(filepath.file_name().unwrap())
         };
 
         let full_out_path = bep_dir.join(out_path);
@@ -281,6 +281,23 @@ fn top_level_directory_name(path: &Path) -> Option<String> {
         .filter(|x| !x.to_string_lossy().is_empty())
         .last()
         .map(|root| root.to_string_lossy().to_string())
+}
+
+fn search_for_directory<'a>(path: &Path, targets: &[&'a str]) -> Option<(&'a str, usize)> {
+    let mut path_parts = path
+        .ancestors()
+        .filter(|x| !x.to_string_lossy().is_empty())
+        .map(|x| x.file_name().unwrap())
+        .collect::<Vec<_>>();
+    path_parts.reverse();
+    for (index, part) in path_parts.into_iter().enumerate() {
+        for target in targets {
+            if part.to_string_lossy() == *target {
+                return Some((target, index + 1));
+            }
+        }
+    }
+    None
 }
 
 /// removes the first n directories from a path, eg a/b/c/d.txt with an n of 2 gives c/d.txt
