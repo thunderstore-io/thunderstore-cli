@@ -78,14 +78,14 @@ public static class UninstallCommand
                     profile.ProfileDirectory,
                     toRemove
                 },
-                RedirectStandardOutput = true,
                 RedirectStandardError = true
             };
 
             var installerProcess = Process.Start(installerInfo)!;
             installerProcess.WaitForExit();
 
-            Write.Light(installerProcess.StandardOutput.ReadToEnd());
+            Write.Success($"Uninstalled mod: {toRemove}");
+
             string errors = installerProcess.StandardError.ReadToEnd();
             if (!string.IsNullOrWhiteSpace(errors) || installerProcess.ExitCode != 0)
             {

@@ -72,6 +72,44 @@ public static class SteamUtils
     private static readonly Regex ManifestInstallLocationRegex = new(@"""installdir""\s+""(.+)""");
     private static readonly Regex PlatformOverrideSourceRegex = new(@"""platform_override_source""\s+""(.+)""");
 
+    public static string? FindSteamExecutable()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            var mainDir = FindSteamDirectory();
+            if (mainDir == null)
+            {
+                return null;
+            }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return Path.Combine(mainDir, "steam.exe");
+            }
+            else
+            {
+                return Path.Combine(mainDir, "steam.sh");
+            }
+        }
+
+        string appDir;
+        string rooted = Path.Combine("/", "Applications", "Steam.app");
+        string user = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Applications", "Steam.app");
+        if (Directory.Exists(user))
+        {
+            appDir = user;
+        }
+        else if (Directory.Exists(rooted))
+        {
+            appDir = rooted;
+        }
+        else
+        {
+            return null;
+        }
+
+        return Path.Combine(appDir, "Contents", "MacOS", "steam_osx");
+    }
+
     public static string? FindSteamDirectory()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

@@ -88,23 +88,10 @@ public static class RunCommand
             }
         }
 
-        var steamDir = SteamUtils.FindSteamDirectory();
-        if (steamDir == null)
+        var steamExePath = SteamUtils.FindSteamExecutable();
+        if (steamExePath == null)
         {
             throw new CommandFatalException("Couldn't find steam install directory!");
-        }
-        string steamExeName;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            steamExeName = "steam.sh";
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            steamExeName = "steam.exe";
-        }
-        else
-        {
-            throw new NotImplementedException();
         }
 
         if (gameIsProton && wineDlls.Length > 0)
@@ -115,7 +102,7 @@ public static class RunCommand
             }
         }
 
-        ProcessStartInfo runSteamInfo = new(Path.Combine(steamDir, steamExeName))
+        ProcessStartInfo runSteamInfo = new(steamExePath)
         {
             Arguments = $"-applaunch {def.PlatformId} {runArguments}"
         };

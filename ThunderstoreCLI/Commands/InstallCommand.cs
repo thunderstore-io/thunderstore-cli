@@ -57,6 +57,7 @@ public static class InstallCommand
         var packageParts = packageId.Split('-');
 
         PackageVersionData version;
+        Write.Light($"Downloading main package: {packageId}");
         if (packageParts.Length == 3)
         {
             var versionResponse = await http.SendAsync(config.Api.GetPackageVersionMetadata(packageParts[0], packageParts[1], packageParts[2]));
@@ -71,12 +72,12 @@ public static class InstallCommand
         }
 
         var tempZipPath = await DownloadTemp(http, version);
-        var returnCode = await InstallZip(config, http, game, profile, tempZipPath, version.Namespace!, true);
+        var returnCode = await InstallZip(config, http, game, profile, tempZipPath, version.Namespace!);
         File.Delete(tempZipPath);
         return returnCode;
     }
 
-    private static async Task<int> InstallZip(Config config, HttpClient http, GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace, bool requiredDownload = false)
+    private static async Task<int> InstallZip(Config config, HttpClient http, GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace)
     {
         using var zip = ZipFile.OpenRead(zipPath);
         var manifestFile = zip.GetEntry("manifest.json") ?? throw new CommandFatalException("Package zip needs a manifest.json!");
@@ -93,7 +94,7 @@ public static class InstallCommand
         {
             var downloadTasks = dependenciesToInstall.Select(mod => DownloadTemp(http, mod.LatestVersion!)).ToArray();
 
-            var spinner = new ProgressSpinner("mods downloaded", downloadTasks, 1);
+            var spinner = new ProgressSpinner("dependencies downloaded", downloadTasks);
             await spinner.Spin();
 
             foreach (var (tempZipPath, package) in downloadTasks.Select(x => x.Result).Zip(dependenciesToInstall))

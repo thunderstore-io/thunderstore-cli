@@ -9,9 +9,8 @@ public class ProgressSpinner
     private static readonly char[] _spinChars = { '|', '/', '-', '\\' };
     private readonly string _label;
     private readonly Task[] _tasks;
-    private readonly int _offset;
 
-    public ProgressSpinner(string label, Task[] tasks, int offset = 0)
+    public ProgressSpinner(string label, Task[] tasks)
     {
         if (tasks.Length == 0)
         {
@@ -20,7 +19,6 @@ public class ProgressSpinner
 
         _label = label;
         _tasks = tasks;
-        _offset = offset;
     }
 
     public async Task Spin()
@@ -39,14 +37,6 @@ public class ProgressSpinner
             canUseCursor = false;
         }
 
-        if (!canUseCursor && _offset != 0)
-        {
-            for (int i = 1; i <= _offset; i++)
-            {
-                Console.Write(Green($"{0}/{_tasks.Length + _offset} {_label}"));
-            }
-        }
-
         while (true)
         {
             IEnumerable<Task> faultedTasks;
@@ -62,13 +52,13 @@ public class ProgressSpinner
             {
                 var spinner = completed == _tasks.Length ? '✓' : _spinChars[_spinIndex++ % _spinChars.Length];
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write(Green($"{completed + _offset}/{_tasks.Length + _offset} {_label} {spinner}"));
+                Console.Write(Green($"{completed}/{_tasks.Length} {_label} {spinner}"));
             }
             else
             {
                 if (completed > _lastSeenCompleted)
                 {
-                    Write.Success($"{completed + _offset}/{_tasks.Length + _offset} {_label}");
+                    Write.Success($"{completed}/{_tasks.Length} {_label}");
                     _lastSeenCompleted = completed;
                 }
             }
