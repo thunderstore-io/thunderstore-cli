@@ -63,8 +63,12 @@
         </EmbeddedResource>
     </ItemGroup>
 
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug' And '$(EnableInstallers)' == ''">
+        <EnableInstallers>true</EnableInstallers>
+    </PropertyGroup>
+
     <!-- Compile bepinex installer with TCLI -->
-    <Target Name="BuildBepInExInstaller" BeforeTargets="BeforeBuild" Condition="'$(DontBuildInstallers)' != 'true'">
+    <Target Name="BuildBepInExInstaller" BeforeTargets="BeforeBuild" Condition="'$(EnableInstallers)' == 'true'">
         <PropertyGroup>
             <CargoFlags Condition=" '$(Configuration)' == 'Release' ">--release</CargoFlags>
             <TargetSubdirectory Condition=" '$(Configuration)' == 'Debug' ">debug</TargetSubdirectory>
@@ -77,7 +81,7 @@
             <None Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer" Condition="!$([MSBuild]::IsOSPlatform('Windows'))" ContinueOnError="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
         </ItemGroup>
     </Target>
-    <PropertyGroup Condition="'$(DontBuildInstallers)' == 'true'">
-        <DefineConstants>NOINSTALLERS</DefineConstants>
+    <PropertyGroup Condition="'$(EnableInstallers)' == 'true'">
+        <DefineConstants>INSTALLERS</DefineConstants>
     </PropertyGroup>
 </Project>

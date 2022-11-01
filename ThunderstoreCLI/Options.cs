@@ -164,16 +164,6 @@ public abstract class ModManagementOptions : BaseOptions
 
     protected abstract CommandInner CommandType { get; }
 
-    public override bool Validate()
-    {
-#if NOINSTALLERS
-        Write.ErrorExit("Installers are not supported when installed through dotnet tool (yet) (i hate nuget)");
-        return false;
-#endif
-
-        return base.Validate();
-    }
-
     public override int Execute()
     {
         var config = Config.FromCLI(new ModManagementCommandConfig(this));
@@ -229,16 +219,6 @@ public class RunGameOptions : BaseOptions
 
     [Option(HelpText = "Profile to install to", Default = "Default")]
     public required string Profile { get; set; }
-
-    public override bool Validate()
-    {
-#if NOINSTALLERS
-        Write.ErrorExit("Installers are not supported when installed through dotnet tool (yet) (i hate nuget)");
-        return false;
-#endif
-
-        return base.Validate();
-    }
 
     public override int Execute()
     {
