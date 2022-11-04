@@ -86,9 +86,16 @@ public class PublishData : BaseJson<PublishData>
             public bool RequirePackageListingApproval { get; set; }
         }
 
+        public class CategoryData
+        {
+            [JsonProperty("name")] public string? Name { get; set; }
+
+            [JsonProperty("slug")] public string? Slug { get; set; }
+        }
+
         [JsonProperty("community")] public CommunityData? Community { get; set; }
 
-        [JsonProperty("categories")] public List<string>? Categories { get; set; }
+        [JsonProperty("categories")] public List<CategoryData>? Categories { get; set; }
 
         [JsonProperty("url")] public string? Url { get; set; }
     }

@@ -45,7 +45,7 @@ public class Config
 
     public string GetProjectRelativePath(string path)
     {
-        return Path.GetFullPath(Path.Join(GetProjectBasePath(), path));
+        return Path.Join(GetProjectBasePath(), path);
     }
 
     public string GetPackageIconPath()

@@ -1,4 +1,5 @@
 using ThunderstoreCLI.Configuration;
+using ThunderstoreCLI.Models;
 using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI.Commands;
@@ -37,7 +38,7 @@ public static class InitCommand
             {
                 Write.Line($"Project configuration already exists, overwriting");
             }
-            ProjectFileConfig.Write(config, path);
+            File.WriteAllText(path, new ThunderstoreProject(true).Serialize());
 
             var iconPath = config.GetPackageIconPath();
             if (File.Exists(iconPath))

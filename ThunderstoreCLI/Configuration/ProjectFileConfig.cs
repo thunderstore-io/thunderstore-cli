@@ -20,7 +20,7 @@ internal class ProjectFileConfig : EmptyConfig
             Project = new ThunderstoreProject(false);
             return;
         }
-        Project = ThunderstoreProject.Deserialize(SourcePath)!;
+        Project = ThunderstoreProject.Deserialize(File.ReadAllText(SourcePath))!;
     }
 
     public override GeneralConfig? GetGeneralConfig()
