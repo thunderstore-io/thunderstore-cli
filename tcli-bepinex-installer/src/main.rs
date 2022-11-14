@@ -46,8 +46,8 @@ pub enum Error {
     PathDoesNotExist(PathBuf),
     #[error("ZIP file does not contain a Thunderstore manifest")]
     NoZipManifest,
-    #[error("Invalid manifest in ZIP")]
-    InvalidManifest,
+    #[error("Invalid manifest in ZIP, serde_json error: {0}")]
+    InvalidManifest(serde_json::Error),
     #[error("Malformed zip")]
     MalformedZip,
     #[error("Manifest does not contain a namespace and no backup was given, namespaces are required for mod installs")]
@@ -63,6 +63,7 @@ struct ManifestV1 {
     pub name: String,
     pub description: String,
     pub version_number: String,
+    #[serde(default)]
     pub dependencies: Vec<String>,
     pub website_url: String,
 }
@@ -119,12 +120,20 @@ fn install(game_dir: PathBuf, bep_dir: PathBuf, zip_path: PathBuf, namespace_bac
         bail!(Error::NoZipManifest);
     }
 
-    let manifest_file = zip.by_name("manifest.json")?;
+    let mut manifest_file = zip.by_name("manifest.json")?;
+
+    let mut manifest_text = String::new();
+    manifest_file.read_to_string(&mut manifest_text).unwrap();
+    if manifest_text.starts_with('\u{FEFF}') {
+        manifest_text.remove(0);
+    }
+
+    drop(manifest_file);
 
     let manifest: ManifestV1 =
-        serde_json::from_reader(manifest_file).map_err(|_| Error::InvalidManifest)?;
+        serde_json::from_str(&manifest_text).map_err(Error::InvalidManifest)?;
 
-    if manifest.name.starts_with("BepInEx") {
+    if manifest.name.starts_with("BepInEx") && zip.file_names().any(|f| f.ends_with("winhttp.dll")) {
         install_bepinex(game_dir, bep_dir, zip)
     } else {
         install_mod(bep_dir, zip, manifest, namespace_backup)
@@ -216,6 +225,10 @@ fn install_mod(
         }
 
         let filepath = file.enclosed_name().ok_or(Error::MalformedZip)?.to_owned();
+        let filename = match filepath.file_name() {
+            Some(name) => name,
+            None => continue
+        };
 
         let mut out_path = None;
         'outer: for remap in remaps.keys() {
@@ -227,7 +240,7 @@ fn install_mod(
             }
         }
         if out_path.is_none() {
-            out_path = Some(default_remap.join(filepath.file_name().unwrap()));
+            out_path = Some(default_remap.join(filename));
         }
 
         let full_out_path = bep_dir.join(out_path.unwrap());

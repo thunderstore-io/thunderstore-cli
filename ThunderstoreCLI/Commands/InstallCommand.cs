@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ThunderstoreCLI.Configuration;
@@ -9,10 +10,11 @@ using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI.Commands;
 
-public static class InstallCommand
+public static partial class InstallCommand
 {
     // will match either ab-cd or ab-cd-123.456.7890
-    internal static readonly Regex FullPackageNameRegex = new(@"^(\w+)-(\w+)(?:|-(\d+\.\d+\.\d+))$");
+    [GeneratedRegex(@"^(?<fullname>(?<namespace>[\w-\.]+)-(?<name>\w+))(?:|-(?<version>\d+\.\d+\.\d+))$")]
+    internal static partial Regex FullPackageNameRegex();
 
     public static async Task<int> Run(Config config)
     {
@@ -33,13 +35,14 @@ public static class InstallCommand
         HttpClient http = new();
 
         int returnCode;
+        Match packageMatch;
         if (File.Exists(package))
         {
             returnCode = await InstallZip(config, http, def, profile, package, null);
         }
-        else if (FullPackageNameRegex.IsMatch(package))
+        else if ((packageMatch = FullPackageNameRegex().Match(package)).Success)
         {
-            returnCode = await InstallFromRepository(config, http, def, profile, package);
+            returnCode = await InstallFromRepository(config, http, def, profile, packageMatch);
         }
         else
         {
@@ -52,28 +55,29 @@ public static class InstallCommand
         return returnCode;
     }
 
-    private static async Task<int> InstallFromRepository(Config config, HttpClient http, GameDefinition game, ModProfile profile, string packageId)
+    private static async Task<int> InstallFromRepository(Config config, HttpClient http, GameDefinition game, ModProfile profile, Match packageMatch)
     {
-        var packageParts = packageId.Split('-');
+        PackageVersionData versionData;
+        Write.Light($"Downloading main package: {packageMatch.Groups["fullname"].Value}");
 
-        PackageVersionData version;
-        Write.Light($"Downloading main package: {packageId}");
-        if (packageParts.Length == 3)
+        var ns = packageMatch.Groups["namespace"];
+        var name = packageMatch.Groups["name"];
+        var version = packageMatch.Groups["version"];
+        if (version.Success)
         {
-            var versionResponse = await http.SendAsync(config.Api.GetPackageVersionMetadata(packageParts[0], packageParts[1], packageParts[2]));
+            var versionResponse = await http.SendAsync(config.Api.GetPackageVersionMetadata(ns.Value, name.Value, version.Value));
             versionResponse.EnsureSuccessStatusCode();
-            version = (await PackageVersionData.DeserializeAsync(await versionResponse.Content.ReadAsStreamAsync()))!;
+            versionData = (await PackageVersionData.DeserializeAsync(await versionResponse.Content.ReadAsStreamAsync()))!;
         }
         else
         {
-            var packageResponse = await http.SendAsync(config.Api.GetPackageMetadata(packageParts[0], packageParts[1]));
+            var packageResponse = await http.SendAsync(config.Api.GetPackageMetadata(ns.Value, name.Value));
             packageResponse.EnsureSuccessStatusCode();
-            version = (await PackageData.DeserializeAsync(await packageResponse.Content.ReadAsStreamAsync()))!.LatestVersion!;
+            versionData = (await PackageData.DeserializeAsync(await packageResponse.Content.ReadAsStreamAsync()))!.LatestVersion!;
         }
 
-        var tempZipPath = await DownloadTemp(http, version);
-        var returnCode = await InstallZip(config, http, game, profile, tempZipPath, version.Namespace!);
-        File.Delete(tempZipPath);
+        var zipPath = await config.Cache.GetFileOrDownload($"{versionData.FullName}.zip", versionData.DownloadUrl!);
+        var returnCode = await InstallZip(config, http, game, profile, zipPath, versionData.Namespace!);
         return returnCode;
     }
 
@@ -92,25 +96,39 @@ public static class InstallCommand
 
         if (dependenciesToInstall.Length > 0)
         {
-            var downloadTasks = dependenciesToInstall.Select(mod => DownloadTemp(http, mod.LatestVersion!)).ToArray();
+            double totalSize = dependenciesToInstall.Select(d => (double) d.Versions![0].FileSize).Sum();
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+            int suffixIndex = 0;
+            while (totalSize >= 1024 && suffixIndex < suffixes.Length)
+            {
+                totalSize /= 1024;
+                suffixIndex++;
+            }
+            Write.Light($"Total estimated download size: {totalSize:F2} {suffixes[suffixIndex]}");
+
+            var downloadTasks = dependenciesToInstall.Select(mod =>
+            {
+                var version = mod.Versions![0];
+                return config.Cache.GetFileOrDownload($"{mod.Fullname}-{version.VersionNumber}.zip", version.DownloadUrl!);
+            }).ToArray();
 
             var spinner = new ProgressSpinner("dependencies downloaded", downloadTasks);
             await spinner.Spin();
 
             foreach (var (tempZipPath, package) in downloadTasks.Select(x => x.Result).Zip(dependenciesToInstall))
             {
-                int returnCode = RunInstaller(game, profile, tempZipPath, package.Namespace);
-                File.Delete(tempZipPath);
+                var packageVersion = package.Versions![0];
+                int returnCode = RunInstaller(game, profile, tempZipPath, package.Owner);
                 if (returnCode == 0)
                 {
-                    Write.Success($"Installed mod: {package.Fullname}-{package.LatestVersion!.VersionNumber}");
+                    Write.Success($"Installed mod: {package.Fullname}-{packageVersion.VersionNumber}");
                 }
                 else
                 {
-                    Write.Error($"Failed to install mod: {package.Fullname}-{package.LatestVersion!.VersionNumber}");
+                    Write.Error($"Failed to install mod: {package.Fullname}-{packageVersion.VersionNumber}");
                     return returnCode;
                 }
-                profile.InstalledModVersions[package.Fullname!] = new PackageManifestV1(package.LatestVersion!);
+                profile.InstalledModVersions[package.Fullname!] = new PackageManifestV1(package, packageVersion);
             }
         }
 
@@ -125,18 +143,6 @@ public static class InstallCommand
             Write.Error($"Failed to install mod: {manifest.FullName}-{manifest.VersionNumber}");
         }
         return exitCode;
-    }
-
-    // TODO: replace with a mod cache
-    private static async Task<string> DownloadTemp(HttpClient http, PackageVersionData version)
-    {
-        string path = Path.GetTempFileName();
-        await using var file = File.OpenWrite(path);
-        using var response = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, version.DownloadUrl!));
-        response.EnsureSuccessStatusCode();
-        var zipStream = await response.Content.ReadAsStreamAsync();
-        await zipStream.CopyToAsync(file);
-        return path;
     }
 
     // TODO: conflict handling

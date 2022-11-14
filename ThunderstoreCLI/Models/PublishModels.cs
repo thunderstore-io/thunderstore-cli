@@ -149,7 +149,7 @@ public class PackageVersionData : BaseJson<PackageVersionData>
 
     [JsonProperty("icon")] public string? Icon { get; set; }
 
-    [JsonProperty("dependencies")] public List<string>? Dependencies { get; set; }
+    [JsonProperty("dependencies")] public string[]? Dependencies { get; set; }
 
     [JsonProperty("download_url")] public string? DownloadUrl { get; set; }
 

@@ -89,6 +89,14 @@ public class ApiHelper
             .GetRequest();
     }
 
+    public HttpRequestMessage GetPackagesV1()
+    {
+        return BaseRequestBuilder
+            .StartNew()
+            .WithEndpoint(V1 + "package/")
+            .GetRequest();
+    }
+
     private static string SerializeFileData(string filePath)
     {
         return new FileData()

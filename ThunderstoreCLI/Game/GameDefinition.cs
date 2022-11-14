@@ -46,7 +46,7 @@ public sealed class GameDefintionCollection : IEnumerable<GameDefinition>, IDisp
     private const string FILE_NAME = "GameDefintions.json";
 
     private readonly string tcliDirectory;
-    private bool shouldWrite = true;
+    private bool shouldWrite = false;
     public List<GameDefinition> List { get; }
 
     internal static GameDefintionCollection FromDirectory(string tcliDirectory) => new(tcliDirectory);

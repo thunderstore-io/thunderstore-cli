@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using ThunderstoreCLI.API;
 using ThunderstoreCLI.Models;
+using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI.Configuration;
 
@@ -21,9 +22,13 @@ public class Config
     private readonly Lazy<ApiHelper> api;
     public ApiHelper Api => api.Value;
 
+    private readonly Lazy<DownloadCache> cache;
+    public DownloadCache Cache => cache.Value;
+
     private Config(GeneralConfig generalConfig, PackageConfig packageConfig, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig, ModManagementConfig modManagementConfig, GameImportConfig gameImportConfig, RunGameConfig runGameConfig)
     {
         api = new Lazy<ApiHelper>(() => new ApiHelper(this));
+        cache = new Lazy<DownloadCache>(() => new DownloadCache(Path.Combine(GeneralConfig!.TcliConfig, "ModCache")));
         GeneralConfig = generalConfig;
         PackageConfig = packageConfig;
         InitConfig = initConfig;
