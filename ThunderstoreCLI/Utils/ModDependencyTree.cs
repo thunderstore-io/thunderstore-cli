@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net;
 using System.Text.RegularExpressions;
 using ThunderstoreCLI.Commands;
@@ -9,31 +8,36 @@ namespace ThunderstoreCLI.Utils;
 
 public static class ModDependencyTree
 {
-    public static IEnumerable<PackageListingV1> Generate(Config config, HttpClient http, PackageManifestV1 root)
+    public static IEnumerable<PackageListingV1> Generate(Config config, HttpClient http, PackageManifestV1 root, string? sourceCommunity)
     {
-        var cachePath = Path.Combine(config.GeneralConfig.TcliConfig, "package-ror2.json");
-        string packagesJson;
-        if (!File.Exists(cachePath) || new FileInfo(cachePath).LastWriteTime.AddMinutes(5) < DateTime.Now)
-        {
-            var packageResponse = http.Send(config.Api.GetPackagesV1());
-            packageResponse.EnsureSuccessStatusCode();
-            using var responseReader = new StreamReader(packageResponse.Content.ReadAsStream());
-            packagesJson = responseReader.ReadToEnd();
-            File.WriteAllText(cachePath, packagesJson);
-        }
-        else
-        {
-            packagesJson = File.ReadAllText(cachePath);
-        }
+        List<PackageListingV1>? packages = null;
 
-        var packages = PackageListingV1.DeserializeList(packagesJson)!;
+        if (sourceCommunity != null)
+        {
+            var cachePath = Path.Combine(config.GeneralConfig.TcliConfig, $"package-{sourceCommunity}.json");
+            string packagesJson;
+            if (!File.Exists(cachePath) || new FileInfo(cachePath).LastWriteTime.AddMinutes(5) < DateTime.Now)
+            {
+                var packageResponse = http.Send(config.Api.GetPackagesV1());
+                packageResponse.EnsureSuccessStatusCode();
+                using var responseReader = new StreamReader(packageResponse.Content.ReadAsStream());
+                packagesJson = responseReader.ReadToEnd();
+                File.WriteAllText(cachePath, packagesJson);
+            }
+            else
+            {
+                packagesJson = File.ReadAllText(cachePath);
+            }
+
+            packages = PackageListingV1.DeserializeList(packagesJson)!;
+        }
 
         HashSet<string> visited = new();
         foreach (var originalDep in root.Dependencies!)
         {
             var match = InstallCommand.FullPackageNameRegex().Match(originalDep);
             var fullname = match.Groups["fullname"].Value;
-            var depPackage = packages.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match, root.FullName);
+            var depPackage = packages?.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match, root.FullName);
             if (depPackage == null)
             {
                 continue;
@@ -51,7 +55,7 @@ public static class ModDependencyTree
         }
     }
 
-    private static IEnumerable<PackageListingV1> GenerateInner(List<PackageListingV1> packages, Config config, HttpClient http, PackageListingV1 root, Predicate<PackageListingV1> visited)
+    private static IEnumerable<PackageListingV1> GenerateInner(List<PackageListingV1>? packages, Config config, HttpClient http, PackageListingV1 root, Predicate<PackageListingV1> visited)
     {
         if (visited(root))
         {
@@ -62,7 +66,7 @@ public static class ModDependencyTree
         {
             var match = InstallCommand.FullPackageNameRegex().Match(dependency);
             var fullname = match.Groups["fullname"].Value;
-            var package = packages.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match, root.Fullname!);
+            var package = packages?.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match, root.Fullname!);
             if (package == null)
             {
                 continue;

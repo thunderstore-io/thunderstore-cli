@@ -38,7 +38,7 @@ public static partial class InstallCommand
         Match packageMatch;
         if (File.Exists(package))
         {
-            returnCode = await InstallZip(config, http, def, profile, package, null);
+            returnCode = await InstallZip(config, http, def, profile, package, null, null);
         }
         else if ((packageMatch = FullPackageNameRegex().Match(package)).Success)
         {
@@ -57,7 +57,7 @@ public static partial class InstallCommand
 
     private static async Task<int> InstallFromRepository(Config config, HttpClient http, GameDefinition game, ModProfile profile, Match packageMatch)
     {
-        PackageVersionData versionData;
+        PackageVersionData? versionData = null;
         Write.Light($"Downloading main package: {packageMatch.Groups["fullname"].Value}");
 
         var ns = packageMatch.Groups["namespace"];
@@ -69,19 +69,18 @@ public static partial class InstallCommand
             versionResponse.EnsureSuccessStatusCode();
             versionData = (await PackageVersionData.DeserializeAsync(await versionResponse.Content.ReadAsStreamAsync()))!;
         }
-        else
-        {
-            var packageResponse = await http.SendAsync(config.Api.GetPackageMetadata(ns.Value, name.Value));
-            packageResponse.EnsureSuccessStatusCode();
-            versionData = (await PackageData.DeserializeAsync(await packageResponse.Content.ReadAsStreamAsync()))!.LatestVersion!;
-        }
+        var packageResponse = await http.SendAsync(config.Api.GetPackageMetadata(ns.Value, name.Value));
+        packageResponse.EnsureSuccessStatusCode();
+        var packageData = await PackageData.DeserializeAsync(await packageResponse.Content.ReadAsStreamAsync());
+
+        versionData ??= packageData!.LatestVersion!;
 
         var zipPath = await config.Cache.GetFileOrDownload($"{versionData.FullName}.zip", versionData.DownloadUrl!);
-        var returnCode = await InstallZip(config, http, game, profile, zipPath, versionData.Namespace!);
+        var returnCode = await InstallZip(config, http, game, profile, zipPath, versionData.Namespace!, packageData!.CommunityListings!.First().Community);
         return returnCode;
     }
 
-    private static async Task<int> InstallZip(Config config, HttpClient http, GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace)
+    private static async Task<int> InstallZip(Config config, HttpClient http, GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace, string? sourceCommunity)
     {
         using var zip = ZipFile.OpenRead(zipPath);
         var manifestFile = zip.GetEntry("manifest.json") ?? throw new CommandFatalException("Package zip needs a manifest.json!");
@@ -90,7 +89,7 @@ public static partial class InstallCommand
 
         manifest.Namespace ??= backupNamespace;
 
-        var dependenciesToInstall = ModDependencyTree.Generate(config, http, manifest)
+        var dependenciesToInstall = ModDependencyTree.Generate(config, http, manifest, sourceCommunity)
             .Where(dependency => !profile.InstalledModVersions.ContainsKey(dependency.Fullname!))
             .ToArray();
 
