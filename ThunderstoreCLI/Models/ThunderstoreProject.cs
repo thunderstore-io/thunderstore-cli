@@ -69,7 +69,7 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
     {
         [TomlProperty("repository")]
         public string Repository { get; set; } = "https://thunderstore.io";
-        [TomlProperty("communtities")]
+        [TomlProperty("communities")]
         public string[] Communities { get; set; } =
         {
             "riskofrain2"
