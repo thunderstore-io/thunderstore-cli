@@ -1,6 +1,6 @@
 using static System.Environment;
 
-namespace ThunderstoreCLI.Config;
+namespace ThunderstoreCLI.Configuration;
 
 class EnvironmentConfig : EmptyConfig
 {

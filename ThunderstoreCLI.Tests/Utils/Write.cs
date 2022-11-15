@@ -1,8 +1,9 @@
 using System;
 using System.IO;
+using ThunderstoreCLI.Utils;
 using Xunit;
 
-namespace ThunderstoreCLI.Tests;
+namespace ThunderstoreCLI.Tests.Utils;
 
 public class FakeConsole : IDisposable
 {
@@ -26,6 +27,7 @@ public class FakeConsole : IDisposable
     }
 }
 
+[Collection(nameof(NoParallel))]
 public class ThunderstoreCLI_Write
 {
     // ANSI escape codes

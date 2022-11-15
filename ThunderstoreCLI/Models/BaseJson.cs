@@ -1,29 +1,50 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace ThunderstoreCLI.Models;
 
-public abstract class BaseJson<T, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Context>
-    where T : BaseJson<T, Context>
-    where Context : JsonSerializerContext
+public abstract class BaseJson<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T> : ISerialize<T>
+    where T : BaseJson<T>
 {
-    public string Serialize(JsonSerializerOptions? options = null)
+    public string Serialize() => Serialize(null);
+    public string Serialize(JsonSerializerSettings? options)
     {
-        var context = (Context) Activator.CreateInstance(typeof(Context), options)!;
-
-        return JsonSerializer.Serialize(this, typeof(T), context);
+        return JsonConvert.SerializeObject(this, options);
     }
-    public static T? Deserialize(string json, JsonSerializerOptions? options = null)
-    {
-        var context = (Context) Activator.CreateInstance(typeof(Context), options)!;
 
-        return (T?) JsonSerializer.Deserialize(json, typeof(T), context);
+    public static T? Deserialize(string json) => Deserialize(json, null);
+    public static T? Deserialize(string json, JsonSerializerSettings? options)
+    {
+        return JsonConvert.DeserializeObject<T>(json, options);
     }
-    public static T? Deserialize(Stream json, JsonSerializerOptions? options)
-    {
-        var context = (Context) Activator.CreateInstance(typeof(Context), options)!;
 
-        return (T?) JsonSerializer.Deserialize(json, typeof(T), context);
+    public static ValueTask<T?> DeserializeAsync(string json) => new(Deserialize(json));
+    public static ValueTask<T?> DeserializeAsync(Stream json) => new(DeserializeAsync(json, null));
+    public static async Task<T?> DeserializeAsync(Stream json, JsonSerializerSettings? options)
+    {
+        using StreamReader reader = new(json);
+        return Deserialize(await reader.ReadToEndAsync(), options);
+    }
+
+    public static List<T>? DeserializeList(string json, JsonSerializerSettings? options = null)
+    {
+        return JsonConvert.DeserializeObject<List<T>>(json, options);
+    }
+}
+
+public static class BaseJson
+{
+    public static readonly JsonSerializerSettings IndentedSettings = new()
+    {
+        Formatting = Formatting.Indented
+    };
+}
+
+public static class BaseJsonExtensions
+{
+    public static string SerializeList<T>(this List<T> list, JsonSerializerSettings? options = null)
+        where T : BaseJson<T>
+    {
+        return JsonConvert.SerializeObject(list, options);
     }
 }

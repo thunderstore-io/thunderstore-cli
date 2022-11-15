@@ -1,11 +1,11 @@
-namespace ThunderstoreCLI.Config;
+namespace ThunderstoreCLI.Configuration;
 
 public interface IConfigProvider
 {
     void Parse(Config currentConfig);
 
     GeneralConfig? GetGeneralConfig();
-    PackageMeta? GetPackageMeta();
+    PackageConfig? GetPackageMeta();
     InitConfig? GetInitConfig();
     BuildConfig? GetBuildConfig();
     PublishConfig? GetPublishConfig();

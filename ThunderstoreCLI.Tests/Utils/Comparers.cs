@@ -1,10 +1,11 @@
+using ThunderstoreCLI.Utils;
 using Xunit;
 
-namespace ThunderstoreCLI.Tests;
+namespace ThunderstoreCLI.Tests.Utils;
 
 public class ThunderstoreCLI_Comparers_SemVer
 {
-    private readonly ThunderstoreCLI.Comparers.SemVer _semVer = new ThunderstoreCLI.Comparers.SemVer();
+    private readonly SemVer _semVer = new SemVer();
 
     public static TheoryData<int[], int[]> EqualValues => new TheoryData<int[], int[]>
     {

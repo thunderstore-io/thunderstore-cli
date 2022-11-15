@@ -1,12 +1,10 @@
-using ThunderstoreCLI.Options;
+namespace ThunderstoreCLI.Configuration;
 
-namespace ThunderstoreCLI.Config;
-
-public abstract class CLIParameterConfig<T> : EmptyConfig where T : PackageOptions
+public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
 {
     protected T options;
 
-    public CLIParameterConfig(T options)
+    public BaseConfig(T options)
     {
         this.options = options;
     }
@@ -15,16 +13,22 @@ public abstract class CLIParameterConfig<T> : EmptyConfig where T : PackageOptio
     {
         return new GeneralConfig()
         {
-            ProjectConfigPath = options.ConfigPath
+            TcliConfig = options.TcliDirectory
         };
     }
+}
 
-    public override PackageMeta? GetPackageMeta()
+public abstract class CLIParameterConfig<T> : BaseConfig<T> where T : PackageOptions
+{
+    public CLIParameterConfig(T opts) : base(opts) { }
+
+    public override PackageConfig? GetPackageMeta()
     {
         if (options == null)
             return null;
-        return new PackageMeta()
+        return new PackageConfig()
         {
+            ProjectConfigPath = options.ConfigPath,
             Namespace = options.Namespace,
             Name = options.Name,
             VersionNumber = options.VersionNumber

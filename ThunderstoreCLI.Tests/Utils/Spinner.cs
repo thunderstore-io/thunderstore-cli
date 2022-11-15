@@ -1,9 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using ThunderstoreCLI.Utils;
 using Xunit;
 
-namespace ThunderstoreCLI.Tests;
+namespace ThunderstoreCLI.Tests.Utils;
 
+[Collection(nameof(NoParallel))]
 public class ThunderstoreCLI_ProgresSpinner
 {
     private async Task CreateTask(bool isSuccess, int delay = 1)

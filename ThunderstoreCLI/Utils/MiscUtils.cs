@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace ThunderstoreCLI;
+namespace ThunderstoreCLI.Utils;
 
 public static class MiscUtils
 {
@@ -14,7 +14,7 @@ public static class MiscUtils
 
         try
         {
-            version = Assembly.GetEntryAssembly()!
+            version = typeof(Program).Assembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
                 .InformationalVersion;
         }
@@ -49,7 +49,7 @@ public static class MiscUtils
         return matches
             .Select(match => match.Groups[1].ToString().Split('.'))
             .Select(ver => ver.Select(part => Int32.Parse(part)).ToArray())
-            .OrderByDescending(ver => ver, new Comparers.SemVer())
+            .OrderByDescending(ver => ver, new SemVer())
             .First();
     }
 

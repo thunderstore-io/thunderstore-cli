@@ -1,19 +1,12 @@
-namespace ThunderstoreCLI.Config;
+namespace ThunderstoreCLI.Configuration;
 
 class BaseConfig : EmptyConfig
 {
-    public override GeneralConfig GetGeneralConfig()
+    public override PackageConfig GetPackageMeta()
     {
-        return new GeneralConfig()
+        return new PackageConfig()
         {
-            ProjectConfigPath = Defaults.PROJECT_CONFIG_PATH
-        };
-    }
-
-    public override PackageMeta GetPackageMeta()
-    {
-        return new PackageMeta()
-        {
+            ProjectConfigPath = Defaults.PROJECT_CONFIG_PATH,
             Namespace = "AuthorName",
             Name = "PackageName",
             VersionNumber = "0.0.1",

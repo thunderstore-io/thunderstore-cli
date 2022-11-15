@@ -1,11 +1,12 @@
-using ThunderstoreCLI.Config;
-using ThunderstoreCLI.Options;
+using ThunderstoreCLI.Configuration;
+using ThunderstoreCLI.Models;
+using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI.Commands;
 
 public static class InitCommand
 {
-    public static int Run(Config.Config config)
+    public static int Run(Config config)
     {
         try
         {
@@ -37,7 +38,7 @@ public static class InitCommand
             {
                 Write.Line($"Project configuration already exists, overwriting");
             }
-            ProjectFileConfig.Write(config, path);
+            File.WriteAllText(path, new ThunderstoreProject(true).Serialize());
 
             var iconPath = config.GetPackageIconPath();
             if (File.Exists(iconPath))
@@ -64,25 +65,25 @@ public static class InitCommand
         }
     }
 
-    public static string BuildReadme(Config.Config config)
+    public static string BuildReadme(Config config)
     {
         return $@"
-# {config.PackageMeta.Namespace}-{config.PackageMeta.Name}
+# {config.PackageConfig.Namespace}-{config.PackageConfig.Name}
 
-{config.PackageMeta.Description}
+{config.PackageConfig.Description}
 ".Trim();
     }
 
-    private static void ValidateConfig(Config.Config config)
+    private static void ValidateConfig(Config config)
     {
-        var v = new Config.Validator("init");
-        v.AddIfEmpty(config.PackageMeta.Namespace, "Package Namespace");
-        v.AddIfEmpty(config.PackageMeta.Name, "Package Name");
-        v.AddIfNotSemver(config.PackageMeta.VersionNumber, "Package VersionNumber");
-        v.AddIfNull(config.PackageMeta.Description, "Package Description");
-        v.AddIfNull(config.PackageMeta.WebsiteUrl, "Package WebsiteUrl");
-        v.AddIfNull(config.PackageMeta.ContainsNsfwContent, "Package ContainsNsfwContent");
-        v.AddIfNull(config.PackageMeta.Dependencies, "Package Dependencies");
+        var v = new Validator("init");
+        v.AddIfEmpty(config.PackageConfig.Namespace, "Package Namespace");
+        v.AddIfEmpty(config.PackageConfig.Name, "Package Name");
+        v.AddIfNotSemver(config.PackageConfig.VersionNumber, "Package VersionNumber");
+        v.AddIfNull(config.PackageConfig.Description, "Package Description");
+        v.AddIfNull(config.PackageConfig.WebsiteUrl, "Package WebsiteUrl");
+        v.AddIfNull(config.PackageConfig.ContainsNsfwContent, "Package ContainsNsfwContent");
+        v.AddIfNull(config.PackageConfig.Dependencies, "Package Dependencies");
         v.AddIfEmpty(config.BuildConfig.IconPath, "Build IconPath");
         v.AddIfEmpty(config.BuildConfig.ReadmePath, "Build ReadmePath");
         v.AddIfEmpty(config.BuildConfig.OutDir, "Build OutDir");

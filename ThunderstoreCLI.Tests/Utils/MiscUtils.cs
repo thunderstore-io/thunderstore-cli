@@ -1,7 +1,8 @@
 using System;
+using ThunderstoreCLI.Utils;
 using Xunit;
 
-namespace ThunderstoreCLI.Tests;
+namespace ThunderstoreCLI.Tests.Utils;
 
 public class ThunderstoreCLI_MiscUtils
 {

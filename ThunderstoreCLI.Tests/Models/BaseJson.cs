@@ -1,13 +1,12 @@
-using System;
-using System.Text.Json;
 using System.Text.Json.Serialization;
-using NuGet.Frameworks;
+using Newtonsoft.Json;
+using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Models;
 using Xunit;
 
-namespace ThunderstoreCLI.Tests;
+namespace ThunderstoreCLI.Tests.Models;
 
-public class TestJson : BaseJson<TestJson, TestJsonContext>
+public class TestJson : BaseJson<TestJson>
 {
     public class Location
     {
@@ -18,9 +17,6 @@ public class TestJson : BaseJson<TestJson, TestJsonContext>
     public int age { get; set; }
     public Location home { get; set; }
 }
-
-[JsonSerializable(typeof(TestJson))]
-public partial class TestJsonContext : JsonSerializerContext { }
 
 public class ThunderstoreCLI_BaseJson
 {
@@ -77,9 +73,9 @@ public class ThunderstoreCLI_BaseJson
     [Fact]
     public void Serialize_WhenAskedToIndent_Indents()
     {
-        var options = new JsonSerializerOptions()
+        var options = new JsonSerializerSettings
         {
-            WriteIndented = true
+            Formatting = Formatting.Indented
         };
 
         Assert.Equal(
