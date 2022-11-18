@@ -12,7 +12,7 @@ public static class RunCommand
 {
     public static int Run(Config config)
     {
-        GameDefintionCollection collection = GameDefintionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
+        var collection = GameDefinitionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
         var def = collection.FirstOrDefault(g => g.Identifier == config.RunGameConfig.GameName);
 
         if (def == null)

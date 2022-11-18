@@ -29,9 +29,9 @@ public static class ImportGameCommand
             throw new CommandFatalException("Game not installed");
         }
 
-        using GameDefintionCollection collection = GameDefintionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
+        var collection = GameDefinitionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
         collection.List.Add(def);
-        collection.Validate();
+        collection.Write();
 
         Write.Success($"Successfully imported {def.Name} ({def.Identifier}) with install folder \"{def.InstallDirectory}\"");
 

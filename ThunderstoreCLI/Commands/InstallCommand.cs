@@ -18,7 +18,7 @@ public static partial class InstallCommand
 
     public static async Task<int> Run(Config config)
     {
-        using var defCollection = GameDefintionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
+        var defCollection = GameDefinitionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
         var defs = defCollection.List;
         GameDefinition? def = defs.FirstOrDefault(x => x.Identifier == config.ModManagementConfig.GameIdentifer);
         if (def == null)
@@ -50,7 +50,7 @@ public static partial class InstallCommand
         }
 
         if (returnCode == 0)
-            defCollection.Validate();
+            defCollection.Write();
 
         return returnCode;
     }
@@ -95,15 +95,8 @@ public static partial class InstallCommand
 
         if (dependenciesToInstall.Length > 0)
         {
-            double totalSize = dependenciesToInstall.Select(d => (double) d.Versions![0].FileSize).Sum();
-            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
-            int suffixIndex = 0;
-            while (totalSize >= 1024 && suffixIndex < suffixes.Length)
-            {
-                totalSize /= 1024;
-                suffixIndex++;
-            }
-            Write.Light($"Total estimated download size: {totalSize:F2} {suffixes[suffixIndex]}");
+            var totalSize = MiscUtils.GetSizeString(dependenciesToInstall.Select(d => d.Versions![0].FileSize).Sum());
+            Write.Light($"Total estimated download size: ");
 
             var downloadTasks = dependenciesToInstall.Select(mod =>
             {

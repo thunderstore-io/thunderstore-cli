@@ -161,16 +161,7 @@ public static class PublishCommand
             throw new PublishCommandException();
         }
 
-        string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
-        int suffixIndex = 0;
-        long size = uploadData.Metadata.Size;
-        while (size >= 1024 && suffixIndex < suffixes.Length)
-        {
-            size /= 1024;
-            suffixIndex++;
-        }
-
-        var details = $"({size}{suffixes[suffixIndex]}) in {uploadData.UploadUrls.Length} chunks...";
+        var details = $"({MiscUtils.GetSizeString(uploadData.Metadata.Size)}) in {uploadData.UploadUrls.Length} chunks...";
         Write.WithNL($"Uploading {Cyan(uploadData.Metadata.Filename)} {details}", after: true);
 
         return uploadData;

@@ -10,7 +10,7 @@ public static class UninstallCommand
 {
     public static int Run(Config config)
     {
-        using var defCollection = GameDefintionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
+        var defCollection = GameDefinitionCollection.FromDirectory(config.GeneralConfig.TcliConfig);
         GameDefinition? def = defCollection.FirstOrDefault(def => def.Identifier == config.ModManagementConfig.GameIdentifer);
         if (def == null)
         {
@@ -99,7 +99,7 @@ public static class UninstallCommand
             throw new CommandFatalException($"The following mods failed to uninstall:\n{string.Join('\n', failedMods)}");
         }
 
-        defCollection.Validate();
+        defCollection.Write();
 
         return 0;
     }

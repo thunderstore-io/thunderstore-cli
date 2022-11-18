@@ -23,7 +23,6 @@
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>$(AssemblyName)</ToolCommandName>
         <ImplicitUsings>enable</ImplicitUsings>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
@@ -77,8 +76,12 @@
         <Message Text="Building tcli-bepinex-installer..." IsCritical="true" />
         <Exec Command="cargo build --manifest-path ../tcli-bepinex-installer/Cargo.toml $(CargoFlags)" ConsoleToMSBuild="true" />
         <ItemGroup>
-            <None Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer.exe" Condition="$([MSBuild]::IsOSPlatform('Windows'))" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
-            <None Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer" Condition="!$([MSBuild]::IsOSPlatform('Windows'))" ContinueOnError="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+            <None Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer.exe" Condition="$([MSBuild]::IsOSPlatform('Windows'))" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always">
+                <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            </None>
+            <None Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer" Condition="!$([MSBuild]::IsOSPlatform('Windows'))" ContinueOnError="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always">
+                <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            </None>
         </ItemGroup>
     </Target>
     <PropertyGroup Condition="'$(EnableInstallers)' == 'true'">

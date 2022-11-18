@@ -41,17 +41,16 @@ public class GameDefinition : BaseJson<GameDefinition>
     }
 }
 
-public sealed class GameDefintionCollection : IEnumerable<GameDefinition>, IDisposable
+public sealed class GameDefinitionCollection : IEnumerable<GameDefinition>
 {
-    private const string FILE_NAME = "GameDefintions.json";
+    private const string FILE_NAME = "GameDefinitions.json";
 
     private readonly string tcliDirectory;
-    private bool shouldWrite = false;
     public List<GameDefinition> List { get; }
 
-    internal static GameDefintionCollection FromDirectory(string tcliDirectory) => new(tcliDirectory);
+    internal static GameDefinitionCollection FromDirectory(string tcliDirectory) => new(tcliDirectory);
 
-    private GameDefintionCollection(string tcliDir)
+    private GameDefinitionCollection(string tcliDir)
     {
         tcliDirectory = tcliDir;
         var filename = Path.Combine(tcliDirectory, FILE_NAME);
@@ -61,18 +60,13 @@ public sealed class GameDefintionCollection : IEnumerable<GameDefinition>, IDisp
             List = new();
     }
 
-    public void Validate() => shouldWrite = true;
+    public void Write()
+    {
+        File.WriteAllText(Path.Combine(tcliDirectory, FILE_NAME), List.SerializeList(BaseJson.IndentedSettings));
+    }
 
     public IEnumerator<GameDefinition> GetEnumerator() => List.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => List.GetEnumerator();
-
-    public void Dispose()
-    {
-        if (!shouldWrite)
-            return;
-        File.WriteAllText(Path.Combine(tcliDirectory, FILE_NAME), List.SerializeList(BaseJson.IndentedSettings));
-        shouldWrite = false;
-    }
 }
 
 public enum GamePlatform

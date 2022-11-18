@@ -232,28 +232,18 @@ public static class SteamUtils
 
         string[] lines = File.ReadAllLines(path);
 
-        int start = -1;
-        for (int i = 0; i < lines.Length; i++)
-        {
-            if (lines[i].StartsWith(@"[Software\\Wine\\DllOverrides]"))
-            {
-                start = i + 2;
-                break;
-            }
-        }
+        int start = Array.FindIndex(lines, l => l.StartsWith(@"[Software\\Wine\\DllOverrides]"));
         if (start == -1)
         {
             return false;
         }
+        start += 2;
 
-        int end = lines.Length - 1;
-        for (int i = start; i < lines.Length; i++)
+        int end = Array.FindIndex(lines, start, l => l.Length == 0);
+
+        if (end == -1)
         {
-            if (lines[i].Length == 0)
-            {
-                end = i;
-                break;
-            }
+            end = lines.Length - 1;
         }
 
         bool written = false;
