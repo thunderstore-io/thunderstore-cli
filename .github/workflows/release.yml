@@ -27,26 +27,26 @@ jobs:
   platform-binary:
     needs: validate-tag
     if: github.event.base_ref == 'refs/heads/master'
-    name: Create binary ${{ matrix.os }}
+    name: Create binary ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         kind: ['linux', 'windows', 'macOS']
         include:
           - kind: linux
-            os: ubuntu-latest
             target: linux-x64
+            os: ubuntu-latest
           - kind: windows
-            os: windows-latest
             target: win-x64
+            os: windows-latest
           - kind: macOS
-            os: macos-latest
             target: osx-x64
+            os: macos-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '7'
       - id: tag
         uses: dawidd6/action-get-tag@v1
       - name: Install dependencies
@@ -56,15 +56,15 @@ jobs:
         shell: bash
         run: |
           release_name="tcli-${{ steps.tag.outputs.tag }}-${{ matrix.target }}"
-          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" -o "$release_name" -p:PublishReadyToRun=true
+          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" -o "${release_name}"
 
           if [ "${{ matrix.target }}" == "win-x64" ]; then
-            7z a -tzip "${release_name}.zip" "./${release_name}/*"
+            7z a -tzip "${release_name}.zip" "./${release_name}"
           else
-            tar czvf "${release_name}.tar.gz" "$release_name"
+            tar czvf "${release_name}.tar.gz" "./${release_name}"
           fi
 
-          rm -r "$release_name"
+          rm -r ${release_name}
 
       - name: Publish to GitHub
         uses: softprops/action-gh-release@v1
@@ -82,9 +82,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '7'
       - id: tag
         uses: dawidd6/action-get-tag@v1
       - name: Install dependencies
@@ -92,10 +92,13 @@ jobs:
 
       - name: Build
         shell: bash
-        run: dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "." -p:SelfContained=false -p:PublishTrimmed=false -p:PublishSingleFile=false -p:StartupObject="" -p:RuntimeIdentifier="" -p:PublishReadyToRun=false -p:PackAsTool=true
+        run: dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "." -p:PublishSelfContained=false -p:PublishSingleFile=false -p:PublishTrimmed=false -p:PublishReadyToRun=false
 
       - name: Publish to GitHub
         uses: softprops/action-gh-release@v1
         with:
           files: "tcli*"
+          name: "Thunderstore CLI ${{ steps.tag.outputs.tag }}"
+          body_path: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
           draft: true
+          prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
