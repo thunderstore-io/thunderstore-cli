@@ -13,8 +13,7 @@ namespace ThunderstoreCLI.Commands;
 public static partial class InstallCommand
 {
     // will match either ab-cd or ab-cd-123.456.7890
-    [GeneratedRegex(@"^(?<fullname>(?<namespace>[\w-\.]+)-(?<name>\w+))(?:|-(?<version>\d+\.\d+\.\d+))$")]
-    internal static partial Regex FullPackageNameRegex();
+    internal static Regex FullPackageNameRegex = new Regex(@"^(?<fullname>(?<namespace>[\w-\.]+)-(?<name>\w+))(?:|-(?<version>\d+\.\d+\.\d+))$");
 
     public static async Task<int> Run(Config config)
     {
@@ -35,12 +34,12 @@ public static partial class InstallCommand
         HttpClient http = new();
 
         int returnCode;
-        Match packageMatch;
+        Match packageMatch = FullPackageNameRegex.Match(package);
         if (File.Exists(package))
         {
             returnCode = await InstallZip(config, http, def, profile, package, null, null);
         }
-        else if ((packageMatch = FullPackageNameRegex().Match(package)).Success)
+        else if (packageMatch.Success)
         {
             returnCode = await InstallFromRepository(config, http, def, profile, packageMatch);
         }

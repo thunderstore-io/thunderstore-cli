@@ -29,23 +29,14 @@ public sealed class DownloadCache
     private async Task<string> DownloadFile(string fullpath, string downloadUrl)
     {
         var tempPath = fullpath + ".tmp";
-        int tryCount = 0;
-Retry:
-        try
+
+        await ActionUtils.RetryAsync(5, async () =>
         {
             // copy into memory first to prevent canceled downloads creating files on the disk
             await using FileStream tempStream = new(tempPath, FileMode.Create, FileAccess.Write);
             await using var downloadStream = await Client.GetStreamAsync(downloadUrl);
             await downloadStream.CopyToAsync(tempStream);
-        }
-        catch
-        {
-            if (++tryCount == 5)
-            {
-                throw;
-            }
-            goto Retry;
-        }
+        });
 
         File.Move(tempPath, fullpath);
         return fullpath;

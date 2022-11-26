@@ -225,7 +225,7 @@ public static class SteamUtils
     public static bool ForceLoadProton(string steamAppId, string[] dllsToEnable)
     {
         var path = Path.Combine(Path.GetDirectoryName(GetAcfPath(steamAppId))!, "compatdata", steamAppId, "pfx", "user.reg");
-        if (!Path.Exists(path))
+        if (!File.Exists(path))
         {
             return false;
         }

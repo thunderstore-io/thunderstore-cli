@@ -35,7 +35,7 @@ public static class ModDependencyTree
         HashSet<string> visited = new();
         foreach (var originalDep in root.Dependencies!)
         {
-            var match = InstallCommand.FullPackageNameRegex().Match(originalDep);
+            var match = InstallCommand.FullPackageNameRegex.Match(originalDep);
             var fullname = match.Groups["fullname"].Value;
             var depPackage = packages?.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match, root.FullName);
             if (depPackage == null)
@@ -64,7 +64,7 @@ public static class ModDependencyTree
 
         foreach (var dependency in root.Versions!.First().Dependencies!)
         {
-            var match = InstallCommand.FullPackageNameRegex().Match(dependency);
+            var match = InstallCommand.FullPackageNameRegex.Match(dependency);
             var fullname = match.Groups["fullname"].Value;
             var package = packages?.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match, root.Fullname!);
             if (package == null)
