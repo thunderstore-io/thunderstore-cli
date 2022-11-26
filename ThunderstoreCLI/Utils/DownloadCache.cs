@@ -12,6 +12,10 @@ public sealed class DownloadCache
     public DownloadCache(string cacheDirectory)
     {
         CacheDirectory = cacheDirectory;
+        if (!Directory.Exists(CacheDirectory))
+        {
+            Directory.CreateDirectory(cacheDirectory);
+        }
     }
 
     // Task instead of ValueTask here because these Tasks will be await'd multiple times (ValueTask does not allow that)

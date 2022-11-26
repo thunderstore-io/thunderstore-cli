@@ -29,8 +29,12 @@ public static class SteamUtils
             throw new ArgumentException($"{steamAppId} is not installed!");
         }
 
-        var source = PlatformOverrideSourceRegex.Match(File.ReadAllText(path)).Groups[1].Value;
-        return source switch
+        var source = PlatformOverrideSourceRegex.Match(File.ReadAllText(path));
+        if (!source.Success)
+        {
+            return Directory.Exists(Path.Combine(Path.GetDirectoryName(path)!, "compatdata", steamAppId));
+        }
+        return source.Groups[1].Value switch
         {
             "" => false,
             "linux" => false,

@@ -29,6 +29,7 @@ public class ApiHelper
 
     private const string V1 = "api/v1/";
     private const string EXPERIMENTAL = "api/experimental/";
+    private const string COMMUNITY = "c/";
 
     public HttpRequestMessage SubmitPackage(string fileUuid)
     {
@@ -94,6 +95,14 @@ public class ApiHelper
         return BaseRequestBuilder
             .StartNew()
             .WithEndpoint(V1 + "package/")
+            .GetRequest();
+    }
+
+    public HttpRequestMessage GetPackagesV1(string community)
+    {
+        return BaseRequestBuilder
+            .StartNew()
+            .WithEndpoint(COMMUNITY + community + "/api/v1/package/")
             .GetRequest();
     }
 

@@ -18,7 +18,7 @@ public static class ModDependencyTree
             string packagesJson;
             if (!File.Exists(cachePath) || new FileInfo(cachePath).LastWriteTime.AddMinutes(5) < DateTime.Now)
             {
-                var packageResponse = http.Send(config.Api.GetPackagesV1());
+                var packageResponse = http.Send(config.Api.GetPackagesV1(sourceCommunity));
                 packageResponse.EnsureSuccessStatusCode();
                 using var responseReader = new StreamReader(packageResponse.Content.ReadAsStream());
                 packagesJson = responseReader.ReadToEnd();
