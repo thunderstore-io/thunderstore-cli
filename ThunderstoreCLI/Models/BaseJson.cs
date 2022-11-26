@@ -42,7 +42,7 @@ public static class BaseJson
 
 public static class BaseJsonExtensions
 {
-    public static string SerializeList<T>(this List<T> list, JsonSerializerSettings? options = null)
+    public static string SerializeList<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(this List<T> list, JsonSerializerSettings? options = null)
         where T : BaseJson<T>
     {
         return JsonConvert.SerializeObject(list, options);

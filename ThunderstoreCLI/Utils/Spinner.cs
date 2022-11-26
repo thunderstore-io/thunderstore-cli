@@ -66,6 +66,7 @@ public class ProgressSpinner
             if (completed == _tasks.Length)
             {
                 Write.Empty();
+                await Task.WhenAll(_tasks);
                 return;
             }
 
