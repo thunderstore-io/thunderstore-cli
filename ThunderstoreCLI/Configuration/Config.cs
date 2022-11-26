@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThunderstoreCLI.API;
 using ThunderstoreCLI.Models;
 
@@ -128,7 +129,7 @@ public class Config
         return result;
     }
 
-    public static void Merge<T>(T target, T source, bool overwrite)
+    public static void Merge<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T target, T source, bool overwrite)
     {
         if (source == null)
             return;

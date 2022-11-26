@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           release_name="tcli-${{ steps.tag.outputs.tag }}-${{ matrix.target }}"
-          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" -o "${release_name}"
+          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" -f net7.0 -o "${release_name}"
 
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             7z a -tzip "${release_name}.zip" "./${release_name}"
