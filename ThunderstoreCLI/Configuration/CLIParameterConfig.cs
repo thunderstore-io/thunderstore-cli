@@ -18,7 +18,9 @@ public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
     }
 }
 
-public abstract class CLIParameterConfig<T> : BaseConfig<T> where T : PackageOptions
+public interface CLIConfig { }
+
+public abstract class CLIParameterConfig<T> : BaseConfig<T>, CLIConfig where T : PackageOptions
 {
     public CLIParameterConfig(T opts) : base(opts) { }
 
