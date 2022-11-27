@@ -33,7 +33,7 @@ public class Config
         List<IConfigProvider> providers = new();
         providers.Add(cliConfig);
         providers.Add(new EnvironmentConfig());
-        if (cliConfig.GetType().IsSubclassOf(typeof(CLIParameterConfig<>)))
+        if (cliConfig is CLIConfig)
             providers.Add(new ProjectFileConfig());
         providers.Add(new BaseConfig());
         return Parse(providers.ToArray());
