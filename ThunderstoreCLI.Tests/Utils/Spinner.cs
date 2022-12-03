@@ -31,7 +31,7 @@ public class ThunderstoreCLI_ProgresSpinner
             CreateTask(false)
         });
 
-        await Assert.ThrowsAsync<SpinnerException>(async () => await spinner.Start());
+        await Assert.ThrowsAsync<SpinnerException>(async () => await spinner.Spin());
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class ThunderstoreCLI_ProgresSpinner
             CreateTask(true)
         });
 
-        await spinner.Start();
+        await spinner.Spin();
     }
 
     [Fact]
@@ -53,6 +53,6 @@ public class ThunderstoreCLI_ProgresSpinner
             CreateTask(true)
         });
 
-        await spinner.Start();
+        await spinner.Spin();
     }
 }

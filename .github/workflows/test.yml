@@ -39,7 +39,7 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
       - name: Run xUnit tests
-        run: dotnet test --collect:"XPlat Code Coverage"
+        run: dotnet test -p:EnableInstallers=false --collect:"XPlat Code Coverage"
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:

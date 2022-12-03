@@ -8,7 +8,14 @@ public interface ISerialize<[DynamicallyAccessedMembers(DynamicallyAccessedMembe
     public string Serialize();
 #if NET7_0
     public static abstract T? Deserialize(string input);
-    public static abstract ValueTask<T?> DeserializeAsync(string input);
-    public static abstract ValueTask<T?> DeserializeAsync(Stream input);
+    public static virtual ValueTask<T?> DeserializeAsync(string input)
+    {
+        return new(T.Deserialize(input));
+    }
+    public static virtual async ValueTask<T?> DeserializeAsync(Stream input)
+    {
+        using StreamReader reader = new(input);
+        return T.Deserialize(await reader.ReadToEndAsync());
+    }
 #endif
 }

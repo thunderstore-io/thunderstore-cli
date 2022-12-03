@@ -21,7 +21,7 @@ public class ProgressSpinner
         _tasks = tasks;
     }
 
-    public async Task Start()
+    public async Task Spin()
     {
         // Cursor operations are not always available e.g. in GitHub Actions environment.
         // Done up here to minimize exception usage (throws and catches are expensive and all)

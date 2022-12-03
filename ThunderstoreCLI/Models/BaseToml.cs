@@ -9,11 +9,4 @@ public abstract class BaseToml<[DynamicallyAccessedMembers(DynamicallyAccessedMe
     public string Serialize() => TomletMain.TomlStringFrom(this);
 
     public static T? Deserialize(string toml) => TomletMain.To<T>(toml);
-
-    public static ValueTask<T?> DeserializeAsync(string toml) => new(Deserialize(toml));
-    public static async ValueTask<T?> DeserializeAsync(Stream toml)
-    {
-        using StreamReader reader = new(toml);
-        return Deserialize(await reader.ReadToEndAsync());
-    }
 }

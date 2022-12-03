@@ -33,7 +33,13 @@
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <!-- needed to use some C#11 features with NET 6, like required properties. -->
+        <PackageReference Include="PolySharp" Version="1.8.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Samboy063.Tomlet" Version="5.0.0" />
+        <PackageReference Include="YamlDotNet" Version="12.0.2" />
     </ItemGroup>
 
     <!-- https://github.com/dotnet/runtime/blob/main/docs/design/features/globalization-invariant-mode.md -->
@@ -55,4 +61,30 @@
             <LastGenOutput>Resources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
     </ItemGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug' And '$(EnableInstallers)' == ''">
+        <EnableInstallers>true</EnableInstallers>
+    </PropertyGroup>
+
+    <!-- Compile bepinex installer with TCLI -->
+    <Target Name="BuildBepInExInstaller" BeforeTargets="BeforeBuild" Condition="'$(EnableInstallers)' == 'true'">
+        <PropertyGroup>
+            <CargoFlags Condition=" '$(Configuration)' == 'Release' ">--release</CargoFlags>
+            <TargetSubdirectory Condition=" '$(Configuration)' == 'Debug' ">debug</TargetSubdirectory>
+            <TargetSubdirectory Condition=" '$(Configuration)' == 'Release' ">release</TargetSubdirectory>
+        </PropertyGroup>
+        <Message Text="Building tcli-bepinex-installer..." IsCritical="true" />
+        <Exec Command="cargo build --manifest-path ../tcli-bepinex-installer/Cargo.toml $(CargoFlags)" ConsoleToMSBuild="true" />
+        <ItemGroup>
+            <None Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer.exe" Condition="$([MSBuild]::IsOSPlatform('Windows'))" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always">
+                <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            </None>
+            <None Include="../tcli-bepinex-installer/target/$(TargetSubdirectory)/tcli-bepinex-installer" Condition="!$([MSBuild]::IsOSPlatform('Windows'))" ContinueOnError="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always">
+                <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            </None>
+        </ItemGroup>
+    </Target>
+    <PropertyGroup Condition="'$(EnableInstallers)' == 'true'">
+        <DefineConstants>INSTALLERS</DefineConstants>
+    </PropertyGroup>
 </Project>

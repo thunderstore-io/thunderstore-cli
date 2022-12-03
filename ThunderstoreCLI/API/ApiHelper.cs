@@ -18,7 +18,7 @@ public class ApiHelper
     public ApiHelper(Config config)
     {
         Config = config;
-        BaseRequestBuilder = new RequestBuilder(config.PublishConfig.Repository ?? throw new Exception("The target repository cannot be empty"));
+        BaseRequestBuilder = new RequestBuilder(config.GeneralConfig.Repository ?? throw new Exception("Repository can't be empty"));
         authHeader = new Lazy<AuthenticationHeaderValue>(() =>
         {
             if (string.IsNullOrEmpty(Config.AuthConfig.AuthToken))
@@ -29,6 +29,7 @@ public class ApiHelper
 
     private const string V1 = "api/v1/";
     private const string EXPERIMENTAL = "api/experimental/";
+    private const string COMMUNITY = "c/";
 
     public HttpRequestMessage SubmitPackage(string fileUuid)
     {
@@ -70,6 +71,38 @@ public class ApiHelper
             .WithEndpoint(EXPERIMENTAL + $"usermedia/{uuid}/abort-upload/")
             .WithMethod(HttpMethod.Post)
             .WithAuth(AuthHeader)
+            .GetRequest();
+    }
+
+    public HttpRequestMessage GetPackageMetadata(string author, string name)
+    {
+        return BaseRequestBuilder
+            .StartNew()
+            .WithEndpoint(EXPERIMENTAL + $"package/{author}/{name}/")
+            .GetRequest();
+    }
+
+    public HttpRequestMessage GetPackageVersionMetadata(string author, string name, string version)
+    {
+        return BaseRequestBuilder
+            .StartNew()
+            .WithEndpoint(EXPERIMENTAL + $"package/{author}/{name}/{version}/")
+            .GetRequest();
+    }
+
+    public HttpRequestMessage GetPackagesV1()
+    {
+        return BaseRequestBuilder
+            .StartNew()
+            .WithEndpoint(V1 + "package/")
+            .GetRequest();
+    }
+
+    public HttpRequestMessage GetPackagesV1(string community)
+    {
+        return BaseRequestBuilder
+            .StartNew()
+            .WithEndpoint(COMMUNITY + community + "/api/v1/package/")
             .GetRequest();
     }
 

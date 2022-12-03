@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using CommandLine;
 using ThunderstoreCLI.Models;
+using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI;
 
@@ -15,23 +16,48 @@ internal static class Program
 #endif
 
         var updateChecker = UpdateChecker.CheckForUpdates();
-        var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions>(args)
+        var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions
+#if INSTALLERS
+                , InstallOptions, UninstallOptions, GameImportOptions, RunGameOptions
+#endif
+            >(args)
             .MapResult(
                 (InitOptions o) => HandleParsed(o),
                 (BuildOptions o) => HandleParsed(o),
                 (PublishOptions o) => HandleParsed(o),
+#if INSTALLERS
+                (InstallOptions o) => HandleParsed(o),
+                (UninstallOptions o) => HandleParsed(o),
+                (GameImportOptions o) => HandleParsed(o),
+                (RunGameOptions o) => HandleParsed(o),
+#endif
                 _ => 1 // failure to parse
             );
         UpdateChecker.WriteUpdateNotification(updateChecker);
         return exitCode;
     }
 
+    // TODO: replace return codes with exceptions completely
     private static int HandleParsed(BaseOptions parsed)
     {
         parsed.Init();
         if (!parsed.Validate())
+        {
             return 1;
-        return parsed.Execute();
+        }
+        try
+        {
+            return parsed.Execute();
+        }
+        catch (CommandFatalException cfe)
+        {
+            Write.Error(cfe.ErrorMessage);
+#if DEBUG
+            throw;
+#else
+            return 1;
+#endif
+        }
     }
 }
 

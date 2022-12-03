@@ -1,6 +1,5 @@
 using System.IO.Compression;
 using System.Text;
-using Newtonsoft.Json;
 using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Models;
 using ThunderstoreCLI.Utils;

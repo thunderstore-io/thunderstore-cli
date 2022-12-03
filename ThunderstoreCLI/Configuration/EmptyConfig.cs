@@ -33,4 +33,19 @@ public abstract class EmptyConfig : IConfigProvider
     {
         return null;
     }
+
+    public virtual ModManagementConfig? GetModManagementConfig()
+    {
+        return null;
+    }
+
+    public virtual GameImportConfig? GetGameImportConfig()
+    {
+        return null;
+    }
+
+    public virtual RunGameConfig? GetRunGameConfig()
+    {
+        return null;
+    }
 }

@@ -69,4 +69,17 @@ public static class MiscUtils
 
         return await response.Content.ReadAsStringAsync();
     }
+
+    public static string GetSizeString(long byteSize)
+    {
+        double finalSize = byteSize;
+        string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+        int suffixIndex = 0;
+        while (finalSize >= 1024 && suffixIndex < suffixes.Length)
+        {
+            finalSize /= 1024;
+            suffixIndex++;
+        }
+        return $"{byteSize:F2} {suffixes[suffixIndex]}";
+    }
 }

@@ -13,7 +13,8 @@ public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
     {
         return new GeneralConfig()
         {
-            TcliConfig = options.TcliDirectory
+            TcliConfig = options.TcliDirectory,
+            Repository = options.Repository
         };
     }
 }
@@ -64,8 +65,7 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
     {
         return new PublishConfig()
         {
-            File = options.File,
-            Repository = options.Repository
+            File = options.File
         };
     }
 
@@ -74,6 +74,48 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
         return new AuthConfig()
         {
             AuthToken = options.Token
+        };
+    }
+}
+
+public class ModManagementCommandConfig : BaseConfig<ModManagementOptions>
+{
+    public ModManagementCommandConfig(ModManagementOptions options) : base(options) { }
+
+    public override ModManagementConfig? GetModManagementConfig()
+    {
+        return new ModManagementConfig()
+        {
+            GameIdentifer = options.GameName,
+            ProfileName = options.Profile,
+            Package = options.Package
+        };
+    }
+}
+
+public class GameImportCommandConfig : BaseConfig<GameImportOptions>
+{
+    public GameImportCommandConfig(GameImportOptions options) : base(options) { }
+
+    public override GameImportConfig? GetGameImportConfig()
+    {
+        return new GameImportConfig()
+        {
+            FilePath = options.FilePath
+        };
+    }
+}
+
+public class RunGameCommandConfig : BaseConfig<RunGameOptions>
+{
+    public RunGameCommandConfig(RunGameOptions options) : base(options) { }
+
+    public override RunGameConfig? GetRunGameConfig()
+    {
+        return new RunGameConfig()
+        {
+            GameName = options.GameName,
+            ProfileName = options.Profile
         };
     }
 }

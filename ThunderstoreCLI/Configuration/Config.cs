@@ -1,32 +1,34 @@
 using System.Diagnostics.CodeAnalysis;
 using ThunderstoreCLI.API;
 using ThunderstoreCLI.Models;
+using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI.Configuration;
 
 public class Config
 {
     // ReSharper disable AutoPropertyCanBeMadeGetOnly.Local
-    public GeneralConfig GeneralConfig { get; private set; }
-    public PackageConfig PackageConfig { get; private set; }
-    public InitConfig InitConfig { get; private set; }
-    public BuildConfig BuildConfig { get; private set; }
-    public PublishConfig PublishConfig { get; private set; }
-    public AuthConfig AuthConfig { get; private set; }
+    public required GeneralConfig GeneralConfig { get; init; }
+    public required PackageConfig PackageConfig { get; init; }
+    public required InitConfig InitConfig { get; init; }
+    public required BuildConfig BuildConfig { get; init; }
+    public required PublishConfig PublishConfig { get; init; }
+    public required AuthConfig AuthConfig { get; init; }
+    public required ModManagementConfig ModManagementConfig { get; init; }
+    public required GameImportConfig GameImportConfig { get; init; }
+    public required RunGameConfig RunGameConfig { get; init; }
     // ReSharper restore AutoPropertyCanBeMadeGetOnly.Local
 
     private readonly Lazy<ApiHelper> api;
     public ApiHelper Api => api.Value;
 
-    private Config(GeneralConfig generalConfig, PackageConfig packageConfig, InitConfig initConfig, BuildConfig buildConfig, PublishConfig publishConfig, AuthConfig authConfig)
+    private readonly Lazy<DownloadCache> cache;
+    public DownloadCache Cache => cache.Value;
+
+    private Config()
     {
         api = new Lazy<ApiHelper>(() => new ApiHelper(this));
-        GeneralConfig = generalConfig;
-        PackageConfig = packageConfig;
-        InitConfig = initConfig;
-        BuildConfig = buildConfig;
-        PublishConfig = publishConfig;
-        AuthConfig = authConfig;
+        cache = new Lazy<DownloadCache>(() => new DownloadCache(Path.Combine(GeneralConfig!.TcliConfig, "ModCache")));
     }
     public static Config FromCLI(IConfigProvider cliConfig)
     {
@@ -109,22 +111,30 @@ public class Config
 
     public static Config Parse(IConfigProvider[] configProviders)
     {
-        var generalConfig = new GeneralConfig();
-        var packageMeta = new PackageConfig();
-        var initConfig = new InitConfig();
-        var buildConfig = new BuildConfig();
-        var publishConfig = new PublishConfig();
-        var authConfig = new AuthConfig();
-        var result = new Config(generalConfig, packageMeta, initConfig, buildConfig, publishConfig, authConfig);
+        Config result = new()
+        {
+            GeneralConfig = new GeneralConfig(),
+            PackageConfig = new PackageConfig(),
+            InitConfig = new InitConfig(),
+            BuildConfig = new BuildConfig(),
+            PublishConfig = new PublishConfig(),
+            AuthConfig = new AuthConfig(),
+            ModManagementConfig = new ModManagementConfig(),
+            GameImportConfig = new GameImportConfig(),
+            RunGameConfig = new RunGameConfig(),
+        };
         foreach (var provider in configProviders)
         {
             provider.Parse(result);
-            Merge(generalConfig, provider.GetGeneralConfig(), false);
-            Merge(packageMeta, provider.GetPackageMeta(), false);
-            Merge(initConfig, provider.GetInitConfig(), false);
-            Merge(buildConfig, provider.GetBuildConfig(), false);
-            Merge(publishConfig, provider.GetPublishConfig(), false);
-            Merge(authConfig, provider.GetAuthConfig(), false);
+            Merge(result.GeneralConfig, provider.GetGeneralConfig(), false);
+            Merge(result.PackageConfig, provider.GetPackageMeta(), false);
+            Merge(result.InitConfig, provider.GetInitConfig(), false);
+            Merge(result.BuildConfig, provider.GetBuildConfig(), false);
+            Merge(result.PublishConfig, provider.GetPublishConfig(), false);
+            Merge(result.AuthConfig, provider.GetAuthConfig(), false);
+            Merge(result.ModManagementConfig, provider.GetModManagementConfig(), false);
+            Merge(result.GameImportConfig, provider.GetGameImportConfig(), false);
+            Merge(result.RunGameConfig, provider.GetRunGameConfig(), false);
         }
         return result;
     }
@@ -201,7 +211,6 @@ public class BuildConfig
 public class PublishConfig
 {
     public string? File { get; set; }
-    public string? Repository { get; set; }
     public string[]? Communities { get; set; }
     public string[]? Categories { get; set; }
 }
@@ -209,4 +218,22 @@ public class PublishConfig
 public class AuthConfig
 {
     public string? AuthToken { get; set; }
+}
+
+public class ModManagementConfig
+{
+    public string? GameIdentifer { get; set; }
+    public string? Package { get; set; }
+    public string? ProfileName { get; set; }
+}
+
+public class GameImportConfig
+{
+    public string? FilePath { get; set; }
+}
+
+public class RunGameConfig
+{
+    public string? GameName { get; set; }
+    public string? ProfileName { get; set; }
 }
