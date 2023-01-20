@@ -9,21 +9,20 @@ public static class ImportGameCommand
 {
     public static int Run(Config config)
     {
-        R2mmGameDescription? desc;
-        try
+        var http = new HttpClient();
+
+        var response = http.Send(new HttpRequestMessage(HttpMethod.Get, "https://gcdn.thunderstore.io/static/dev/schema/ecosystem-schema.0.0.2.json"));
+
+        response.EnsureSuccessStatusCode();
+
+        var schema = SchemaResponse.Deserialize(response.Content.ReadAsStream())!;
+
+        if (!schema.games.TryGetValue(config.GameImportConfig.GameId!, out var game))
         {
-            desc = R2mmGameDescription.Deserialize(File.ReadAllText(config.GameImportConfig.FilePath!));
-        }
-        catch (Exception e)
-        {
-            throw new CommandFatalException($"Failed to read game description file: {e}");
-        }
-        if (desc is null)
-        {
-            throw new CommandFatalException("Game description file was empty");
+            throw new CommandFatalException($"Could not find game with ID {config.GameImportConfig.GameId}");
         }
 
-        var def = desc.ToGameDefintion(config);
+        var def = game.ToGameDefintion(config);
         if (def == null)
         {
             throw new CommandFatalException("Game not installed");

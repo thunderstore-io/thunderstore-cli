@@ -27,6 +27,8 @@ public static class RunCommand
             throw new CommandFatalException($"No profile found with the name {config.RunGameConfig.ProfileName}");
         }
 
+        var isSteam = def.Platform == GamePlatform.Steam;
+
         ProcessStartInfo startInfo = new(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "tcli-bepinex-installer.exe" : "tcli-bepinex-installer")
         {
             ArgumentList =
@@ -39,17 +41,17 @@ public static class RunCommand
             RedirectStandardError = true
         };
 
-        var gameIsProton = SteamUtils.IsProtonGame(def.PlatformId);
+        var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        // TODO: Wine without Steam
+        var gameIsProton = isSteam && SteamUtils.IsProtonGame(def.PlatformId!);
 
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        startInfo.ArgumentList.Add("--game-platform");
+        startInfo.ArgumentList.Add((isWindows, gameIsProton) switch
         {
-            startInfo.ArgumentList.Add("--game-platform");
-            startInfo.ArgumentList.Add(gameIsProton switch
-            {
-                true => "windows",
-                false => "linux"
-            });
-        }
+            (true, _) => "windows",
+            (false, true) => "proton",
+            (false, false) => "linux"
+        });
 
         var installerProcess = Process.Start(startInfo)!;
         installerProcess.WaitForExit();
@@ -62,6 +64,7 @@ public static class RunCommand
 
         string runArguments = "";
         string[] wineDlls = Array.Empty<string>();
+        List<KeyValuePair<string, string>> environ = new();
 
         string[] outputLines = installerProcess.StandardOutput.ReadToEnd().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
         foreach (var line in outputLines)
@@ -85,32 +88,65 @@ public static class RunCommand
                     }
                     wineDlls = args.Split(':');
                     break;
+                case "ENVIRONMENT":
+                    var parts = args.Split('=');
+                    environ.Add(new(parts[0], parts[1]));
+                    break;
             }
         }
 
-        var steamExePath = SteamUtils.FindSteamExecutable();
-        if (steamExePath == null)
-        {
-            throw new CommandFatalException("Couldn't find steam install directory!");
-        }
+        var allArgs = string.Join(' ', runArguments, config.RunGameConfig.UserArguments);
 
-        if (gameIsProton && wineDlls.Length > 0)
+        if (isSteam)
         {
-            if (!SteamUtils.ForceLoadProton(def.PlatformId, wineDlls))
+            var steamExePath = SteamUtils.FindSteamExecutable();
+            if (steamExePath == null)
             {
-                throw new CommandFatalException($"No compat files could be found for app id {def.PlatformId}, please run the game at least once.");
+                throw new CommandFatalException("Couldn't find steam install directory!");
             }
+
+            if (gameIsProton && wineDlls.Length > 0)
+            {
+                if (!SteamUtils.ForceLoadProton(def.PlatformId!, wineDlls))
+                {
+                    throw new CommandFatalException($"No compat files could be found for app id {def.PlatformId}, please run the game at least once.");
+                }
+            }
+
+            ProcessStartInfo runSteamInfo = new(steamExePath)
+            {
+                Arguments = $"-applaunch {def.PlatformId} {allArgs}"
+            };
+
+            Write.Note($"Starting appid {def.PlatformId} with arguments: {allArgs}");
+            var steamProcess = Process.Start(runSteamInfo)!;
+            steamProcess.WaitForExit();
+            Write.Success($"Started game with appid {def.PlatformId}");
         }
-
-        ProcessStartInfo runSteamInfo = new(steamExePath)
+        else if (def.Platform == GamePlatform.Other)
         {
-            Arguments = $"-applaunch {def.PlatformId} {runArguments}"
-        };
+            var exePath = def.ExePath!;
 
-        Write.Note($"Starting appid {def.PlatformId} with arguments: {runArguments}");
-        var steamProcess = Process.Start(runSteamInfo)!;
-        steamProcess.WaitForExit();
-        Write.Success($"Started game with appid {def.PlatformId}");
+            if (!File.Exists(exePath))
+            {
+                throw new CommandFatalException($"Executable {exePath} could not be found.");
+            }
+
+            ProcessStartInfo process = new(exePath)
+            {
+                Arguments = allArgs,
+                WorkingDirectory = def.InstallDirectory,
+            };
+            foreach (var (key, val) in environ)
+            {
+                Write.Line($"{key}: {val}");
+                process.Environment.Add(key, val);
+            }
+
+            Write.Note($"Starting {exePath} with arguments: {allArgs}");
+
+            Process.Start(process)!.WaitForExit();
+        }
 
         return 0;
     }

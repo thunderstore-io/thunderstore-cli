@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    env,
     ffi::OsString,
     fs::{self, OpenOptions},
     io::{self, Read, Seek},
@@ -7,7 +8,7 @@ use std::{
 };
 
 use anyhow::{bail, Result};
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use serde::Deserialize;
 use zip::ZipArchive;
 
@@ -36,8 +37,8 @@ enum Commands {
         game_directory: PathBuf,
         bepinex_directory: PathBuf,
         #[arg(long)]
-        game_platform: Option<String>,
-    }
+        game_platform: GamePlatform,
+    },
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -68,6 +69,13 @@ struct ManifestV1 {
     pub website_url: String,
 }
 
+#[derive(Debug, Deserialize, Clone, Copy, ValueEnum)]
+enum GamePlatform {
+    Windows,
+    Proton,
+    Linux,
+}
+
 fn main() -> Result<()> {
     let args = ClapArgs::parse();
 
@@ -87,7 +95,12 @@ fn main() -> Result<()> {
             if !zip_path.exists() {
                 bail!(Error::PathDoesNotExist(zip_path));
             }
-            install(game_directory, bepinex_directory, zip_path, namespace_backup)
+            install(
+                game_directory,
+                bepinex_directory,
+                zip_path,
+                namespace_backup,
+            )
         }
         Commands::Uninstall {
             game_directory,
@@ -103,17 +116,23 @@ fn main() -> Result<()> {
             uninstall(game_directory, bepinex_directory, name)
         }
         Commands::StartInstructions {
+            game_directory,
             bepinex_directory,
             game_platform,
             ..
         } => {
-            output_instructions(bepinex_directory, game_platform);
+            output_instructions(game_directory, bepinex_directory, game_platform);
             Ok(())
         }
     }
 }
 
-fn install(game_dir: PathBuf, bep_dir: PathBuf, zip_path: PathBuf, namespace_backup: Option<String>) -> Result<()> {
+fn install(
+    game_dir: PathBuf,
+    bep_dir: PathBuf,
+    zip_path: PathBuf,
+    namespace_backup: Option<String>,
+) -> Result<()> {
     let mut zip = ZipArchive::new(std::fs::File::open(zip_path)?)?;
 
     if !zip.file_names().any(|name| name == "manifest.json") {
@@ -133,7 +152,8 @@ fn install(game_dir: PathBuf, bep_dir: PathBuf, zip_path: PathBuf, namespace_bac
     let manifest: ManifestV1 =
         serde_json::from_str(&manifest_text).map_err(Error::InvalidManifest)?;
 
-    if manifest.name.starts_with("BepInEx") && zip.file_names().any(|f| f.ends_with("winhttp.dll")) {
+    if manifest.name.starts_with("BepInEx") && zip.file_names().any(|f| f.ends_with("winhttp.dll"))
+    {
         install_bepinex(game_dir, bep_dir, zip)
     } else {
         install_mod(bep_dir, zip, manifest, namespace_backup)
@@ -145,7 +165,11 @@ fn install_bepinex(
     bep_dir: PathBuf,
     mut zip: ZipArchive<impl Read + Seek>,
 ) -> Result<()> {
-    let write_opts = OpenOptions::new().write(true).create(true).clone();
+    let write_opts = {
+        let mut opts = OpenOptions::new();
+        opts.write(true).create(true);
+        opts
+    };
 
     for i in 0..zip.len() {
         let mut file = zip.by_index(i)?;
@@ -163,15 +187,14 @@ fn install_bepinex(
             continue;
         }
 
-        let dir_to_use = if filepath.ancestors().any(|part| {
+        let in_bep_folder = filepath.ancestors().any(|part| {
             part.file_name()
                 .unwrap_or(&OsString::new())
-                .to_string_lossy() == "BepInEx"
-        }) {
-            &bep_dir
-        } else {
-            &game_dir
-        };
+                .to_string_lossy()
+                == "BepInEx"
+        });
+
+        let dir_to_use = if in_bep_folder { &bep_dir } else { &game_dir };
 
         // this removes the BepInExPack*/ from the path
         let resolved_path = remove_first_n_directories(&filepath, 1);
@@ -196,7 +219,10 @@ fn install_mod(
 
     let full_name = format!(
         "{}-{}",
-        manifest.namespace.or(namespace_backup).ok_or(Error::MissingNamespace)?,
+        manifest
+            .namespace
+            .or(namespace_backup)
+            .ok_or(Error::MissingNamespace)?,
         manifest.name
     );
 
@@ -213,7 +239,10 @@ fn install_mod(
         Path::new("BepInEx").join("monomod"),
         Path::new("BepInEx").join("monomod").join(&full_name),
     );
-    remaps.insert(Path::new("BepInEx").join("config"), Path::new("BepInEx").join("config"));
+    remaps.insert(
+        Path::new("BepInEx").join("config"),
+        Path::new("BepInEx").join("config"),
+    );
 
     let default_remap = &remaps[&Path::new("BepInEx").join("plugins")];
 
@@ -227,7 +256,7 @@ fn install_mod(
         let filepath = file.enclosed_name().ok_or(Error::MalformedZip)?.to_owned();
         let filename = match filepath.file_name() {
             Some(name) => name,
-            None => continue
+            None => continue,
         };
 
         let mut out_path = None;
@@ -253,7 +282,12 @@ fn install_mod(
 }
 
 fn uninstall(game_dir: PathBuf, bep_dir: PathBuf, name: String) -> Result<()> {
-    if name.split_once('-').ok_or(Error::InvalidModName)?.1.starts_with("BepInEx") {
+    if name
+        .split_once('-')
+        .ok_or(Error::InvalidModName)?
+        .1
+        .starts_with("BepInEx")
+    {
         uninstall_bepinex(game_dir, bep_dir)
     } else {
         uninstall_mod(bep_dir, name)
@@ -279,22 +313,72 @@ fn uninstall_mod(bep_dir: PathBuf, name: String) -> Result<()> {
     Ok(())
 }
 
-fn output_instructions(bep_dir: PathBuf, platform: Option<String>) {
-    if platform.as_ref().map(|p| p == "windows").unwrap_or(true) {
-        let drive_prefix = match platform {
-            Some(_) => "Z:",
-            None => ""
-        };
-
-        println!("ARGUMENTS:--doorstop-enable true --doorstop-target {}{}", drive_prefix, bep_dir.join("BepInEx").join("core").join("BepInEx.Preloader.dll").to_string_lossy().replace('/', "\\"));
-        println!("WINEDLLOVERRIDE:winhttp")
+fn output_instructions(game_dir: PathBuf, bep_dir: PathBuf, platform: GamePlatform) {
+    let drive_prefix = if matches!(platform, GamePlatform::Proton) {
+        "Z:\\"
     } else {
-        eprintln!("native linux not implmented");
+        ""
+    };
+
+    let bep_preloader_dll = bep_dir
+        .join("BepInEx")
+        .join("core")
+        .join("BepInEx.Preloader.dll")
+        .to_string_lossy()
+        .into_owned();
+
+    match platform {
+        GamePlatform::Windows | GamePlatform::Proton => {
+            println!(
+                "ARGUMENTS:--doorstop-enable true --doorstop-target {}{}",
+                drive_prefix,
+                bep_preloader_dll.replace('/', "\\")
+            );
+            println!("WINEDLLOVERRIDE:winhttp");
+        }
+        GamePlatform::Linux => {
+            println!("ENVIRONMENT:DOORSTOP_ENABLE=TRUE");
+            println!("ENVIRONMENT:DOORSTOP_INVOKE_DLL_PATH={}", bep_preloader_dll);
+            println!(
+                "ENVIRONMENT:DOORSTOP_CORLIB_OVERRIDE_PATH={}",
+                game_dir.join("unstripped_corlib").to_string_lossy()
+            );
+
+            let mut ld_library = OsString::from(game_dir.join("doorstop_libs"));
+            match env::var_os("LD_LIBRARY") {
+                Some(orig) => {
+                    ld_library.push(":");
+                    ld_library.push(orig);
+                }
+                None => {}
+            }
+
+            println!("ENVIRONMENT:LD_LIBRARY={}", ld_library.to_string_lossy());
+
+            let mut ld_preload = OsString::from(game_dir.join("doorstop_libs").join({
+                if cfg!(target_arch = "x86_64") {
+                    "libdoorstop_x64.so"
+                } else {
+                    "libdoorstop_x86.so"
+                }
+            }));
+            match env::var_os("LD_PRELOAD") {
+                Some(orig) => {
+                    ld_preload.push(":");
+                    ld_preload.push(orig);
+                }
+                None => {}
+            }
+
+            println!("ENVIRONMENT:LD_PRELOAD={}", ld_preload.to_string_lossy());
+        }
     }
 }
 
 fn top_level_directory_name(path: &Path) -> Option<&str> {
-    path.components().next().and_then(|n| n.as_os_str().to_str())
+    path.components()
+        .next()
+        .and_then(|n| n.as_os_str().to_str())
 }
 
 /// removes the first n directories from a path, eg a/b/c/d.txt with an n of 2 gives c/d.txt

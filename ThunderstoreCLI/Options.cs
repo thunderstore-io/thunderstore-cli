@@ -191,14 +191,17 @@ public class UninstallOptions : ModManagementOptions
 [Verb("import-game", HelpText = "Imports a new game to use with TCLI")]
 public class GameImportOptions : BaseOptions
 {
-    [Value(0, MetaName = "File Path", Required = true, HelpText = "Path to game description file to import")]
-    public required string FilePath { get; set; }
+    [Option(HelpText = "Path to game exe to use when launching the game. Only works with servers.")]
+    public required string? ExePath { get; set; }
+
+    [Value(0, Required = true, HelpText = "The identifier for the game to import.")]
+    public required string GameId { get; set; }
 
     public override bool Validate()
     {
-        if (!File.Exists(FilePath))
+        if (!string.IsNullOrWhiteSpace(ExePath) && !File.Exists(ExePath))
         {
-            Write.ErrorExit($"Could not locate game description file at {FilePath}");
+            Write.ErrorExit($"Could not locate game exe at {ExePath}");
         }
 
         return base.Validate();
@@ -215,10 +218,13 @@ public class GameImportOptions : BaseOptions
 public class RunGameOptions : BaseOptions
 {
     [Value(0, MetaName = "Game", Required = true, HelpText = "The identifier of the game to run.")]
-    public required string GameName { get; set; } = null!;
+    public required string GameName { get; set; }
 
-    [Option(HelpText = "Profile to install to", Default = "DefaultProfile")]
+    [Option(HelpText = "Which profile to run the game under", Default = "DefaultProfile")]
     public required string Profile { get; set; }
+
+    [Option(HelpText = "Arguments to run the game with.")]
+    public string? Args { get; set; }
 
     public override int Execute()
     {

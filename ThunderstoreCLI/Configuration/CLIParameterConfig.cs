@@ -101,7 +101,8 @@ public class GameImportCommandConfig : BaseConfig<GameImportOptions>
     {
         return new GameImportConfig()
         {
-            FilePath = options.FilePath
+            ExePath = options.ExePath,
+            GameId = options.GameId,
         };
     }
 }
@@ -115,7 +116,8 @@ public class RunGameCommandConfig : BaseConfig<RunGameOptions>
         return new RunGameConfig()
         {
             GameName = options.GameName,
-            ProfileName = options.Profile
+            ProfileName = options.Profile,
+            UserArguments = options.Args,
         };
     }
 }
