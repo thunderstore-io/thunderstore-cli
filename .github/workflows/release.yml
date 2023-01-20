@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           release_name="tcli-${{ steps.tag.outputs.tag }}-${{ matrix.target }}"
-          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" -f net7.0 -o "${release_name}"
+          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" --self-contained true -f net7.0 -o "${release_name}"
 
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             7z a -tzip "${release_name}.zip" "./${release_name}"
@@ -92,7 +92,7 @@ jobs:
 
       - name: Build
         shell: bash
-        run: dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "." -p:PublishSelfContained=false -p:PublishSingleFile=false -p:PublishTrimmed=false -p:PublishReadyToRun=false
+        run: dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "." -p:EnableInstallers=false -p:PublishSelfContained=false -p:PublishSingleFile=false -p:PublishTrimmed=false -p:PublishReadyToRun=false
 
       - name: Publish to GitHub
         uses: softprops/action-gh-release@v1
