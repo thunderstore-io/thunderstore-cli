@@ -123,7 +123,7 @@ public class PublishOptions : PackageOptions
             return false;
         }
 
-        if (!(File is null))
+        if (File is not null)
         {
             var filePath = Path.GetFullPath(File);
             if (!System.IO.File.Exists(filePath))
@@ -147,13 +147,13 @@ public class PublishOptions : PackageOptions
 
 public abstract class ModManagementOptions : BaseOptions
 {
-    [Value(0, MetaName = "Game Name", Required = true, HelpText = "Can be any of: ror2, vrising, vrising_dedicated, vrising_builtin")]
+    [Value(0, MetaName = "Game Name", Required = true, HelpText = "The identifier of the game to manage mods for")]
     public string GameName { get; set; } = null!;
 
-    [Value(1, MetaName = "Package", Required = true, HelpText = "Path to package zip or package name in the format namespace-name")]
+    [Value(1, MetaName = "Package", Required = true, HelpText = "Path to package zip or package name in the format namespace-name(-version)")]
     public string Package { get; set; } = null!;
 
-    [Option(HelpText = "Profile to install to", Default = "Default")]
+    [Option(HelpText = "Profile to install to", Default = "DefaultProfile")]
     public string? Profile { get; set; }
 
     protected enum CommandInner
@@ -176,19 +176,19 @@ public abstract class ModManagementOptions : BaseOptions
     }
 }
 
-[Verb("install")]
+[Verb("install", HelpText = "Installs a mod to a profile")]
 public class InstallOptions : ModManagementOptions
 {
     protected override CommandInner CommandType => CommandInner.Install;
 }
 
-[Verb("uninstall")]
+[Verb("uninstall", HelpText = "Uninstalls a mod from a profile")]
 public class UninstallOptions : ModManagementOptions
 {
     protected override CommandInner CommandType => CommandInner.Uninstall;
 }
 
-[Verb("import-game")]
+[Verb("import-game", HelpText = "Imports a new game to use with TCLI")]
 public class GameImportOptions : BaseOptions
 {
     [Value(0, MetaName = "File Path", Required = true, HelpText = "Path to game description file to import")]
@@ -211,13 +211,13 @@ public class GameImportOptions : BaseOptions
     }
 }
 
-[Verb("run")]
+[Verb("run", HelpText = "Run a game modded")]
 public class RunGameOptions : BaseOptions
 {
-    [Value(0, MetaName = "Game Name", Required = true, HelpText = "Can be any of: ror2, vrising, vrising_dedicated, vrising_builtin")]
+    [Value(0, MetaName = "Game", Required = true, HelpText = "The identifier of the game to run.")]
     public required string GameName { get; set; } = null!;
 
-    [Option(HelpText = "Profile to install to", Default = "Default")]
+    [Option(HelpText = "Profile to install to", Default = "DefaultProfile")]
     public required string Profile { get; set; }
 
     public override int Execute()
