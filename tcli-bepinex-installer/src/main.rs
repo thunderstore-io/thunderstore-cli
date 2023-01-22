@@ -356,6 +356,7 @@ fn output_instructions(game_dir: PathBuf, bep_dir: PathBuf, platform: GamePlatfo
             println!("ENVIRONMENT:LD_LIBRARY={}", ld_library.to_string_lossy());
 
             let mut ld_preload = OsString::from(game_dir.join("doorstop_libs").join({
+                // FIXME: properly determine arch of the game exe, instead of assuming its the same as this exe
                 if cfg!(target_arch = "x86_64") {
                     "libdoorstop_x64.so"
                 } else {
