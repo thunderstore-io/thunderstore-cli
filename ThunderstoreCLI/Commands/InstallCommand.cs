@@ -95,7 +95,7 @@ public static partial class InstallCommand
         if (dependenciesToInstall.Length > 0)
         {
             var totalSize = MiscUtils.GetSizeString(dependenciesToInstall.Select(d => d.Versions![0].FileSize).Sum());
-            Write.Light($"Total estimated download size: ");
+            Write.Light($"Total estimated download size: {totalSize}");
 
             var downloadTasks = dependenciesToInstall.Select(mod =>
             {

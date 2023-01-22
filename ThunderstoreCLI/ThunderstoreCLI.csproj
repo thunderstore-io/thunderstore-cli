@@ -62,7 +62,7 @@
         </EmbeddedResource>
     </ItemGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug' And '$(EnableInstallers)' == ''">
+    <PropertyGroup Condition="'$(EnableInstallers)' == ''">
         <EnableInstallers>true</EnableInstallers>
     </PropertyGroup>
 
