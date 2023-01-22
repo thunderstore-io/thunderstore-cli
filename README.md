@@ -30,6 +30,8 @@ To get started, import your game from the Thunderstore API using:
 ```
 tcli.exe import-game {game identifier, e.g. ror2 or valheim}
 ```
+To run the game from a specific file instead of say, through Steam (you probably want this for servers!) use `--exepath {path/to/server/launcher.exe}`. Passing in a script file also works fine.
+
 To install mods, use the command:
 ```
 tcli.exe install {game identifier} {namespace-modname(-version)}
@@ -45,6 +47,8 @@ And running the game is done with:
 tcli.exe run {game identifier}
 ```
 The `--profile` snippet from above still applies to both of those commands.
+
+If you want to run the game with a specific set of arguments, you can use `--args "--flag parameter1 parameter2"`
 
 The installed mods by default will go into `%APPDATA%\ThunderstoreCLI` on Windows and `~/.config/ThunderstoreCLI` on Linux. This is configurable by using `--tcli-directory` with any command.
 

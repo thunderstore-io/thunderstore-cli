@@ -229,11 +229,13 @@ public class ModManagementConfig
 
 public class GameImportConfig
 {
-    public string? FilePath { get; set; }
+    public string? ExePath { get; set; }
+    public string? GameId { get; set; }
 }
 
 public class RunGameConfig
 {
     public string? GameName { get; set; }
     public string? ProfileName { get; set; }
+    public string? UserArguments { get; set; }
 }
