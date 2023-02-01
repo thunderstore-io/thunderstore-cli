@@ -18,7 +18,7 @@ internal static class Program
         var updateChecker = UpdateChecker.CheckForUpdates();
         var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions
 #if INSTALLERS
-                , InstallOptions, UninstallOptions, GameImportOptions, RunGameOptions
+                , InstallOptions, UninstallOptions, GameImportOptions, RunGameOptions, ListOptions
 #endif
             >(args)
             .MapResult(
@@ -30,6 +30,7 @@ internal static class Program
                 (UninstallOptions o) => HandleParsed(o),
                 (GameImportOptions o) => HandleParsed(o),
                 (RunGameOptions o) => HandleParsed(o),
+                (ListOptions o) => HandleParsed(o),
 #endif
                 _ => 1 // failure to parse
             );
