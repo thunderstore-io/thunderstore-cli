@@ -25,10 +25,6 @@ public class SchemaGame
         {
             return GameDefinition.FromNativeInstall(config, label, meta.displayName);
         }
-        if (!OperatingSystem.IsWindows())
-        {
-            throw new CommandFatalException("Installs without passing --exepath are not yet supported on non-Windows");
-        }
         var platform = distributions.First(p => p.platform == GamePlatform.Steam);
         return GameDefinition.FromPlatformInstall(config, platform.platform, platform.identifier, label, meta.displayName);
     }

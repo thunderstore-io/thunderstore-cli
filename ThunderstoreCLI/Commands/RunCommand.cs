@@ -4,7 +4,6 @@ using System.Text;
 using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Game;
 using ThunderstoreCLI.Utils;
-using YamlDotNet.Core.Tokens;
 
 namespace ThunderstoreCLI.Commands;
 

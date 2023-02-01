@@ -26,20 +26,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommandLineParser" Version="2.8.0" />
-        <PackageReference Include="Crayon" Version="2.0.60" />
-        <PackageReference Include="MinVer" Version="2.5.0">
+        <PackageReference Include="CommandLineParser" Version="2.9.1" />
+        <PackageReference Include="Crayon" Version="2.0.69" />
+        <PackageReference Include="MinVer" Version="4.3.0">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
         <!-- needed to use some C#11 features with NET 6, like required properties. -->
-        <PackageReference Include="PolySharp" Version="1.8.1">
+        <PackageReference Include="PolySharp" Version="1.12.1">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Samboy063.Tomlet" Version="5.0.0" />
-        <PackageReference Include="YamlDotNet" Version="12.0.2" />
+        <PackageReference Include="Samboy063.Tomlet" Version="5.1.2" />
     </ItemGroup>
 
     <!-- https://github.com/dotnet/runtime/blob/main/docs/design/features/globalization-invariant-mode.md -->

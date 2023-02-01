@@ -223,7 +223,7 @@ public class RunGameOptions : BaseOptions
     [Option(HelpText = "Which profile to run the game under", Default = "DefaultProfile")]
     public required string Profile { get; set; }
 
-    [Option(HelpText = "Arguments to run the game with.")]
+    [Option(HelpText = "Arguments to run the game with. Anything after a trailing -- will be prioritized over this argument.")]
     public string? Args { get; set; }
 
     public override int Execute()
