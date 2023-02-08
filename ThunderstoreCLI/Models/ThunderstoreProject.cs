@@ -8,41 +8,6 @@ namespace ThunderstoreCLI.Models;
 [TomlDoNotInlineObject]
 public class ThunderstoreProject : BaseToml<ThunderstoreProject>
 {
-    static ThunderstoreProject()
-    {
-        TomletMain.RegisterMapper<DictionaryWrapper>(
-            instance =>
-            {
-                var table = new TomlTable
-                {
-                    ForceNoInline = true
-                };
-                foreach (var (key, val) in instance!.Wrapped)
-                {
-                    table.Entries.Add(key, new TomlString(val));
-                }
-                return table;
-            },
-            table =>
-            {
-                var dict = new Dictionary<string, string>();
-                foreach (var (key, value) in ((TomlTable) table).Entries)
-                {
-                    dict[key] = value.StringValue;
-                }
-                return new DictionaryWrapper
-                {
-                    Wrapped = dict
-                };
-            }
-        );
-    }
-
-    public class DictionaryWrapper
-    {
-        public required Dictionary<string, string> Wrapped { get; init; }
-    }
-
     [TomlDoNotInlineObject]
     public class ConfigData
     {
@@ -68,12 +33,9 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
         public string WebsiteUrl { get; set; } = "https://thunderstore.io";
         [TomlProperty("containsNsfwContent")]
         public bool ContainsNsfwContent { get; set; } = false;
-
         [TomlProperty("dependencies")]
-        public DictionaryWrapper Dependencies { get; set; } = new()
-        {
-            Wrapped = new Dictionary<string, string>() { { "AuthorName-PackageName", "0.0.1" } }
-        };
+        [TomlDoNotInlineObject]
+        public Dictionary<string, string> Dependencies { get; set; } = new() { { "AuthorName-PackageName", "0.0.1" } };
     }
     [TomlProperty("package")]
     public PackageData? Package { get; set; }

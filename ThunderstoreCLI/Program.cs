@@ -15,6 +15,15 @@ internal static class Program
             { }
 #endif
 
+        string? trailingArgs = null;
+
+        var argsDelimeterIndex = Array.IndexOf(args, "--");
+        if (argsDelimeterIndex != -1)
+        {
+            trailingArgs = string.Join(' ', args, argsDelimeterIndex + 1, args.Length - argsDelimeterIndex);
+            args = args[..argsDelimeterIndex];
+        }
+
         var updateChecker = UpdateChecker.CheckForUpdates();
         var exitCode = Parser.Default.ParseArguments<InitOptions, BuildOptions, PublishOptions
 #if INSTALLERS
@@ -29,7 +38,15 @@ internal static class Program
                 (InstallOptions o) => HandleParsed(o),
                 (UninstallOptions o) => HandleParsed(o),
                 (GameImportOptions o) => HandleParsed(o),
-                (RunGameOptions o) => HandleParsed(o),
+                (RunGameOptions o) =>
+                {
+                    if (trailingArgs != null)
+                    {
+                        o.Args = trailingArgs;
+                    }
+                    return HandleParsed(o);
+                },
+                
                 (ListOptions o) => HandleParsed(o),
 #endif
                 _ => 1 // failure to parse
