@@ -41,7 +41,7 @@ internal class ProjectFileConfig : EmptyConfig
             VersionNumber = Project.Package?.VersionNumber,
             ProjectConfigPath = SourcePath,
             Description = Project.Package?.Description,
-            Dependencies = Project.Package?.Dependencies.Wrapped,
+            Dependencies = Project.Package?.Dependencies,
             ContainsNsfwContent = Project.Package?.ContainsNsfwContent,
             WebsiteUrl = Project.Package?.WebsiteUrl
         };

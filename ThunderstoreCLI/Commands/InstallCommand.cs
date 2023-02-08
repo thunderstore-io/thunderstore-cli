@@ -13,7 +13,7 @@ namespace ThunderstoreCLI.Commands;
 public static partial class InstallCommand
 {
     // will match either ab-cd or ab-cd-123.456.7890
-    internal static Regex FullPackageNameRegex = new Regex(@"^(?<fullname>(?<namespace>[\w-\.]+)-(?<name>\w+))(?:|-(?<version>\d+\.\d+\.\d+))$");
+    internal static readonly Regex FullPackageNameRegex = new Regex(@"^(?<fullname>(?<namespace>[\w-\.]+)-(?<name>\w+))(?:|-(?<version>\d+\.\d+\.\d+))$");
 
     public static async Task<int> Run(Config config)
     {
@@ -65,11 +65,13 @@ public static partial class InstallCommand
         if (version.Success)
         {
             var versionResponse = await http.SendAsync(config.Api.GetPackageVersionMetadata(ns.Value, name.Value, version.Value));
-            versionResponse.EnsureSuccessStatusCode();
+            if (!versionResponse.IsSuccessStatusCode)
+                throw new CommandFatalException($"Couldn't find version {version} of mod {ns}-{name}");
             versionData = (await PackageVersionData.DeserializeAsync(await versionResponse.Content.ReadAsStreamAsync()))!;
         }
         var packageResponse = await http.SendAsync(config.Api.GetPackageMetadata(ns.Value, name.Value));
-        packageResponse.EnsureSuccessStatusCode();
+        if (!packageResponse.IsSuccessStatusCode)
+            throw new CommandFatalException($"Could not find package with the name {ns}-{name}");
         var packageData = await PackageData.DeserializeAsync(await packageResponse.Content.ReadAsStreamAsync());
 
         versionData ??= packageData!.LatestVersion!;
