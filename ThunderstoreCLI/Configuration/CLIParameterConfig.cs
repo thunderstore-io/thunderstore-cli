@@ -121,3 +121,8 @@ public class RunGameCommandConfig : BaseConfig<RunGameOptions>
         };
     }
 }
+
+public class ListConfig : BaseConfig<ListOptions>
+{
+    public ListConfig(ListOptions options) : base(options) { }
+}

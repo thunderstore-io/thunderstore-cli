@@ -232,3 +232,13 @@ public class RunGameOptions : BaseOptions
         return RunCommand.Run(config);
     }
 }
+
+[Verb("list", HelpText = "List configured games, profiles, and mods")]
+public class ListOptions : BaseOptions
+{
+    public override int Execute()
+    {
+        ListCommand.Run(Config.FromCLI(new ListConfig(this)));
+        return 0;
+    }
+}
