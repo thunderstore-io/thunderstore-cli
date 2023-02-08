@@ -20,7 +20,8 @@ internal static class Program
         var argsDelimeterIndex = Array.IndexOf(args, "--");
         if (argsDelimeterIndex != -1)
         {
-            trailingArgs = string.Join(' ', args, argsDelimeterIndex + 1, args.Length - argsDelimeterIndex);
+            var trailingWithQuotes = args.Skip(argsDelimeterIndex + 1).Select(arg => arg.Contains(' ') ? $"\"{arg}\"" : arg);
+            trailingArgs = string.Join(' ', trailingWithQuotes);
             args = args[..argsDelimeterIndex];
         }
 
@@ -46,7 +47,7 @@ internal static class Program
                     }
                     return HandleParsed(o);
                 },
-                
+
                 (ListOptions o) => HandleParsed(o),
 #endif
                 _ => 1 // failure to parse
