@@ -80,6 +80,6 @@ public static class MiscUtils
             finalSize /= 1024;
             suffixIndex++;
         }
-        return $"{byteSize:F2} {suffixes[suffixIndex]}";
+        return $"{finalSize:F2} {suffixes[suffixIndex]}";
     }
 }
