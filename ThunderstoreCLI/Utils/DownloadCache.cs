@@ -18,6 +18,11 @@ public sealed class DownloadCache
         }
     }
 
+    public bool ContainsFile(string filename)
+    {
+        return File.Exists(Path.Combine(CacheDirectory, filename));
+    }
+
     // Task instead of ValueTask here because these Tasks will be await'd multiple times (ValueTask does not allow that)
     public Task<string> GetFileOrDownload(string filename, string downloadUrl)
     {

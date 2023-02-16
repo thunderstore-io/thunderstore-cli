@@ -239,11 +239,7 @@ public static class PublishCommand
 
             using var response = await HttpClient.SendAsync(request);
 
-            try
-            {
-                response.EnsureSuccessStatusCode();
-            }
-            catch
+            if (!response.IsSuccessStatusCode)
             {
                 Write.Empty();
                 Write.ErrorExit(await response.Content.ReadAsStringAsync());
