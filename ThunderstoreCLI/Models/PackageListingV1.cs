@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using ThunderstoreCLI.Commands;
 
 namespace ThunderstoreCLI.Models;
 
@@ -103,6 +105,11 @@ public class PackageVersionV1
 
     [JsonProperty("file_size")]
     public int FileSize { get; set; }
+
+    [JsonIgnore]
+    private GroupCollection? _fullNameParts;
+    [JsonIgnore]
+    public GroupCollection FullNameParts => _fullNameParts ??= InstallCommand.FullPackageNameRegex.Match(FullName!).Groups;
 
     public PackageVersionV1() { }
 

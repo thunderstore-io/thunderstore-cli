@@ -8,7 +8,7 @@ namespace ThunderstoreCLI.Utils;
 
 public static class ModDependencyTree
 {
-    public static IEnumerable<PackageListingV1> Generate(Config config, HttpClient http, PackageManifestV1 root, string? sourceCommunity)
+    public static IEnumerable<PackageVersionV1> Generate(Config config, HttpClient http, PackageManifestV1 root, string? sourceCommunity, bool useExactVersions)
     {
         List<PackageListingV1>? packages = null;
 
@@ -32,67 +32,62 @@ public static class ModDependencyTree
             packages = PackageListingV1.DeserializeList(packagesJson)!;
         }
 
-        HashSet<string> visited = new();
-        foreach (var originalDep in root.Dependencies!)
+        Queue<string> toVisit = new();
+        Dictionary<string, (int id, PackageVersionV1 version)> dict = new();
+        int currentId = 0;
+        foreach (var dep in root.Dependencies!)
         {
-            var match = InstallCommand.FullPackageNameRegex.Match(originalDep);
+            toVisit.Enqueue(dep);
+        }
+        while (toVisit.TryDequeue(out var packageString))
+        {
+            var match = InstallCommand.FullPackageNameRegex.Match(packageString);
             var fullname = match.Groups["fullname"].Value;
-            var depPackage = packages?.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match, root.FullName);
-            if (depPackage == null)
+            if (dict.TryGetValue(fullname, out var current))
             {
+                dict[fullname] = (currentId++, current.version);
                 continue;
             }
-            foreach (var dependency in GenerateInner(packages, config, http, depPackage, p => visited.Contains(p.Fullname!)))
+            var package = packages?.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match);
+            if (package is null)
+                continue;
+            PackageVersionV1? version;
+            if (useExactVersions)
             {
-                // can happen on cycles, oh well
-                if (visited.Contains(dependency.Fullname!))
+                string requiredVersion = match.Groups["version"].Value;
+                version = package.Versions!.FirstOrDefault(v => v.VersionNumber == requiredVersion);
+                if (version is null)
                 {
-                    continue;
+                    Write.Warn($"Version {requiredVersion} could not be found for mod {fullname}, using latest instead");
+                    version = package.Versions!.First();
                 }
-                visited.Add(dependency.Fullname!);
-                yield return dependency;
+            }
+            else
+            {
+                version = package.Versions!.First();
+            }
+            dict[fullname] = (currentId++, version);
+            foreach (var dep in version.Dependencies!)
+            {
+                toVisit.Enqueue(dep);
             }
         }
+        return dict.Values.OrderByDescending(x => x.id).Select(x => x.version);
     }
 
-    private static IEnumerable<PackageListingV1> GenerateInner(List<PackageListingV1>? packages, Config config, HttpClient http, PackageListingV1 root, Predicate<PackageListingV1> visited)
-    {
-        if (visited(root))
-        {
-            yield break;
-        }
-
-        foreach (var dependency in root.Versions!.First().Dependencies!)
-        {
-            var match = InstallCommand.FullPackageNameRegex.Match(dependency);
-            var fullname = match.Groups["fullname"].Value;
-            var package = packages?.Find(p => p.Fullname == fullname) ?? AttemptResolveExperimental(config, http, match, root.Fullname!);
-            if (package == null)
-            {
-                continue;
-            }
-            foreach (var innerPackage in GenerateInner(packages, config, http, package, visited))
-            {
-                yield return innerPackage;
-            }
-        }
-
-        yield return root;
-    }
-
-    private static PackageListingV1? AttemptResolveExperimental(Config config, HttpClient http, Match nameMatch, string neededBy)
+    private static PackageListingV1? AttemptResolveExperimental(Config config, HttpClient http, Match nameMatch)
     {
         var response = http.Send(config.Api.GetPackageMetadata(nameMatch.Groups["namespace"].Value, nameMatch.Groups["name"].Value));
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            Write.Warn($"Failed to resolve dependency {nameMatch.Groups["fullname"].Value} for {neededBy}, continuing without it.");
+            Write.Warn($"Failed to resolve dependency {nameMatch.Groups["fullname"].Value}, continuing without it.");
             return null;
         }
         response.EnsureSuccessStatusCode();
         using var reader = new StreamReader(response.Content.ReadAsStream());
         var data = PackageData.Deserialize(reader.ReadToEnd());
 
-        Write.Warn($"Package {data!.Fullname} (needed by {neededBy}) exists in different community, ignoring");
+        Write.Warn($"Package {data!.Fullname} exists in different community, ignoring");
         return null;
     }
 }
