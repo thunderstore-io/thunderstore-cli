@@ -35,7 +35,7 @@ public static class UninstallCommand
             var searchWithDash = search + '-';
             foreach (var mod in profile.InstalledModVersions.Values)
             {
-                if (mod.Dependencies!.Any(s => s.StartsWith(searchWithDash)))
+                if (mod.Dependencies.Any(s => s.StartsWith(searchWithDash)))
                 {
                     if (modsToRemove.Add(mod.FullName))
                     {

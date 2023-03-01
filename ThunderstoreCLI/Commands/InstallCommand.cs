@@ -37,7 +37,7 @@ public static partial class InstallCommand
         Match packageMatch = FullPackageNameRegex.Match(package);
         if (File.Exists(package))
         {
-            returnCode = await InstallZip(config, http, def, profile, package, null, null);
+            returnCode = await InstallZip(config, http, def, profile, package, null, null, false);
         }
         else if (packageMatch.Success)
         {
@@ -77,11 +77,11 @@ public static partial class InstallCommand
         versionData ??= packageData!.LatestVersion!;
 
         var zipPath = await config.Cache.GetFileOrDownload($"{versionData.FullName}.zip", versionData.DownloadUrl!);
-        var returnCode = await InstallZip(config, http, game, profile, zipPath, versionData.Namespace!, packageData!.CommunityListings!.First().Community);
+        var returnCode = await InstallZip(config, http, game, profile, zipPath, versionData.Namespace!, packageData!.CommunityListings!.First().Community, packageData.CommunityListings!.First().Categories!.Contains("Modpacks"));
         return returnCode;
     }
 
-    private static async Task<int> InstallZip(Config config, HttpClient http, GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace, string? sourceCommunity)
+    private static async Task<int> InstallZip(Config config, HttpClient http, GameDefinition game, ModProfile profile, string zipPath, string? backupNamespace, string? sourceCommunity, bool isModpack)
     {
         using var zip = ZipFile.OpenRead(zipPath);
         var manifestFile = zip.GetEntry("manifest.json") ?? throw new CommandFatalException("Package zip needs a manifest.json!");
@@ -90,15 +90,15 @@ public static partial class InstallCommand
 
         manifest.Namespace ??= backupNamespace;
 
-        var dependenciesToInstall = ModDependencyTree.Generate(config, http, manifest, sourceCommunity)
-            .Where(dependency => !profile.InstalledModVersions.ContainsKey(dependency.Fullname!))
+        var dependenciesToInstall = ModDependencyTree.Generate(config, http, manifest, sourceCommunity, isModpack)
+            .Where(dependency => !profile.InstalledModVersions.ContainsKey(dependency.FullNameParts["fullname"].Value))
             .ToArray();
 
         if (dependenciesToInstall.Length > 0)
         {
             var totalSize = dependenciesToInstall
-                .Where(d => !config.Cache.ContainsFile($"{d.Fullname}-{d.Versions![0].VersionNumber}.zip"))
-                .Select(d => d.Versions![0].FileSize)
+                .Where(d => !config.Cache.ContainsFile($"{d.FullName}-{d.VersionNumber}.zip"))
+                .Select(d => d.FileSize)
                 .Sum();
             if (totalSize != 0)
             {
@@ -106,35 +106,32 @@ public static partial class InstallCommand
             }
 
             var downloadTasks = dependenciesToInstall.Select(mod =>
-            {
-                var version = mod.Versions![0];
-                return config.Cache.GetFileOrDownload($"{mod.Fullname}-{version.VersionNumber}.zip", version.DownloadUrl!);
-            }).ToArray();
+                config.Cache.GetFileOrDownload($"{mod.FullName}-{mod.VersionNumber}.zip", mod.DownloadUrl!)
+            ).ToArray();
 
             var spinner = new ProgressSpinner("dependencies downloaded", downloadTasks);
             await spinner.Spin();
 
-            foreach (var (tempZipPath, package) in downloadTasks.Select(x => x.Result).Zip(dependenciesToInstall))
+            foreach (var (tempZipPath, pVersion) in downloadTasks.Select(x => x.Result).Zip(dependenciesToInstall))
             {
-                var packageVersion = package.Versions![0];
-                int returnCode = RunInstaller(game, profile, tempZipPath, package.Owner);
+                int returnCode = RunInstaller(game, profile, tempZipPath, pVersion.FullNameParts["namespace"].Value);
                 if (returnCode == 0)
                 {
-                    Write.Success($"Installed mod: {package.Fullname}-{packageVersion.VersionNumber}");
+                    Write.Success($"Installed mod: {pVersion.FullName}");
                 }
                 else
                 {
-                    Write.Error($"Failed to install mod: {package.Fullname}-{packageVersion.VersionNumber}");
+                    Write.Error($"Failed to install mod: {pVersion.FullName}");
                     return returnCode;
                 }
-                profile.InstalledModVersions[package.Fullname!] = new PackageManifestV1(package, packageVersion);
+                profile.InstalledModVersions[pVersion.FullNameParts["fullname"].Value] = new InstalledModVersion(pVersion.FullNameParts["fullname"].Value, pVersion.VersionNumber!, pVersion.Dependencies!);
             }
         }
 
         var exitCode = RunInstaller(game, profile, zipPath, backupNamespace);
         if (exitCode == 0)
         {
-            profile.InstalledModVersions[manifest.FullName] = manifest;
+            profile.InstalledModVersions[manifest.FullName] = new InstalledModVersion(manifest.FullName, manifest.VersionNumber!, manifest.Dependencies!);
             Write.Success($"Installed mod: {manifest.FullName}-{manifest.VersionNumber}");
         }
         else
