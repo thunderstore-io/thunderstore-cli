@@ -345,21 +345,24 @@ fn output_instructions(game_dir: PathBuf, bep_dir: PathBuf, platform: GamePlatfo
             );
 
             let mut ld_library = OsString::from(game_dir.join("doorstop_libs"));
-            if let Some(orig) = env::var_os("LD_LIBRARY") {
+            if let Some(orig) = env::var_os("LD_LIBRARY_PATH") {
                 ld_library.push(":");
                 ld_library.push(orig);
             }
 
-            println!("ENVIRONMENT:LD_LIBRARY={}", ld_library.to_string_lossy());
+            println!(
+                "ENVIRONMENT:LD_LIBRARY_PATH={}",
+                ld_library.to_string_lossy()
+            );
 
-            let mut ld_preload = OsString::from(game_dir.join("doorstop_libs").join({
+            let mut ld_preload = OsString::from({
                 // FIXME: properly determine arch of the game exe, instead of assuming its the same as this exe
                 if cfg!(target_arch = "x86_64") {
                     "libdoorstop_x64.so"
                 } else {
                     "libdoorstop_x86.so"
                 }
-            }));
+            });
             if let Some(orig) = env::var_os("LD_PRELOAD") {
                 ld_preload.push(":");
                 ld_preload.push(orig);

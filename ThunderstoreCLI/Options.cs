@@ -75,11 +75,6 @@ public abstract class PackageOptions : BaseOptions
             return false;
         }
 
-        if (!Directory.Exists(TcliDirectory))
-        {
-            Directory.CreateDirectory(TcliDirectory!);
-        }
-
         return true;
     }
 }
