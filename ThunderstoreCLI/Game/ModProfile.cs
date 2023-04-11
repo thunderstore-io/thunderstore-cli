@@ -20,7 +20,7 @@ public class ModProfile : BaseJson<ModProfile>
     {
         Name = name;
 
-        var directory = Path.Combine(tcliDirectory, "Profiles", gameDef.Identifier, name);
+        var directory = Path.GetFullPath(Path.Combine(tcliDirectory, "Profiles", gameDef.Identifier, name));
         if (!Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);
