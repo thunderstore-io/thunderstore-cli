@@ -1,8 +1,0 @@
-uuid: "a672812c-5a54-4fb2-bcb1-0bf4b9ca1781"
-label: "ror2"
-meta:
-  displayName: "Risk of Rain 2"
-  iconUrl: "RiskOfRain2.jpg"
-distributions:
-  - platform: "steam"
-    identifier: "632360"
