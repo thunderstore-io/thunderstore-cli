@@ -1,6 +1,8 @@
+mod ts;
+
 use std::path::PathBuf;
 use clap::{Parser, Subcommand};
-use clap::parser::Values;
+use tokio::main;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -230,7 +232,13 @@ enum Commands {
     },
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
+    use ts::package;
+    let result = package::get_metadata("Mythic", "ServerLaunchFix").await;
+
+    println!("{:#?}", result);
+
     let args = Args::parse();
 
     match args.commands {
