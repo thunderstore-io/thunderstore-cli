@@ -1,0 +1,8 @@
+[workspace]
+members = [
+  "crates/*",
+]
+
+[profile.release]
+lto = true
+strip = true
