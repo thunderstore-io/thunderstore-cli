@@ -235,7 +235,8 @@ enum Commands {
 #[tokio::main]
 async fn main() {
     use ts::package;
-    let result = package::get_metadata("Mythic", "ServerLaunchFix").await;
+    // let result = package::get_metadata("Mythic", "ServerLaunchFix").await;
+    let result = package::get_all().await;
 
     println!("{:#?}", result);
 
