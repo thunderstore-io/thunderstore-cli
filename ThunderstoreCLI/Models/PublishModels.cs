@@ -10,6 +10,8 @@ public class PackageUploadMetadata : BaseJson<PackageUploadMetadata>
 
     [JsonProperty("communities")] public string[]? Communities { get; set; }
 
+    [JsonProperty("community_categories")] public Dictionary<string, string[]>? CommunityCategories { get; set; }
+
     [JsonProperty("has_nsfw_content")] public bool HasNsfwContent { get; set; }
 
     [JsonProperty("upload_uuid")] public string? UploadUUID { get; set; }

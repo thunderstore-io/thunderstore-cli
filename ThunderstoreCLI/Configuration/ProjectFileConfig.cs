@@ -62,7 +62,7 @@ internal class ProjectFileConfig : EmptyConfig
     {
         return new PublishConfig()
         {
-            Categories = Project.Publish?.Categories,
+            Categories = Project.Publish?.Categories.Categories,
             Communities = Project.Publish?.Communities
         };
     }

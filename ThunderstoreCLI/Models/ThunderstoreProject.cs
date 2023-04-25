@@ -8,6 +8,29 @@ namespace ThunderstoreCLI.Models;
 [TomlDoNotInlineObject]
 public class ThunderstoreProject : BaseToml<ThunderstoreProject>
 {
+    public struct CategoryDictionary
+    {
+        public Dictionary<string, string[]> Categories;
+    }
+
+    static ThunderstoreProject()
+    {
+        TomletMain.RegisterMapper(
+            dict => TomletMain.ValueFrom(dict.Categories),
+            toml => toml switch
+            {
+                TomlArray arr => new CategoryDictionary
+                {
+                    Categories = new Dictionary<string, string[]>
+                    {
+                        { "", arr.ArrayValues.Select(v => v.StringValue).ToArray() }
+                    }
+                },
+                TomlTable table => new CategoryDictionary { Categories = TomletMain.To<Dictionary<string, string[]>>(table) },
+                _ => throw new NotSupportedException()
+            });
+    }
+
     [TomlDoNotInlineObject]
     public class ConfigData
     {
@@ -75,10 +98,15 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
         {
             "riskofrain2"
         };
+
         [TomlProperty("categories")]
-        public string[] Categories { get; set; } =
+        [TomlDoNotInlineObject]
+        public CategoryDictionary Categories { get; set; } = new()
         {
-            "items", "skills"
+            Categories = new Dictionary<string, string[]>
+            {
+                { "riskofrain2", new[] { "items", "skills" } }
+            }
         };
     }
     [TomlProperty("publish")]
@@ -112,7 +140,7 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
         };
         Publish = new PublishData()
         {
-            Categories = config.PublishConfig.Categories!,
+            Categories = new CategoryDictionary { Categories = config.PublishConfig.Categories! },
             Communities = config.PublishConfig.Communities!,
             Repository = config.GeneralConfig.Repository
         };

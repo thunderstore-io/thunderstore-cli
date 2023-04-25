@@ -290,7 +290,7 @@ public static class PublishCommand
     private static void ValidateConfig(Config config, bool justReturnErrors = false)
     {
         var buildConfigErrors = BuildCommand.ValidateConfig(config, false);
-        var v = new Validator("publish", buildConfigErrors);
+        var v = new CommandValidator("publish", buildConfigErrors);
         v.AddIfEmpty(config.AuthConfig.AuthToken, "Auth AuthToken");
         v.ThrowIfErrors();
     }

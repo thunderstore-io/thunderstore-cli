@@ -37,7 +37,7 @@ public class Config
         providers.Add(new EnvironmentConfig());
         if (cliConfig is CLIConfig)
             providers.Add(new ProjectFileConfig());
-        providers.Add(new BaseConfig());
+        providers.Add(new DefaultConfig());
         return Parse(providers.ToArray());
     }
 
@@ -102,7 +102,10 @@ public class Config
         return new PackageUploadMetadata()
         {
             AuthorName = PackageConfig.Namespace,
-            Categories = PublishConfig.Categories,
+            Categories = PublishConfig.Categories!.GetOrDefault("") ?? Array.Empty<string>(),
+            CommunityCategories = PublishConfig.Categories!
+                .Where(kvp => kvp.Key != "")
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
             Communities = PublishConfig.Communities,
             HasNsfwContent = PackageConfig.ContainsNsfwContent ?? false,
             UploadUUID = fileUuid
@@ -212,7 +215,7 @@ public class PublishConfig
 {
     public string? File { get; set; }
     public string[]? Communities { get; set; }
-    public string[]? Categories { get; set; }
+    public Dictionary<string, string[]>? Categories { get; set; }
 }
 
 public class AuthConfig
