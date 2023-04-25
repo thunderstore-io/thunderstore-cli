@@ -309,7 +309,7 @@ public static class BuildCommand
 
     public static List<string> ValidateConfig(Config config, bool throwIfErrors = true)
     {
-        var v = new Validator("build");
+        var v = new CommandValidator("build");
         v.AddIfEmpty(config.PackageConfig.Namespace, "Package Namespace");
         v.AddIfEmpty(config.PackageConfig.Name, "Package Name");
         v.AddIfNotSemver(config.PackageConfig.VersionNumber, "Package VersionNumber");

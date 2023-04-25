@@ -76,7 +76,7 @@ public static class InitCommand
 
     private static void ValidateConfig(Config config)
     {
-        var v = new Validator("init");
+        var v = new CommandValidator("init");
         v.AddIfEmpty(config.PackageConfig.Namespace, "Package Namespace");
         v.AddIfEmpty(config.PackageConfig.Name, "Package Name");
         v.AddIfNotSemver(config.PackageConfig.VersionNumber, "Package VersionNumber");

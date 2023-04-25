@@ -1,14 +1,14 @@
 using ThunderstoreCLI.Utils;
 
-namespace ThunderstoreCLI.Configuration;
+namespace ThunderstoreCLI.Commands;
 
 /// <summary>Helper for validating command-specific configurations</summary>
-public class Validator
+public class CommandValidator
 {
     private List<string> _errors;
     private string _name;
 
-    public Validator(string commandName, List<string>? errors = null)
+    public CommandValidator(string commandName, List<string>? errors = null)
     {
         _name = commandName;
         _errors = errors ?? new List<string>();
