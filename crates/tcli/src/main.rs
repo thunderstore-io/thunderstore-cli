@@ -1,18 +1,13 @@
+use std::path::PathBuf;
+
+use clap::{Parser, Subcommand};
+
+use crate::ts::version::Version;
+
 pub mod error;
 mod game;
 mod project;
 mod ts;
-
-use std::env;
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
-
-use clap::{Parser, Subcommand};
-use serde::Serialize;
-use tokio::main;
-
-use crate::ts::v1::ecosystem;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -39,20 +34,11 @@ enum Commands {
 
         /// Version number for the package.
         #[clap(long)]
-        package_version: Option<String>,
-
-        /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
-        /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long, value_parser)]
-        tcli_directory: Option<PathBuf>,
-
-        /// URL of the default repository.
-        #[clap(long)]
-        repository: Option<String>,
+        package_version: Option<Version>,
 
         /// Path of the project configuration file.
         #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: Option<PathBuf>,
+        config_path: PathBuf,
     },
 
     /// Build a package.
@@ -80,7 +66,7 @@ enum Commands {
 
         /// Path for the project configuration file.
         #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: Option<PathBuf>,
+        config_path: PathBuf,
     },
 
     /// Publish a package. By default this will also build a new package.
@@ -116,7 +102,7 @@ enum Commands {
 
         /// Path for the project configuration file.
         #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: Option<PathBuf>,
+        config_path: PathBuf,
     },
 
     /// Installs a mod into a profile.
@@ -142,7 +128,7 @@ enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: Option<PathBuf>,
+        config_path: PathBuf,
     },
 
     /// Uninstalls a mod from a profile.
@@ -168,7 +154,7 @@ enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: Option<PathBuf>,
+        config_path: PathBuf,
     },
 
     /// Imports a new game for use by tcli.
@@ -191,7 +177,7 @@ enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: Option<PathBuf>,
+        config_path: PathBuf,
     },
 
     /// Run a game with mods.
@@ -218,7 +204,7 @@ enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: Option<PathBuf>,
+        config_path: PathBuf,
 
         /// Arguments to run the game with. Takes precedence over --args.
         #[clap(last = true, name = "--")]
@@ -238,35 +224,30 @@ enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: Option<PathBuf>,
+        config_path: PathBuf,
     },
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), crate::error::Error> {
     // let result = package::get_metadata("Mythic", "ServerLaunchFix").await;
     // let result = package::get_all().await;
     // let result = ecosystem::get_schema().await.unwrap();
 
-    let args = Args::parse();
-
-    match args.commands {
+    match Args::parse().commands {
         Commands::Init {
             overwrite,
-            package_name,
             package_namespace,
+            package_name,
             package_version,
-            tcli_directory,
-            repository,
             config_path,
-        } => {
-            let project_dir = config_path
-                .map(|x| x.parent().unwrap().to_path_buf())
-                .unwrap_or(env::current_dir().unwrap());
-            project::create_new(project_dir, overwrite.unwrap_or(false))
-                .await
-                .unwrap()
-        }
+        } => project::create_new(
+            config_path,
+            overwrite.unwrap_or(false),
+            package_namespace,
+            package_name,
+            package_version,
+        ),
         Commands::Run {
             game_name,
             profile,
@@ -277,6 +258,7 @@ async fn main() {
             trailing_args,
         } => {
             println!("{:#?}", trailing_args);
+            Ok(())
         }
         _ => todo!("other commands"),
     }

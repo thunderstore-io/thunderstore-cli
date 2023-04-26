@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::ts::version::Version;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PackageMetadata {
     pub namespace: String,
@@ -21,7 +23,8 @@ pub struct PackageMetadata {
 pub struct PackageVersion {
     pub namespace: String,
     pub name: String,
-    pub version_number: String,
+    #[serde(rename = "version_number")]
+    pub version: Version,
     pub full_name: String,
     pub description: String,
     pub icon: String,
@@ -32,20 +35,20 @@ pub struct PackageVersion {
     pub is_active: bool,
 }
 
-impl Into<PackageVersion> for crate::ts::v1::models::package::PackageVersion {
-    fn into(self) -> PackageVersion {
+impl From<crate::ts::v1::models::package::PackageVersion> for PackageVersion {
+    fn from(value: crate::ts::v1::models::package::PackageVersion) -> Self {
         PackageVersion {
-            namespace: self.full_name.rsplitn(3, '-').last().unwrap().to_string(),
-            name: self.name,
-            version_number: self.version_number,
-            full_name: self.full_name,
-            description: self.description,
-            icon: self.icon,
-            dependencies: self.dependencies,
-            download_url: self.download_url,
-            downloads: self.downloads,
-            website_url: self.website_url,
-            is_active: self.is_active,
+            namespace: value.full_name.rsplitn(3, '-').last().unwrap().to_string(),
+            name: value.name,
+            version: value.version,
+            full_name: value.full_name,
+            description: value.description,
+            icon: value.icon,
+            dependencies: value.dependencies,
+            download_url: value.download_url,
+            downloads: value.downloads,
+            website_url: value.website_url,
+            is_active: value.is_active,
         }
     }
 }

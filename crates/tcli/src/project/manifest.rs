@@ -2,38 +2,41 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::ts::version::Version;
+
 #[derive(Serialize, Deserialize, Default)]
 pub struct ProjectManifest {
-    config: ConfigData,
-    package: PackageData,
-    build: BuildData,
-    publish: PublishData,
+    pub config: ConfigData,
+    pub package: PackageData,
+    pub build: BuildData,
+    pub publish: PublishData,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ConfigData {
-    schema_version: String,
+pub struct ConfigData {
+    schema_version: Version,
 }
 
 impl Default for ConfigData {
     fn default() -> Self {
         ConfigData {
-            schema_version: "0.0.1".into(),
+            schema_version: "0.0.1".parse().unwrap(),
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct PackageData {
-    namespace: String,
-    name: String,
-    version_number: String,
-    description: String,
-    website_url: String,
-    contains_nsfw_content: bool,
-    dependencies: HashMap<String, String>,
+pub struct PackageData {
+    pub namespace: String,
+    pub name: String,
+    #[serde(rename = "versionNumber")]
+    pub version: Version,
+    pub description: String,
+    pub website_url: String,
+    pub contains_nsfw_content: bool,
+    pub dependencies: HashMap<String, Version>,
 }
 
 impl Default for PackageData {
@@ -41,18 +44,21 @@ impl Default for PackageData {
         PackageData {
             namespace: "AuthorName".into(),
             name: "PackageName".into(),
-            version_number: "0.0.1".into(),
+            version: "0.0.1".parse().unwrap(),
             description: "Example mod description".into(),
             website_url: "https://thunderstore.io".into(),
             contains_nsfw_content: false,
-            dependencies: HashMap::from([("AuthorName-PackageName".into(), "0.0.1".into())]),
+            dependencies: HashMap::from([(
+                "AuthorName-PackageName".into(),
+                "0.0.1".parse().unwrap(),
+            )]),
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct BuildData {
+pub struct BuildData {
     icon: String,
     readme: String,
     outdir: String,
@@ -71,7 +77,7 @@ impl Default for BuildData {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct CopyPath {
+pub struct CopyPath {
     source: String,
     target: String,
 }
@@ -88,13 +94,13 @@ impl Default for CopyPath {
 #[derive(Serialize, Deserialize, Debug)]
 // needs to be untagged to appear as transparent with no discrimator
 #[serde(untagged)]
-enum Categories {
+pub enum Categories {
     Old(Vec<String>),
     New(HashMap<String, Vec<String>>),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct PublishData {
+pub struct PublishData {
     repository: String,
     communities: Vec<String>,
     categories: Categories,

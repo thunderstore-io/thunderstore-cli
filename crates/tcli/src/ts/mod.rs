@@ -4,6 +4,7 @@ use reqwest::Client;
 
 pub mod experimental;
 pub mod v1;
+pub mod version;
 
 pub(in crate::ts) const CM: &str = "https://thunderstore.io/c/";
 pub(in crate::ts) const V1: &str = "https://thunderstore.io/api/v1";

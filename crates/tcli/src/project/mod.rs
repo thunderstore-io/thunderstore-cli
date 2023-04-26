@@ -1,47 +1,89 @@
 use std::fs;
-use std::fs::{read, File};
+use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
 use crate::error::Error;
 use crate::project::manifest::ProjectManifest;
+use crate::ts::version::Version;
 
 pub mod manifest;
 
-pub async fn create_new(project_dir: impl AsRef<Path>, overwrite: bool) -> Result<(), Error> {
-    let project_dir = project_dir.as_ref();
+pub fn create_new(
+    config_path: impl AsRef<Path>,
+    overwrite: bool,
+    namespace: Option<String>,
+    name: Option<String>,
+    version: Option<Version>,
+) -> Result<(), Error> {
+    let config_path = config_path.as_ref();
+
+    let project_dir = config_path.parent().unwrap_or("./".as_ref());
+    let config_filename = config_path
+        .file_name()
+        .ok_or_else(|| Error::PathIsDirectory(config_path.into()))?;
 
     if project_dir.is_file() {
         return Err(Error::ProjectDirIsFile(project_dir.into()));
     }
 
     if !project_dir.is_dir() {
-        fs::create_dir(project_dir).unwrap();
+        fs::create_dir(project_dir).map_err(|e| Error::FileIoError(project_dir.into(), e))?;
     }
 
-    let manifest = ProjectManifest::default();
-    let manifest_path = project_dir.join("thunderstore.toml");
+    let manifest_path = project_dir.join(config_filename);
 
-    match (manifest_path.is_file(), overwrite) {
-        (true, true) => fs::remove_file(&manifest_path)
-            .map_err(|_| Error::CannotRemoveManifest(manifest_path.clone().into())),
-        (true, false) => return Err(Error::ProjectAlreadyExists(manifest_path.into())),
-        (_, _) => Ok(()),
-    }?;
+    let manifest = {
+        let mut manifest = ProjectManifest::default();
+        if let Some(namespace) = namespace {
+            manifest.package.namespace = namespace;
+        }
+        if let Some(name) = name {
+            manifest.package.name = name;
+        }
+        if let Some(version) = version {
+            manifest.package.version = version;
+        }
+        manifest
+    };
 
-    let manifest_toml =
-        toml::to_string_pretty(&manifest).expect("Failed to serialize default thunderstore.toml");
+    let mut options = File::options();
+    options.write(true);
+    if overwrite {
+        options.create(true);
+    } else {
+        options.create_new(true);
+    }
 
-    File::create(&manifest_path)
-        .unwrap()
-        .write_all(manifest_toml.as_bytes())
-        .expect("Failed to write default project manifest file.");
+    let mut manifest_file = options
+        .open(&manifest_path)
+        .map_err(move |e| match e.kind() {
+            std::io::ErrorKind::AlreadyExists => Error::ProjectAlreadyExists(manifest_path),
+            _ => Error::FileIoError(manifest_path, e),
+        })?;
+
+    write!(
+        manifest_file,
+        "{}",
+        toml::to_string_pretty(&manifest).unwrap()
+    )
+    .unwrap();
 
     let icon_path = project_dir.join("icon.png");
-    File::create(icon_path).expect("Failed to create default icon.png file.");
+    File::create(&icon_path)
+        .map_err(move |e| Error::FileIoError(icon_path, e))?
+        .write_all(include_bytes!("../../resources/icon.png"))
+        .unwrap();
 
     let readme_path = project_dir.join("README.md");
-    File::create(readme_path).expect("Failed to create default README.md file.");
+    write!(
+        File::create(&readme_path).map_err(move |e| Error::FileIoError(readme_path, e))?,
+        include_str!("../../resources/readme_template.md"),
+        manifest.package.namespace,
+        manifest.package.name,
+        manifest.package.description
+    )
+    .unwrap();
 
     Ok(())
 }

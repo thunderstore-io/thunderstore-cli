@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::ts::version::Version;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PackageListing {
     pub name: String,
@@ -23,7 +25,8 @@ pub struct PackageVersion {
     pub full_name: String,
     pub description: String,
     pub icon: String,
-    pub version_number: String,
+    #[serde(rename = "version_number")]
+    pub version: Version,
     pub dependencies: Vec<String>,
     pub download_url: String,
     pub downloads: u32,

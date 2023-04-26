@@ -1,32 +1,26 @@
-use std::fmt::Display;
-
 use crate::error::Error;
 use crate::ts::experimental::models::package::{PackageListing, PackageVersion};
+use crate::ts::version::Version;
 use crate::ts::{CLIENT, EX};
 
-pub async fn get_metadata<T: Into<String> + Display>(
-    author: T,
-    name: T,
-) -> Result<PackageListing, Error> {
-    let response = CLIENT
+pub async fn get_metadata(author: &str, name: &str) -> Result<PackageListing, Error> {
+    Ok(CLIENT
         .get(format!("{EX}/package/{author}/{name}/"))
         .send()
-        .await
-        .map_err(Error::GenericApiError)?;
-
-    response.json().await.map_err(Error::SerializationFailure)
+        .await?
+        .json()
+        .await?)
 }
 
-pub async fn get_version_metadata<T: Into<String> + Display>(
-    author: T,
-    name: T,
-    version: T,
+pub async fn get_version_metadata(
+    author: &str,
+    name: &str,
+    version: Version,
 ) -> Result<PackageVersion, Error> {
-    let response = CLIENT
+    Ok(CLIENT
         .get(format!("{EX}/package/{author}/{name}/{version}/"))
         .send()
-        .await
-        .map_err(Error::GenericApiError)?;
-
-    response.json().await.map_err(Error::SerializationFailure)
+        .await?
+        .json()
+        .await?)
 }

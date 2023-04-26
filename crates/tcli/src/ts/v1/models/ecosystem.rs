@@ -2,10 +2,12 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::ts::version::Version;
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct EcosystemSchema {
-    schema_version: String,
+    schema_version: Version,
     games: HashMap<String, GameDef>,
     communities: HashMap<String, SchemaCommunity>,
 }
