@@ -1,5 +1,8 @@
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
+use std::fmt::Formatter;
+
+use serde::de::{MapAccess, SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct ProjectManifest {
@@ -84,11 +87,73 @@ impl Default for CopyPath {
     }
 }
 
+#[derive(Debug)]
+enum Categories {
+    Old(Vec<String>),
+    New(HashMap<String, Vec<String>>),
+}
+
+impl Serialize for Categories {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            Categories::Old(v) => v.serialize(serializer),
+            Categories::New(map) => map.serialize(serializer),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Categories {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_any(CategoriesVisitor)
+    }
+}
+
+struct CategoriesVisitor;
+
+impl<'v> Visitor<'v> for CategoriesVisitor {
+    type Value = Categories;
+
+    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+        write!(
+            formatter,
+            "either an array of strings or a map of strings to arrays of strings."
+        )
+    }
+
+    fn visit_seq<A: SeqAccess<'v>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+        let mut res = if let Some(hint) = seq.size_hint() {
+            Vec::with_capacity(hint)
+        } else {
+            vec![]
+        };
+
+        while let Some(next) = seq.next_element()? {
+            res.push(next);
+        }
+
+        Ok(Categories::Old(res))
+    }
+
+    fn visit_map<A: MapAccess<'v>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+        let mut res = if let Some(hint) = map.size_hint() {
+            HashMap::with_capacity(hint)
+        } else {
+            HashMap::new()
+        };
+
+        while let Some((key, val)) = map.next_entry()? {
+            res.insert(key, val);
+        }
+
+        Ok(Categories::New(res))
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct PublishData {
     repository: String,
     communities: Vec<String>,
-    categories: Vec<String>,
+    categories: Categories,
 }
 
 impl Default for PublishData {
@@ -96,7 +161,10 @@ impl Default for PublishData {
         PublishData {
             repository: "https://thunderstore.io".into(),
             communities: vec!["riskofrain2".to_string()],
-            categories: vec!["items".into(), "skills".into()],
+            categories: Categories::New(HashMap::from([(
+                "riskofrain2".into(),
+                vec!["items".into(), "skills".into()],
+            )])),
         }
     }
 }

@@ -1,7 +1,8 @@
 use std::fs;
-use std::fs::{File, read};
+use std::fs::{read, File};
 use std::io::Write;
 use std::path::Path;
+
 use crate::error::Error;
 use crate::project::manifest::ProjectManifest;
 
@@ -22,20 +23,18 @@ pub async fn create_new(project_dir: impl AsRef<Path>, overwrite: bool) -> Resul
     let manifest_path = project_dir.join("thunderstore.toml");
 
     match (manifest_path.is_file(), overwrite) {
-        (true, true) => {
-            fs::remove_file(&manifest_path)
-                .map_err(|_| Error::CannotRemoveManifest(manifest_path.clone().into()))
-        },
-        (true, false) => {
-            return Err(Error::ProjectAlreadyExists(manifest_path.into()))
-        },
+        (true, true) => fs::remove_file(&manifest_path)
+            .map_err(|_| Error::CannotRemoveManifest(manifest_path.clone().into())),
+        (true, false) => return Err(Error::ProjectAlreadyExists(manifest_path.into())),
         (_, _) => Ok(()),
     }?;
 
-    let manifest_toml = toml::to_string_pretty(&manifest)
-        .expect("Failed to serialize default thunderstore.toml");
+    let manifest_toml =
+        toml::to_string_pretty(&manifest).expect("Failed to serialize default thunderstore.toml");
 
-    File::create(&manifest_path).unwrap().write_all(manifest_toml.as_bytes())
+    File::create(&manifest_path)
+        .unwrap()
+        .write_all(manifest_toml.as_bytes())
         .expect("Failed to write default project manifest file.");
 
     let icon_path = project_dir.join("icon.png");

@@ -1,9 +1,9 @@
 use once_cell::sync::Lazy;
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Client;
-use reqwest::header::{ACCEPT, CONTENT_TYPE, HeaderMap, HeaderValue};
 
-pub mod v1;
 pub mod experimental;
+pub mod v1;
 
 pub(in crate::ts) const CM: &str = "https://thunderstore.io/c/";
 pub(in crate::ts) const V1: &str = "https://thunderstore.io/api/v1";

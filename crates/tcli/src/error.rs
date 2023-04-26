@@ -15,5 +15,5 @@ pub enum Error {
     ProjectAlreadyExists(PathBuf),
 
     #[error("Cannot remove manifest file at {0}.")]
-    CannotRemoveManifest(PathBuf)
+    CannotRemoveManifest(PathBuf),
 }

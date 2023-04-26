@@ -1,15 +1,17 @@
-mod ts;
-mod project;
-mod game;
 pub mod error;
+mod game;
+mod project;
+mod ts;
 
 use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 use serde::Serialize;
 use tokio::main;
+
 use crate::ts::v1::ecosystem;
 
 #[derive(Parser, Debug)]
@@ -244,9 +246,7 @@ enum Commands {
 async fn main() {
     // let result = package::get_metadata("Mythic", "ServerLaunchFix").await;
     // let result = package::get_all().await;
-    // let result = ecosystem::get_schema().await;
-
-    project::create_new(r#"C:\Users\Ethan\Dev\rust\thunderstore-cli\ignore\tcli-0.2.1-win-x64\test"#, true).await;
+    // let result = ecosystem::get_schema().await.unwrap();
 
     let args = Args::parse();
 
@@ -266,7 +266,7 @@ async fn main() {
             project::create_new(project_dir, overwrite.unwrap_or(false))
                 .await
                 .unwrap()
-        },
+        }
         Commands::Run {
             game_name,
             profile,
@@ -277,7 +277,7 @@ async fn main() {
             trailing_args,
         } => {
             println!("{:#?}", trailing_args);
-        },
-        _ => panic!("")
+        }
+        _ => todo!("other commands"),
     }
 }

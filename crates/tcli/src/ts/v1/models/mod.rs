@@ -1,2 +1,2 @@
-pub mod package;
 pub mod ecosystem;
+pub mod package;
