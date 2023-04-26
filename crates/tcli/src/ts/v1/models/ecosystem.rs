@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
+
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -16,7 +17,8 @@ pub struct GameDef {
     label: String,
     meta: GameDefMeta,
     distributions: Vec<GameDefPlatform>,
-    r2modman: GameDefR2MM,
+    r2modman: Option<GameDefR2MM>,
+    thunderstore: Option<GameDefThunderstore>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -69,11 +71,35 @@ struct R2MMInstallRule {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+struct GameDefThunderstore {
+    display_name: String,
+    categories: HashMap<String, ThunderstoreCategory>,
+    sections: HashMap<String, ThunderstoreSection>,
+    discord_url: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ThunderstoreCategory {
+    label: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct ThunderstoreSection {
+    name: String,
+    #[serde(default)]
+    exclude_categories: Vec<String>,
+    #[serde(default)]
+    require_categories: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct SchemaCommunity {
     display_name: String,
     categories: HashMap<String, CommunityCategory>,
     sections: HashMap<String, CommunitySection>,
-    discord_url: String,
+    discord_url: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -86,6 +112,8 @@ struct CommunityCategory {
 #[serde(rename_all = "camelCase")]
 struct CommunitySection {
     name: String,
-    excluded_categories: Option<Vec<String>>,
-    required_categories: Option<Vec<String>>,
+    #[serde(default)]
+    excluded_categories: Vec<String>,
+    #[serde(default)]
+    required_categories: Vec<String>,
 }
