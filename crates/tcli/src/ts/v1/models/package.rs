@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::ts::package_reference::{self, PackageReference};
 use crate::ts::version::Version;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -27,7 +28,8 @@ pub struct PackageVersion {
     pub icon: String,
     #[serde(rename = "version_number")]
     pub version: Version,
-    pub dependencies: Vec<String>,
+    #[serde(with = "package_reference::ser::string_array")]
+    pub dependencies: Vec<PackageReference>,
     pub download_url: String,
     pub downloads: u32,
     pub website_url: String,

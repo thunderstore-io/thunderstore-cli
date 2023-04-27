@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::ts::package_reference::{self, PackageReference};
 use crate::ts::version::Version;
 
 #[derive(Serialize, Deserialize, Default)]
@@ -15,13 +17,13 @@ pub struct ProjectManifest {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigData {
-    schema_version: Version,
+    pub schema_version: Version,
 }
 
 impl Default for ConfigData {
     fn default() -> Self {
         ConfigData {
-            schema_version: "0.0.1".parse().unwrap(),
+            schema_version: Version::new(0, 0, 1),
         }
     }
 }
@@ -36,7 +38,8 @@ pub struct PackageData {
     pub description: String,
     pub website_url: String,
     pub contains_nsfw_content: bool,
-    pub dependencies: HashMap<String, Version>,
+    #[serde(with = "package_reference::ser::table")]
+    pub dependencies: Vec<PackageReference>,
 }
 
 impl Default for PackageData {
@@ -48,10 +51,12 @@ impl Default for PackageData {
             description: "Example mod description".into(),
             website_url: "https://thunderstore.io".into(),
             contains_nsfw_content: false,
-            dependencies: HashMap::from([(
-                "AuthorName-PackageName".into(),
-                "0.0.1".parse().unwrap(),
-            )]),
+            dependencies: vec![PackageReference::new(
+                "AuthorName",
+                "PackageName",
+                Version::new(0, 0, 1),
+            )
+            .unwrap()],
         }
     }
 }
@@ -59,10 +64,10 @@ impl Default for PackageData {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct BuildData {
-    icon: String,
-    readme: String,
-    outdir: String,
-    copy: Vec<CopyPath>,
+    pub icon: PathBuf,
+    pub readme: PathBuf,
+    pub outdir: PathBuf,
+    pub copy: Vec<CopyPath>,
 }
 
 impl Default for BuildData {
@@ -78,8 +83,8 @@ impl Default for BuildData {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CopyPath {
-    source: String,
-    target: String,
+    pub source: PathBuf,
+    pub target: PathBuf,
 }
 
 impl Default for CopyPath {
@@ -101,9 +106,9 @@ pub enum Categories {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublishData {
-    repository: String,
-    communities: Vec<String>,
-    categories: Categories,
+    pub repository: String,
+    pub communities: Vec<String>,
+    pub categories: Categories,
 }
 
 impl Default for PublishData {

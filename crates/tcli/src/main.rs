@@ -16,13 +16,16 @@ struct Args {
     commands: Commands,
 }
 
+const DEFAULT_REPO: &str = "https://thunderstore.io";
+const DEFAULT_MANIFEST: &str = "./thunderstore.toml";
+
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Initialize a new project configuration.
     Init {
         /// If present, overwrite current configuration.
         #[clap(long, default_value = "false")]
-        overwrite: Option<bool>,
+        overwrite: bool,
 
         /// Name for the package.
         #[clap(long)]
@@ -37,7 +40,7 @@ enum Commands {
         package_version: Option<Version>,
 
         /// Path of the project configuration file.
-        #[clap(long, value_parser, default_value = "./thunderstore.toml")]
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
         config_path: PathBuf,
     },
 
@@ -53,26 +56,20 @@ enum Commands {
 
         /// Version number for the package.
         #[clap(long)]
-        package_version: Option<String>,
+        package_version: Option<Version>,
 
-        /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
-        /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long, value_parser)]
-        tcli_directory: Option<PathBuf>,
-
-        /// URL of the default repository.
         #[clap(long)]
-        repository: Option<String>,
+        output_path: Option<PathBuf>,
 
         /// Path for the project configuration file.
-        #[clap(long, value_parser, default_value = "./thunderstore.toml")]
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
         config_path: PathBuf,
     },
 
     /// Publish a package. By default this will also build a new package.
     Publish {
         /// If provided, use defined package instead of building.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         file: Option<PathBuf>,
 
         /// Authentication token to use when publishing the package.
@@ -89,19 +86,14 @@ enum Commands {
 
         /// Version number for the package.
         #[clap(long)]
-        package_version: Option<String>,
-
-        /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
-        /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long, value_parser)]
-        tcli_directory: Option<PathBuf>,
+        package_version: Option<Version>,
 
         /// URL of the default repository.
-        #[clap(long)]
-        repository: Option<String>,
+        #[clap(long, default_value = DEFAULT_REPO)]
+        repository: String,
 
         /// Path for the project configuration file.
-        #[clap(long, value_parser, default_value = "./thunderstore.toml")]
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
         config_path: PathBuf,
     },
 
@@ -119,15 +111,15 @@ enum Commands {
 
         /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
         /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         tcli_directory: Option<PathBuf>,
 
         /// URL of the default repository.
-        #[clap(long)]
-        repository: Option<String>,
+        #[clap(long, default_value = DEFAULT_REPO)]
+        repository: String,
 
         /// Path of the project configuration file.
-        #[clap(long, value_parser, default_value = "./thunderstore.toml")]
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
         config_path: PathBuf,
     },
 
@@ -136,24 +128,24 @@ enum Commands {
         /// The identifier of the game to manage mods for.
         game_name: String,
 
-        /// Path to a package .zip or package name in the format 'namespace-name(-version)'.
+        /// Package name in the format 'namespace-name(-version)'.
         package: String,
 
         /// Profile that the mod will be installed into.
         #[clap(long, default_value = "DefaultProfile")]
-        profile: Option<String>,
+        profile: String,
 
         /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
         /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         tcli_directory: Option<PathBuf>,
 
         /// URL of the default repository.
-        #[clap(long)]
-        repository: Option<String>,
+        #[clap(long, default_value = DEFAULT_REPO)]
+        repository: String,
 
         /// Path of the project configuration file.
-        #[clap(long, value_parser, default_value = "./thunderstore.toml")]
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
         config_path: PathBuf,
     },
 
@@ -163,20 +155,20 @@ enum Commands {
         game_name: String,
 
         /// Path to the game executable to use when launching the game. Only works with servers.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         exe_path: Option<PathBuf>,
 
         /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
         /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         tcli_directory: Option<PathBuf>,
 
         /// URL of the default repository.
-        #[clap(long)]
-        repository: Option<String>,
+        #[clap(long, default_value = DEFAULT_REPO)]
+        repository: String,
 
         /// Path of the project configuration file.
-        #[clap(long, value_parser, default_value = "./thunderstore.toml")]
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
         config_path: PathBuf,
     },
 
@@ -195,15 +187,15 @@ enum Commands {
 
         /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
         /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         tcli_directory: Option<PathBuf>,
 
         /// URL of the default repository.
-        #[clap(long)]
-        repository: Option<String>,
+        #[clap(long, default_value = DEFAULT_REPO)]
+        repository: String,
 
         /// Path of the project configuration file.
-        #[clap(long, value_parser, default_value = "./thunderstore.toml")]
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
         config_path: PathBuf,
 
         /// Arguments to run the game with. Takes precedence over --args.
@@ -215,16 +207,8 @@ enum Commands {
     List {
         /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
         /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long, value_parser)]
-        tcli_directory: Option<PathBuf>,
-
-        /// URL of the default repository.
         #[clap(long)]
-        repository: Option<String>,
-
-        /// Path of the project configuration file.
-        #[clap(long, value_parser, default_value = "./thunderstore.toml")]
-        config_path: PathBuf,
+        tcli_directory: Option<PathBuf>,
     },
 }
 
@@ -243,23 +227,24 @@ async fn main() -> Result<(), crate::error::Error> {
             config_path,
         } => project::create_new(
             config_path,
-            overwrite.unwrap_or(false),
+            overwrite,
             package_namespace,
             package_name,
             package_version,
         ),
-        Commands::Run {
-            game_name,
-            profile,
-            args,
-            tcli_directory,
-            repository,
+        Commands::Build {
+            package_name,
+            package_namespace,
+            package_version,
+            output_path,
             config_path,
-            trailing_args,
-        } => {
-            println!("{:#?}", trailing_args);
-            Ok(())
-        }
+        } => project::build(
+            config_path,
+            output_path,
+            package_namespace,
+            package_name,
+            package_version,
+        ),
         _ => todo!("other commands"),
     }
 }

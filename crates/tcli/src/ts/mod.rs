@@ -3,6 +3,8 @@ use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Client;
 
 pub mod experimental;
+pub mod package_manifest;
+pub mod package_reference;
 pub mod v1;
 pub mod version;
 

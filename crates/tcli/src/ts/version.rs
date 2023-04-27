@@ -10,6 +10,16 @@ pub struct Version {
     pub patch: u32,
 }
 
+impl Version {
+    pub const fn new(major: u32, minor: u32, patch: u32) -> Version {
+        Version {
+            major,
+            minor,
+            patch,
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum VersionParseError {
     #[error("Failed to parse an integer because: {0}.")]
