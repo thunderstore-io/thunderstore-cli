@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -34,4 +34,23 @@ pub enum Error {
 
     #[error("Failed modifying zip file: {0}.")]
     ZipError(#[from] zip::result::ZipError),
+}
+
+pub trait IoResultToTcli<R> {
+    fn map_fs_error(self, path: impl AsRef<Path>) -> Result<R, Error>;
+}
+
+impl<R> IoResultToTcli<R> for Result<R, std::io::Error> {
+    fn map_fs_error(self, path: impl AsRef<Path>) -> Result<R, Error> {
+        self.map_err(|e| Error::FileIoError(path.as_ref().into(), e))
+    }
+}
+
+impl From<walkdir::Error> for Error {
+    fn from(value: walkdir::Error) -> Self {
+        Self::FileIoError(
+            value.path().unwrap_or(Path::new("")).into(),
+            value.into_io_error().unwrap(),
+        )
+    }
 }

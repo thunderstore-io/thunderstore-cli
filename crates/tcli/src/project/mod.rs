@@ -5,7 +5,7 @@ use std::path::Path;
 
 use zip::write::FileOptions;
 
-use crate::error::Error;
+use crate::error::{Error, IoResultToTcli};
 use crate::project::manifest::ProjectManifest;
 use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::version::Version;
@@ -31,7 +31,7 @@ pub fn create_new(
     }
 
     if !project_dir.is_dir() {
-        fs::create_dir(project_dir).map_err(|e| Error::FileIoError(project_dir.into(), e))?;
+        fs::create_dir(project_dir).map_fs_error(project_dir)?;
     }
 
     let manifest_path = project_dir.join(config_filename);
@@ -74,13 +74,13 @@ pub fn create_new(
 
     let icon_path = project_dir.join("icon.png");
     File::create(&icon_path)
-        .map_err(move |e| Error::FileIoError(icon_path, e))?
+        .map_fs_error(icon_path)?
         .write_all(include_bytes!("../../resources/icon.png"))
         .unwrap();
 
     let readme_path = project_dir.join("README.md");
     write!(
-        File::create(&readme_path).map_err(move |e| Error::FileIoError(readme_path, e))?,
+        File::create(&readme_path).map_fs_error(readme_path)?,
         include_str!("../../resources/readme_template.md"),
         manifest.package.namespace,
         manifest.package.name,
@@ -107,10 +107,8 @@ pub fn build(
     let project_dir = config_path.parent().unwrap_or(Path::new("./"));
 
     let manifest = {
-        let mut manifest: ProjectManifest = toml::from_str(
-            &fs::read_to_string(config_path)
-                .map_err(|e| Error::FileIoError(config_path.into(), e))?,
-        )?;
+        let mut manifest: ProjectManifest =
+            toml::from_str(&fs::read_to_string(config_path).map_fs_error(config_path)?)?;
 
         if let Some(namespace) = namespace {
             manifest.package.namespace = namespace;
@@ -145,7 +143,7 @@ pub fn build(
             .create(true)
             .write(true)
             .open(&output_path)
-            .map_err(|e| Error::FileIoError(output_path.clone(), e))?,
+            .map_fs_error(output_path)?,
     );
 
     for copy in manifest.build.copy {
@@ -153,12 +151,7 @@ pub fn build(
 
         // first elem is always the root, even when the path given is to a file
         for file in walkdir::WalkDir::new(&source_path) {
-            let file = file.map_err(|e| {
-                Error::FileIoError(
-                    e.path().unwrap_or(Path::new("")).into(),
-                    e.into_io_error().unwrap(),
-                )
-            })?;
+            let file = file?;
 
             let inner_path = file
                 .path()
@@ -176,8 +169,7 @@ pub fn build(
                     FileOptions::default(),
                 )?;
                 std::io::copy(
-                    &mut File::open(file.path())
-                        .map_err(|e| Error::FileIoError(file.path().into(), e))?,
+                    &mut File::open(file.path()).map_fs_error(file.path())?,
                     &mut zip,
                 )?;
             } else {
@@ -193,19 +185,19 @@ pub fn build(
         serde_json::to_string_pretty(&PackageManifestV1::from(manifest.package)).unwrap()
     )?;
 
+    let icon_path = project_dir.join(manifest.build.icon);
     zip.start_file("icon.png", FileOptions::default())?;
     std::io::copy(
-        &mut File::open(project_dir.join(manifest.build.icon))
-            .map_err(|e| Error::FileIoError("icon.png".into(), e))?,
+        &mut File::open(&icon_path).map_fs_error(icon_path)?,
         &mut zip,
     )?;
 
+    let readme_path = project_dir.join(manifest.build.readme);
     zip.start_file("README.md", FileOptions::default())?;
     write!(
         zip,
         "{}",
-        fs::read_to_string(project_dir.join(manifest.build.readme))
-            .map_err(|e| Error::FileIoError("README.md".into(), e))?
+        fs::read_to_string(&readme_path).map_fs_error(readme_path)?
     )?;
 
     zip.finish()?;
