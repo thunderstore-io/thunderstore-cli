@@ -1,11 +1,12 @@
+use clap::Parser;
+
+use crate::cli::{Args, Commands};
+
+mod cli;
 mod error;
 mod game;
 mod project;
 mod ts;
-mod cli;
-
-use clap::Parser;
-use crate::cli::{Args, Commands};
 
 #[tokio::main]
 async fn main() -> Result<(), crate::error::Error> {

@@ -1,7 +1,17 @@
+use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
+pub struct Infallible {
+    _priv: PhantomData<()>,
+}
+
 #[derive(Debug, thiserror::Error)]
+#[repr(u32)]
 pub enum Error {
+    #[error("Success")]
+    Success(Infallible),
+
     #[error("An API error occured.")]
     ApiError(#[from] reqwest::Error),
 
@@ -34,6 +44,9 @@ pub enum Error {
 
     #[error("Failed modifying zip file: {0}.")]
     ZipError(#[from] zip::result::ZipError),
+
+    #[error("Missing manifest field: {0}")]
+    MissingManifestField(String),
 }
 
 pub trait IoResultToTcli<R> {

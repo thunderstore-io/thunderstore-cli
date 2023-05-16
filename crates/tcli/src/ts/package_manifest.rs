@@ -15,13 +15,13 @@ pub struct PackageManifestV1 {
     pub website_url: String,
 }
 
-impl From<PackageData> for PackageManifestV1 {
-    fn from(value: PackageData) -> Self {
+impl PackageManifestV1 {
+    pub fn from_manifest(value: PackageData, dependencies: Vec<PackageReference>) -> Self {
         Self {
             name: value.name,
             description: value.description,
             version: value.version,
-            dependencies: value.dependencies,
+            dependencies,
             website_url: value.website_url,
         }
     }

@@ -6,29 +6,47 @@ use serde::{Deserialize, Serialize};
 use crate::ts::package_reference::{self, PackageReference};
 use crate::ts::version::Version;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ProjectManifest {
     pub config: ConfigData,
-    pub package: PackageData,
-    pub build: BuildData,
-    pub publish: PublishData,
+    pub package: Option<PackageData>,
+    pub build: Option<BuildData>,
+    pub publish: Option<PublishData>,
+    #[serde(flatten)]
+    pub dependencies: DependencyData,
+}
+
+impl ProjectManifest {
+    pub fn default_dev_project() -> Self {
+        ProjectManifest {
+            config: Default::default(),
+            package: Some(Default::default()),
+            build: Some(Default::default()),
+            publish: Some(Default::default()),
+            dependencies: Default::default(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigData {
     pub schema_version: Version,
+    pub repository: String,
+    pub game: String,
 }
 
 impl Default for ConfigData {
     fn default() -> Self {
         ConfigData {
             schema_version: Version::new(0, 0, 1),
+            repository: "https://thunderstore.io".into(),
+            game: "risk-of-rain2".into(),
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageData {
     pub namespace: String,
@@ -38,8 +56,6 @@ pub struct PackageData {
     pub description: String,
     pub website_url: String,
     pub contains_nsfw_content: bool,
-    #[serde(with = "package_reference::ser::table")]
-    pub dependencies: Vec<PackageReference>,
 }
 
 impl Default for PackageData {
@@ -51,12 +67,6 @@ impl Default for PackageData {
             description: "Example mod description".into(),
             website_url: "https://thunderstore.io".into(),
             contains_nsfw_content: false,
-            dependencies: vec![PackageReference::new(
-                "AuthorName",
-                "PackageName",
-                Version::new(0, 0, 1),
-            )
-            .unwrap()],
         }
     }
 }
@@ -106,7 +116,6 @@ pub enum Categories {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublishData {
-    pub repository: String,
     pub communities: Vec<String>,
     pub categories: Categories,
 }
@@ -114,12 +123,36 @@ pub struct PublishData {
 impl Default for PublishData {
     fn default() -> Self {
         PublishData {
-            repository: "https://thunderstore.io".into(),
             communities: vec!["riskofrain2".to_string()],
             categories: Categories::New(HashMap::from([(
                 "riskofrain2".into(),
                 vec!["items".into(), "skills".into()],
             )])),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DependencyData {
+    #[serde(default)]
+    #[serde(with = "package_reference::ser::table")]
+    pub dependencies: Vec<PackageReference>,
+    #[serde(default)]
+    #[serde(rename = "dev-dependencies")]
+    #[serde(with = "package_reference::ser::table")]
+    pub dev_dependencies: Vec<PackageReference>,
+}
+
+impl Default for DependencyData {
+    fn default() -> Self {
+        DependencyData {
+            dependencies: vec![PackageReference::new(
+                "AuthorName",
+                "PackageName",
+                Version::new(0, 0, 1),
+            )
+            .unwrap()],
+            dev_dependencies: vec![],
         }
     }
 }

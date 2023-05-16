@@ -37,18 +37,20 @@ pub fn create_new(
     let manifest_path = project_dir.join(config_filename);
 
     let manifest = {
-        let mut manifest = ProjectManifest::default();
+        let mut manifest = ProjectManifest::default_dev_project();
+        let package = manifest.package.as_mut().unwrap();
         if let Some(namespace) = namespace {
-            manifest.package.namespace = namespace;
+            package.namespace = namespace;
         }
         if let Some(name) = name {
-            manifest.package.name = name;
+            package.name = name;
         }
         if let Some(version) = version {
-            manifest.package.version = version;
+            package.version = version;
         }
         manifest
     };
+    let package = manifest.package.as_ref().unwrap();
 
     let mut options = File::options();
     options.write(true);
@@ -73,20 +75,35 @@ pub fn create_new(
     .unwrap();
 
     let icon_path = project_dir.join("icon.png");
-    File::create(&icon_path)
-        .map_fs_error(icon_path)?
-        .write_all(include_bytes!("../../resources/icon.png"))
-        .unwrap();
+    match File::options()
+        .write(true)
+        .create_new(true)
+        .open(&icon_path)
+    {
+        Ok(mut f) => f
+            .write_all(include_bytes!("../../resources/icon.png"))
+            .unwrap(),
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+        Err(e) => Err(Error::FileIoError(icon_path, e))?,
+    }
 
     let readme_path = project_dir.join("README.md");
-    write!(
-        File::create(&readme_path).map_fs_error(readme_path)?,
-        include_str!("../../resources/readme_template.md"),
-        manifest.package.namespace,
-        manifest.package.name,
-        manifest.package.description
-    )
-    .unwrap();
+    match File::options()
+        .write(true)
+        .create_new(true)
+        .open(&readme_path)
+    {
+        Ok(mut f) => {
+            write!(
+                f,
+                include_str!("../../resources/readme_template.md"),
+                package.namespace, package.name, package.description
+            )
+            .unwrap();
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+        Err(e) => return Err(Error::FileIoError(readme_path, e)),
+    }
 
     Ok(())
 }
@@ -110,26 +127,35 @@ pub fn build(
         let mut manifest: ProjectManifest =
             toml::from_str(&fs::read_to_string(config_path).map_fs_error(config_path)?)?;
 
+        let package = manifest
+            .package
+            .as_mut()
+            .ok_or(Error::MissingManifestField("package".into()))?;
         if let Some(namespace) = namespace {
-            manifest.package.namespace = namespace;
+            package.namespace = namespace;
         }
         if let Some(name) = name {
-            manifest.package.name = name;
+            package.name = name;
         }
         if let Some(version) = version {
-            manifest.package.version = version;
+            package.version = version;
         }
 
         manifest
     };
+    let package = manifest.package.as_ref().unwrap();
+    let build = manifest
+        .build
+        .as_ref()
+        .ok_or(Error::MissingManifestField("build".into()))?;
 
     let output_path = output_path
         .as_ref()
         .map(|p| p.as_ref().to_path_buf())
-        .unwrap_or(project_dir.join(manifest.build.outdir))
+        .unwrap_or(project_dir.join(&build.outdir))
         .join(format!(
             "{}-{}-{}.zip",
-            manifest.package.namespace, manifest.package.name, manifest.package.version
+            package.namespace, package.name, package.version
         ));
 
     match fs::create_dir_all(output_path.parent().unwrap()) {
@@ -146,8 +172,8 @@ pub fn build(
             .map_fs_error(output_path)?,
     );
 
-    for copy in manifest.build.copy {
-        let source_path = project_dir.join(copy.source);
+    for copy in &build.copy {
+        let source_path = project_dir.join(&copy.source);
 
         // first elem is always the root, even when the path given is to a file
         for file in walkdir::WalkDir::new(&source_path) {
@@ -182,17 +208,21 @@ pub fn build(
     write!(
         zip,
         "{}",
-        serde_json::to_string_pretty(&PackageManifestV1::from(manifest.package)).unwrap()
+        serde_json::to_string_pretty(&PackageManifestV1::from_manifest(
+            package.clone(),
+            manifest.dependencies.dependencies.clone()
+        ))
+        .unwrap()
     )?;
 
-    let icon_path = project_dir.join(manifest.build.icon);
+    let icon_path = project_dir.join(&build.icon);
     zip.start_file("icon.png", FileOptions::default())?;
     std::io::copy(
         &mut File::open(&icon_path).map_fs_error(icon_path)?,
         &mut zip,
     )?;
 
-    let readme_path = project_dir.join(manifest.build.readme);
+    let readme_path = project_dir.join(&build.readme);
     zip.start_file("README.md", FileOptions::default())?;
     write!(
         zip,

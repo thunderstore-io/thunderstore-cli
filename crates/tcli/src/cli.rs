@@ -1,9 +1,8 @@
 use std::path::PathBuf;
-use clap::{Parser, Subcommand};
-use crate::ts::version::Version;
 
-const DEFAULT_REPO: &str = "https://thunderstore.io";
-const DEFAULT_MANIFEST: &str = "./thunderstore.toml";
+use clap::{Parser, Subcommand};
+
+use crate::ts::version::Version;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -11,6 +10,9 @@ pub struct Args {
     #[clap(subcommand)]
     pub commands: Commands,
 }
+
+const DEFAULT_REPO: &str = "https://thunderstore.io";
+const DEFAULT_MANIFEST: &str = "./thunderstore.toml";
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
@@ -97,19 +99,6 @@ pub enum Commands {
 
         /// Path to a package .zip or package name in the format 'namespace-name(-version)'.
         package: String,
-
-        /// Profile that the mod will be installed into.
-        #[clap(long, default_value = "DefaultProfile")]
-        profile: Option<String>,
-
-        /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
-        /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long)]
-        tcli_directory: Option<PathBuf>,
-
-        /// URL of the default repository.
-        #[clap(long, default_value = DEFAULT_REPO)]
-        repository: String,
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
