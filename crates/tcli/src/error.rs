@@ -9,6 +9,7 @@ pub struct Infallible {
 #[derive(Debug, thiserror::Error)]
 #[repr(u32)]
 pub enum Error {
+    #[allow(unused)]
     #[error("Success")]
     Success(Infallible),
 
@@ -27,9 +28,6 @@ pub enum Error {
     #[error("A file IO error occured at path {0}: {1}")]
     FileIoError(PathBuf, std::io::Error),
 
-    #[error("Cannot remove manifest file at {0}.")]
-    CannotRemoveManifest(PathBuf),
-
     #[error("The path {0} represents a directory.")]
     PathIsDirectory(PathBuf),
 
@@ -45,8 +43,8 @@ pub enum Error {
     #[error("Failed modifying zip file: {0}.")]
     ZipError(#[from] zip::result::ZipError),
 
-    #[error("Missing manifest field: {0}")]
-    MissingManifestField(String),
+    #[error("Project is missing required table '{0}'.")]
+    MissingTable(&'static str),
 }
 
 pub trait IoResultToTcli<R> {

@@ -36,7 +36,7 @@ pub enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
-        config_path: PathBuf,
+        project_path: PathBuf,
     },
 
     /// Build a package.
@@ -54,11 +54,11 @@ pub enum Commands {
         package_version: Option<Version>,
 
         #[clap(long)]
-        output_path: Option<PathBuf>,
+        output_dir: Option<PathBuf>,
 
         /// Path for the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
-        config_path: PathBuf,
+        project_path: PathBuf,
     },
 
     /// Publish a package. By default this will also build a new package.
@@ -89,7 +89,7 @@ pub enum Commands {
 
         /// Path for the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
-        config_path: PathBuf,
+        project_path: PathBuf,
     },
 
     /// Installs a mod into a profile.
@@ -102,7 +102,7 @@ pub enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
-        config_path: PathBuf,
+        project_path: PathBuf,
     },
 
     /// Uninstalls a mod from a profile.
@@ -128,7 +128,7 @@ pub enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
-        config_path: PathBuf,
+        project_path: PathBuf,
     },
 
     /// Imports a new game for use by tcli.
@@ -151,7 +151,7 @@ pub enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
-        config_path: PathBuf,
+        project_path: PathBuf,
     },
 
     /// Run a game with mods.
@@ -178,7 +178,7 @@ pub enum Commands {
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
-        config_path: PathBuf,
+        project_path: PathBuf,
 
         /// Arguments to run the game with. Takes precedence over --args.
         #[clap(last = true, name = "--")]

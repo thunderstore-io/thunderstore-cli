@@ -1,8 +1,12 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::fs::File;
+use std::io::Read;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::error::Error;
+use crate::project::overrides::ProjectOverrides;
 use crate::ts::package_reference::{self, PackageReference};
 use crate::ts::version::Version;
 
@@ -25,6 +29,41 @@ impl ProjectManifest {
             publish: Some(Default::default()),
             dependencies: Default::default(),
         }
+    }
+
+    pub fn read_from_file(path: impl AsRef<Path>) -> Result<Self, Error> {
+        let mut text = String::new();
+        File::open(&path)
+            .map_err(|_| Error::NoProjectFile(path.as_ref().into()))?
+            .read_to_string(&mut text)?;
+        Ok(toml::from_str(&text)?)
+    }
+
+    pub fn apply_overrides(&mut self, overrides: ProjectOverrides) -> Result<(), Error> {
+        if overrides.namespace.is_some() || overrides.name.is_some() || overrides.version.is_some()
+        {
+            let package = self
+                .package
+                .as_mut()
+                .ok_or(Error::MissingTable("package"))?;
+            if let Some(namespace) = overrides.namespace {
+                package.namespace = namespace;
+            }
+            if let Some(name) = overrides.name {
+                package.name = name;
+            }
+            if let Some(version) = overrides.version {
+                package.version = version;
+            }
+        }
+        if let Some(output_dir) = overrides.output_dir {
+            self.build
+                .as_mut()
+                .ok_or(Error::MissingTable("build"))?
+                .outdir = output_dir;
+        }
+
+        Ok(())
     }
 }
 

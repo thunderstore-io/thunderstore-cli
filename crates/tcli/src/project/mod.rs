@@ -7,17 +7,17 @@ use zip::write::FileOptions;
 
 use crate::error::{Error, IoResultToTcli};
 use crate::project::manifest::ProjectManifest;
+use crate::project::overrides::ProjectOverrides;
 use crate::ts::package_manifest::PackageManifestV1;
-use crate::ts::version::Version;
 
 pub mod manifest;
+pub mod overrides;
+pub mod publish;
 
 pub fn create_new(
     config_path: impl AsRef<Path>,
     overwrite: bool,
-    namespace: Option<String>,
-    name: Option<String>,
-    version: Option<Version>,
+    overrides: ProjectOverrides,
 ) -> Result<(), Error> {
     let config_path = config_path.as_ref();
 
@@ -38,16 +38,7 @@ pub fn create_new(
 
     let manifest = {
         let mut manifest = ProjectManifest::default_dev_project();
-        let package = manifest.package.as_mut().unwrap();
-        if let Some(namespace) = namespace {
-            package.namespace = namespace;
-        }
-        if let Some(name) = name {
-            package.name = name;
-        }
-        if let Some(version) = version {
-            package.version = version;
-        }
+        manifest.apply_overrides(overrides)?;
         manifest
     };
     let package = manifest.package.as_ref().unwrap();
@@ -108,55 +99,24 @@ pub fn create_new(
     Ok(())
 }
 
-pub fn build(
-    config_path: impl AsRef<Path>,
-    output_path: Option<impl AsRef<Path>>,
-    namespace: Option<String>,
-    name: Option<String>,
-    version: Option<Version>,
-) -> Result<(), Error> {
-    let config_path = config_path.as_ref();
+pub fn build(project_dir: impl AsRef<Path>, manifest: ProjectManifest) -> Result<(), Error> {
+    let project_dir = project_dir.as_ref();
 
-    if !config_path.is_file() {
-        return Err(Error::NoProjectFile(config_path.into()));
-    }
-
-    let project_dir = config_path.parent().unwrap_or(Path::new("./"));
-
-    let manifest = {
-        let mut manifest: ProjectManifest =
-            toml::from_str(&fs::read_to_string(config_path).map_fs_error(config_path)?)?;
-
-        let package = manifest
-            .package
-            .as_mut()
-            .ok_or(Error::MissingManifestField("package".into()))?;
-        if let Some(namespace) = namespace {
-            package.namespace = namespace;
-        }
-        if let Some(name) = name {
-            package.name = name;
-        }
-        if let Some(version) = version {
-            package.version = version;
-        }
-
-        manifest
-    };
-    let package = manifest.package.as_ref().unwrap();
+    let package = manifest
+        .package
+        .as_ref()
+        .ok_or(Error::MissingTable("package"))?;
     let build = manifest
         .build
         .as_ref()
-        .ok_or(Error::MissingManifestField("build".into()))?;
+        .ok_or(Error::MissingTable("build"))?;
 
-    let output_path = output_path
-        .as_ref()
-        .map(|p| p.as_ref().to_path_buf())
-        .unwrap_or(project_dir.join(&build.outdir))
-        .join(format!(
-            "{}-{}-{}.zip",
-            package.namespace, package.name, package.version
-        ));
+    let output_dir = &build.outdir;
+
+    let output_path = output_dir.join(format!(
+        "{}-{}-{}.zip",
+        package.namespace, package.name, package.version
+    ));
 
     match fs::create_dir_all(output_path.parent().unwrap()) {
         Ok(_) => Ok(()),
@@ -176,7 +136,7 @@ pub fn build(
         let source_path = project_dir.join(&copy.source);
 
         // first elem is always the root, even when the path given is to a file
-        for file in walkdir::WalkDir::new(&source_path) {
+        for file in walkdir::WalkDir::new(&source_path).follow_links(true) {
             let file = file?;
 
             let inner_path = file
