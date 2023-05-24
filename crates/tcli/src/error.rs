@@ -1,20 +1,11 @@
-use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
-pub struct Infallible {
-    _priv: PhantomData<()>,
-}
-
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
 #[repr(u32)]
 pub enum Error {
-    #[allow(unused)]
-    #[error("Success")]
-    Success(Infallible),
-
     #[error("An API error occured.")]
-    ApiError(#[from] reqwest::Error),
+    ApiError(#[from] reqwest::Error) = 1,
 
     #[error("The path at {0} is actually a file.")]
     ProjectDirIsFile(PathBuf),
@@ -45,6 +36,9 @@ pub enum Error {
 
     #[error("Project is missing required table '{0}'.")]
     MissingTable(&'static str),
+
+    #[error("Missing repository url.")]
+    MissingRepository,
 }
 
 pub trait IoResultToTcli<R> {

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -15,9 +14,11 @@ pub struct ProjectManifest {
     pub config: ConfigData,
     pub package: Option<PackageData>,
     pub build: Option<BuildData>,
-    pub publish: Option<PublishData>,
+    pub publish: Vec<PublishData>,
     #[serde(flatten)]
     pub dependencies: DependencyData,
+    #[serde(skip)]
+    pub project_dir: Option<PathBuf>,
 }
 
 impl ProjectManifest {
@@ -26,17 +27,25 @@ impl ProjectManifest {
             config: Default::default(),
             package: Some(Default::default()),
             build: Some(Default::default()),
-            publish: Some(Default::default()),
+            publish: vec![Default::default()],
             dependencies: Default::default(),
+            project_dir: None,
         }
     }
 
     pub fn read_from_file(path: impl AsRef<Path>) -> Result<Self, Error> {
+        let path = path.as_ref();
         let mut text = String::new();
-        File::open(&path)
-            .map_err(|_| Error::NoProjectFile(path.as_ref().into()))?
+        File::open(path)
+            .map_err(|_| Error::NoProjectFile(path.into()))?
             .read_to_string(&mut text)?;
-        Ok(toml::from_str(&text)?)
+        let mut manifest: ProjectManifest = toml::from_str(&text)?;
+        manifest.project_dir = Some(
+            path.parent()
+                .map(|p| p.to_path_buf())
+                .unwrap_or_else(|| PathBuf::from("./")),
+        );
+        Ok(manifest)
     }
 
     pub fn apply_overrides(&mut self, overrides: ProjectOverrides) -> Result<(), Error> {
@@ -62,6 +71,9 @@ impl ProjectManifest {
                 .ok_or(Error::MissingTable("build"))?
                 .outdir = output_dir;
         }
+        if let Some(repository) = overrides.repository {
+            self.config.repository = Some(repository);
+        }
 
         Ok(())
     }
@@ -71,16 +83,16 @@ impl ProjectManifest {
 #[serde(rename_all = "camelCase")]
 pub struct ConfigData {
     pub schema_version: Version,
-    pub repository: String,
-    pub game: String,
+    pub repository: Option<String>,
+    pub game: Option<String>,
 }
 
 impl Default for ConfigData {
     fn default() -> Self {
         ConfigData {
             schema_version: Version::new(0, 0, 1),
-            repository: "https://thunderstore.io".into(),
-            game: "risk-of-rain2".into(),
+            repository: Some("https://thunderstore.io".to_string()),
+            game: Some("risk-of-rain2".to_string()),
         }
     }
 }
@@ -146,27 +158,16 @@ impl Default for CopyPath {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-// needs to be untagged to appear as transparent with no discrimator
-#[serde(untagged)]
-pub enum Categories {
-    Old(Vec<String>),
-    New(HashMap<String, Vec<String>>),
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct PublishData {
-    pub communities: Vec<String>,
-    pub categories: Categories,
+    pub community: String,
+    pub categories: Vec<String>,
 }
 
 impl Default for PublishData {
     fn default() -> Self {
         PublishData {
-            communities: vec!["riskofrain2".to_string()],
-            categories: Categories::New(HashMap::from([(
-                "riskofrain2".into(),
-                vec!["items".into(), "skills".into()],
-            )])),
+            community: "riskofrain2".to_string(),
+            categories: vec!["items".to_string(), "skills".to_string()],
         }
     }
 }

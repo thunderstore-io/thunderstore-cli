@@ -1,8 +1,9 @@
 use std::fs;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
+pub use publish::publish;
 use zip::write::FileOptions;
 
 use crate::error::{Error, IoResultToTcli};
@@ -12,7 +13,7 @@ use crate::ts::package_manifest::PackageManifestV1;
 
 pub mod manifest;
 pub mod overrides;
-pub mod publish;
+mod publish;
 
 pub fn create_new(
     config_path: impl AsRef<Path>,
@@ -99,8 +100,11 @@ pub fn create_new(
     Ok(())
 }
 
-pub fn build(project_dir: impl AsRef<Path>, manifest: ProjectManifest) -> Result<(), Error> {
-    let project_dir = project_dir.as_ref();
+pub fn build(manifest: &ProjectManifest) -> Result<PathBuf, Error> {
+    let project_dir = manifest
+        .project_dir
+        .as_deref()
+        .expect("Project should be loaded from a file to build");
 
     let package = manifest
         .package
@@ -129,7 +133,7 @@ pub fn build(project_dir: impl AsRef<Path>, manifest: ProjectManifest) -> Result
             .create(true)
             .write(true)
             .open(&output_path)
-            .map_fs_error(output_path)?,
+            .map_fs_error(&output_path)?,
     );
 
     for copy in &build.copy {
@@ -192,5 +196,5 @@ pub fn build(project_dir: impl AsRef<Path>, manifest: ProjectManifest) -> Result
 
     zip.finish()?;
 
-    Ok(())
+    Ok(output_path)
 }

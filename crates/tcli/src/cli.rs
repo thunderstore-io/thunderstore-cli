@@ -11,7 +11,6 @@ pub struct Args {
     pub commands: Commands,
 }
 
-const DEFAULT_REPO: &str = "https://thunderstore.io";
 const DEFAULT_MANIFEST: &str = "./thunderstore.toml";
 
 #[derive(Subcommand, Debug)]
@@ -84,8 +83,8 @@ pub enum Commands {
         package_version: Option<Version>,
 
         /// URL of the default repository.
-        #[clap(long, default_value = DEFAULT_REPO)]
-        repository: String,
+        #[clap(long)]
+        repository: Option<String>,
 
         /// Path for the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
@@ -123,8 +122,8 @@ pub enum Commands {
         tcli_directory: Option<PathBuf>,
 
         /// URL of the default repository.
-        #[clap(long, default_value = DEFAULT_REPO)]
-        repository: String,
+        #[clap(long)]
+        repository: Option<String>,
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
@@ -146,8 +145,8 @@ pub enum Commands {
         tcli_directory: Option<PathBuf>,
 
         /// URL of the default repository.
-        #[clap(long, default_value = DEFAULT_REPO)]
-        repository: String,
+        #[clap(long)]
+        repository: Option<String>,
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]
@@ -173,8 +172,8 @@ pub enum Commands {
         tcli_directory: Option<PathBuf>,
 
         /// URL of the default repository.
-        #[clap(long, default_value = DEFAULT_REPO)]
-        repository: String,
+        #[clap(long)]
+        repository: Option<String>,
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]

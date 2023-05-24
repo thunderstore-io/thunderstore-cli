@@ -1,5 +1,6 @@
-use once_cell::sync::Lazy;
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
+use std::fmt::{Display, Formatter};
+
+use once_cell::sync::{Lazy, OnceCell};
 use reqwest::Client;
 
 pub mod experimental;
@@ -8,17 +9,39 @@ pub mod package_reference;
 pub mod v1;
 pub mod version;
 
-pub(in crate::ts) const CM: &str = "https://thunderstore.io/c/";
-pub(in crate::ts) const V1: &str = "https://thunderstore.io/api/v1";
-pub(in crate::ts) const EX: &str = "https://thunderstore.io/api/experimental";
+pub struct RepositoryUrl(OnceCell<String>);
+
+impl RepositoryUrl {
+    const fn new() -> Self {
+        Self(OnceCell::new())
+    }
+}
+
+impl Display for RepositoryUrl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.0
+                .get()
+                .expect("Tried to get repository before initialization")
+        )
+    }
+}
+
+pub fn init_repository(repo: &str) {
+    CM.0.set(format!("{repo}/c")).unwrap();
+    V1.0.set(format!("{repo}/api/v1")).unwrap();
+    EX.0.set(format!("{repo}/api/experimental")).unwrap();
+}
+
+pub(in crate::ts) static CM: RepositoryUrl = RepositoryUrl::new();
+pub(in crate::ts) static V1: RepositoryUrl = RepositoryUrl::new();
+pub(in crate::ts) static EX: RepositoryUrl = RepositoryUrl::new();
 
 pub(in crate::ts) static CLIENT: Lazy<Client> = Lazy::new(|| {
-    let mut header_map = HeaderMap::new();
-    header_map.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-    header_map.insert(ACCEPT, HeaderValue::from_static("application/json"));
-
     Client::builder()
-        .default_headers(header_map)
+        .user_agent(concat!("thunderstore-cli/", env!("CARGO_PKG_VERSION")))
         .build()
         .unwrap()
 });

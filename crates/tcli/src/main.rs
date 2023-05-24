@@ -1,8 +1,7 @@
-use std::path::Path;
-
 use clap::Parser;
 
 use crate::cli::{Args, Commands};
+use crate::error::Error;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
 
@@ -13,7 +12,7 @@ mod project;
 mod ts;
 
 #[tokio::main]
-async fn main() -> Result<(), error::Error> {
+async fn main() -> Result<(), Error> {
     match Args::parse().commands {
         Commands::Init {
             overwrite,
@@ -44,7 +43,34 @@ async fn main() -> Result<(), error::Error> {
                     .version_override(package_version)
                     .output_dir_override(output_dir),
             )?;
-            project::build(project_path.parent().unwrap_or(Path::new("./")), manifest)
+            project::build(&manifest)?;
+            Ok(())
+        }
+        Commands::Publish {
+            file,
+            token,
+            package_name,
+            package_namespace,
+            package_version,
+            repository,
+            project_path,
+        } => {
+            let mut manifest = ProjectManifest::read_from_file(&project_path)?;
+            manifest.apply_overrides(
+                ProjectOverrides::new()
+                    .namespace_override(package_namespace)
+                    .name_override(package_name)
+                    .version_override(package_version)
+                    .repository_override(repository),
+            )?;
+            ts::init_repository(
+                manifest
+                    .config
+                    .repository
+                    .as_deref()
+                    .ok_or(Error::MissingRepository)?,
+            );
+            project::publish(&manifest, file, &token.unwrap()).await
         }
         _ => todo!("other commands"),
     }
