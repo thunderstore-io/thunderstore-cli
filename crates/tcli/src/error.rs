@@ -39,6 +39,9 @@ pub enum Error {
 
     #[error("Missing repository url.")]
     MissingRepository,
+
+    #[error("Missing auth token.")]
+    MissingAuthToken,
 }
 
 pub trait IoResultToTcli<R> {

@@ -10,6 +10,7 @@ mod error;
 mod game;
 mod project;
 mod ts;
+mod ui;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -48,13 +49,17 @@ async fn main() -> Result<(), Error> {
         }
         Commands::Publish {
             file,
-            token,
+            mut token,
             package_name,
             package_namespace,
             package_version,
             repository,
             project_path,
         } => {
+            token = token.or_else(|| std::env::var("TCLI_AUTH_TOKEN").ok());
+            if token.is_none() {
+                return Err(Error::MissingAuthToken);
+            }
             let mut manifest = ProjectManifest::read_from_file(&project_path)?;
             manifest.apply_overrides(
                 ProjectOverrides::new()
@@ -69,8 +74,9 @@ async fn main() -> Result<(), Error> {
                     .repository
                     .as_deref()
                     .ok_or(Error::MissingRepository)?,
+                token.as_deref(),
             );
-            project::publish(&manifest, file, &token.unwrap()).await
+            project::publish(&manifest, file).await
         }
         _ => todo!("other commands"),
     }
