@@ -8,6 +8,7 @@ pub async fn get_metadata(author: &str, name: &str) -> Result<PackageListing, Er
         .get(format!("{EX}/package/{author}/{name}/"))
         .send()
         .await?
+        .error_for_status()?
         .json()
         .await?)
 }
@@ -21,6 +22,7 @@ pub async fn get_version_metadata(
         .get(format!("{EX}/package/{author}/{name}/{version}/"))
         .send()
         .await?
+        .error_for_status()?
         .json()
         .await?)
 }

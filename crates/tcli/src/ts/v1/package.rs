@@ -7,6 +7,7 @@ pub async fn get_all() -> Result<Vec<PackageListing>, Error> {
         .get(format!("{V1}/package/"))
         .send()
         .await?
+        .error_for_status()?
         .json()
         .await?)
 }
@@ -16,6 +17,7 @@ pub async fn get_community_all(community: &str) -> Result<Vec<PackageListing>, E
         .get(format!("{CM}/{community}/api/v1/package/"))
         .send()
         .await?
+        .error_for_status()?
         .json()
         .await?)
 }

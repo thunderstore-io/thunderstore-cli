@@ -7,6 +7,7 @@ pub async fn get_schema() -> Result<EcosystemSchema, Error> {
         .get("https://gcdn.thunderstore.io/static/dev/schema/ecosystem-schema.0.0.8.json")
         .send()
         .await?
+        .error_for_status()?
         .json()
         .await?)
 }

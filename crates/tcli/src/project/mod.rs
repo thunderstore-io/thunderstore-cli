@@ -115,7 +115,7 @@ pub fn build(manifest: &ProjectManifest) -> Result<PathBuf, Error> {
         .as_ref()
         .ok_or(Error::MissingTable("build"))?;
 
-    let output_dir = &build.outdir;
+    let output_dir = project_dir.join(&build.outdir);
 
     let output_path = output_dir.join(format!(
         "{}-{}-{}.zip",

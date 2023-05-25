@@ -128,6 +128,7 @@ pub struct BuildData {
     pub icon: PathBuf,
     pub readme: PathBuf,
     pub outdir: PathBuf,
+    #[serde(default)]
     pub copy: Vec<CopyPath>,
 }
 
