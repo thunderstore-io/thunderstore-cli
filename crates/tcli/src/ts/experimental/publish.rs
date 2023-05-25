@@ -13,6 +13,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use crate::error::{Error, IoResultToTcli};
 use crate::ts::experimental::models::publish::*;
 use crate::ts::{CLIENT, EX};
+use crate::ui::PROGRESS_STYLE;
 
 pub async fn usermedia_initiate(
     params: &UserMediaInitiateUploadParams,
@@ -83,10 +84,7 @@ pub async fn upload_file(path: impl AsRef<Path>, auth_token: &str) -> Result<Use
 
     println!("Uploading in {} chunks...", initiate_response.upload_urls.len());
 
-    let progress_bar = &ProgressBar::new(length).with_style(
-        ProgressStyle::with_template("[{elapsed}] {bytes}/{total_bytes} {wide_bar}")
-            .unwrap(),
-    );
+    let progress_bar = &ProgressBar::new(length).with_style(PROGRESS_STYLE);
 
     let tags_result: Result<Vec<CompletedPart>, Error> = initiate_response
         .upload_urls
