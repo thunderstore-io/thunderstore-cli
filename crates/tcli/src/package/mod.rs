@@ -1,21 +1,27 @@
 mod cache;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::iter;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use async_recursion::async_recursion;
 use colored::Colorize;
-use futures::future::try_join_all;
+use futures::future::{join_all, try_join_all};
 use futures::prelude::*;
 use futures::stream::FuturesUnordered;
+use indicatif::{MultiProgress, ProgressBar};
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
 
 use crate::error::Error;
 use crate::ts::experimental::package;
 use crate::ts::package_reference::PackageReference;
 use crate::ts::version::Version;
+use crate::ts::CLIENT;
+use crate::ui::PROGRESS_STYLE;
+use crate::TCLI_HOME;
 
 #[derive(Debug)]
 pub enum PackageSource {
@@ -47,12 +53,12 @@ impl Package {
             ident.version.to_string().truecolor(90, 90, 90),
         );
 
-        if root_package.dependencies.len() == 1 {
+        if final_deps.read().await.len() == 2 {
             print!("and {} other dependent package", "1".green());
         } else {
             print!(
                 "and {} other dependent packages",
-                root_package.dependencies.len().to_string().green()
+                (final_deps.read().await.len() - 1).to_string().green()
             );
         }
 
@@ -61,8 +67,90 @@ impl Package {
         Ok(root_package)
     }
 
-    pub async fn install(&self, project: PathBuf) {
-        todo!()
+    pub async fn sync(&self, project: PathBuf) -> Result<(), Error> {
+        // Iterate down through package listings, downloading each into the package cache.
+        let mut queue = VecDeque::new();
+        let mut download_queue = VecDeque::new();
+        let mut visited = HashSet::new();
+
+        queue.extend(&self.dependencies[..]);
+
+        while let Some(package) = queue.pop_front() {
+            if visited.contains(&package.identifier.to_loose_ident_string()) {
+                continue;
+            }
+
+            for dependency in &package.dependencies {
+                queue.push_back(dependency);
+            }
+
+            visited.insert(package.identifier.to_loose_ident_string());
+            download_queue.push_back(package);
+        }
+
+        download_queue.push_back(self);
+
+        println!(
+            "{} downloading {} packages...",
+            "[#]".yellow(),
+            download_queue.len().to_string().bold(),
+        );
+
+        let multi_bar = MultiProgress::new();
+        multi_bar.set_move_cursor(true);
+
+        let download_jobs = download_queue.into_iter().map(|package| async {
+            let package_source = match &package.source {
+                PackageSource::Local(_) => panic!("Not yet supported."),
+                PackageSource::Remote(url) => url,
+            };
+
+            let download_result = CLIENT.get(package_source).send().await.unwrap();
+            let download_size = download_result.content_length().unwrap();
+
+            let progress = ProgressBar::new(download_size);
+            let progress = multi_bar.add(progress);
+
+            progress.set_style(PROGRESS_STYLE.to_owned());
+
+            let progress_message = format!(
+                "{}-{} ({})",
+                package.identifier.namespace.bold(),
+                package.identifier.name.bold(),
+                package.identifier.version.to_string().truecolor(90, 90, 90)
+            );
+
+            progress.set_message(progress_message);
+
+            let mut download_stream = download_result.bytes_stream();
+
+            let dest_path = TCLI_HOME
+                .join("package_cache")
+                .join(format!("{}.zip", package.identifier));
+            let mut outfile = File::create(dest_path).await.unwrap();
+
+            while let Some(chunk) = download_stream.next().await {
+                let chunk = chunk.unwrap();
+                outfile.write_all(&chunk).await.unwrap();
+
+                progress.inc(chunk.len() as _);
+            }
+
+            let finished_msg = format!(
+                "{} {}-{} ({})",
+                "[✓]".green(),
+                package.identifier.namespace.bold(),
+                package.identifier.name.bold(),
+                package.identifier.version.to_string().truecolor(90, 90, 90)
+            );
+
+            progress.println(finished_msg);
+            progress.finish_and_clear();
+        });
+
+        join_all(download_jobs).await;
+
+        Ok(())
     }
 }
 

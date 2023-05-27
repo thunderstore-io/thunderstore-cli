@@ -47,7 +47,7 @@ pub(in crate::ts) static V1: RepositoryUrl = RepositoryUrl::new();
 pub(in crate::ts) static EX: RepositoryUrl = RepositoryUrl::new();
 pub(in crate::ts) static AUTH: OnceCell<HeaderValue> = OnceCell::new();
 
-pub(in crate::ts) static CLIENT: Lazy<Client> = Lazy::new(|| {
+pub(crate) static CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
         .user_agent(concat!("thunderstore-cli/", env!("CARGO_PKG_VERSION")))
         .build()
