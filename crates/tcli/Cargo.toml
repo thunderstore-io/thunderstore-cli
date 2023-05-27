@@ -20,3 +20,6 @@ zip = "0.6"
 md-5 = "0.10"
 base64 = "0.21"
 indicatif = { version = "0.17.3", features = ["improved_unicode", "tokio"] }
+directories = "5.0.1"
+async-recursion = "1.0.4"
+colored = "2.0.0"

@@ -20,7 +20,7 @@ pub struct PackageMetadata {
     pub community_listings: Vec<PackageListing>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PackageVersion {
     pub namespace: String,
     pub name: String,

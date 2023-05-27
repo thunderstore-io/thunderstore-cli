@@ -5,11 +5,11 @@ use crate::ts::version::{Version, VersionParseError};
 
 pub mod ser;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PackageReference {
-    namespace: String,
-    name: String,
-    version: Version,
+    pub namespace: String,
+    pub name: String,
+    pub version: Version,
 }
 
 impl PackageReference {
@@ -42,6 +42,10 @@ impl PackageReference {
             name: name.to_string(),
             version,
         })
+    }
+
+    pub fn to_loose_ident_string(&self) -> String {
+        format!("{}-{}", self.namespace, self.name)
     }
 }
 

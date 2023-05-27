@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
+use crate::ts::package_reference::PackageReference;
 use crate::ts::version::Version;
 
 #[derive(Parser, Debug)]
@@ -92,16 +93,9 @@ pub enum Commands {
     },
 
     /// Installs a mod into a profile.
-    Install {
-        /// The identifier of the game to manage mods for.
-        game_name: String,
-
+    Add {
         /// Path to a package .zip or package name in the format 'namespace-name(-version)'.
-        package: String,
-
-        /// Path of the project configuration file.
-        #[clap(long, default_value = DEFAULT_MANIFEST)]
-        project_path: PathBuf,
+        package: PackageReference,
     },
 
     /// Uninstalls a mod from a profile.

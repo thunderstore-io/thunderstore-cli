@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 
-#[derive(SerializeDisplay, DeserializeFromStr, Debug, Copy, Clone)]
+#[derive(SerializeDisplay, DeserializeFromStr, Debug, Copy, Clone, PartialEq)]
 pub struct Version {
     pub major: u32,
     pub minor: u32,
@@ -50,5 +50,83 @@ impl FromStr for Version {
 impl Display for Version {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+impl PartialOrd for Version {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match self.major.partial_cmp(&other.major) {
+            Some(core::cmp::Ordering::Equal) => {}
+            ord => return ord,
+        }
+        match self.minor.partial_cmp(&other.minor) {
+            Some(core::cmp::Ordering::Equal) => {}
+            ord => return ord,
+        }
+        self.patch.partial_cmp(&other.patch)
+    }
+
+    fn lt(&self, other: &Self) -> bool {
+        if self.major < other.major {
+            return true;
+        }
+
+        if self.minor < other.minor {
+            return true;
+        }
+
+        if self.patch < other.patch {
+            return self.patch < other.patch;
+        }
+
+        false
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        if self.major < other.major {
+            return true;
+        }
+
+        if self.minor < other.minor {
+            return true;
+        }
+
+        if self.patch < other.patch {
+            return self.patch < other.patch;
+        }
+
+        true
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        if self.major > other.major {
+            return true;
+        }
+
+        if self.minor > other.minor {
+            return true;
+        }
+
+        if self.patch > other.patch {
+            return self.patch > other.patch;
+        }
+
+        false
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        if self.major > other.major {
+            return true;
+        }
+
+        if self.minor > other.minor {
+            return true;
+        }
+
+        if self.patch > other.patch {
+            return self.patch > other.patch;
+        }
+
+        true
     }
 }

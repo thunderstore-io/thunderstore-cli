@@ -1,4 +1,10 @@
+use std::env;
+use std::path::PathBuf;
+
 use clap::Parser;
+use directories::BaseDirs;
+use once_cell::sync::Lazy;
+use package::Package;
 
 use crate::cli::{Args, Commands};
 use crate::error::Error;
@@ -8,12 +14,21 @@ use crate::project::overrides::ProjectOverrides;
 mod cli;
 mod error;
 mod game;
+mod package;
 mod project;
 mod ts;
 mod ui;
 
+pub static TCLI_HOME: Lazy<PathBuf> = Lazy::new(|| {
+    let default_home = BaseDirs::new().unwrap().data_dir().join("tcli");
+
+    env::var("TCLI_HOME").map_or_else(|_| default_home, PathBuf::from)
+});
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    ts::init_repository("https://thunderstore.io", None);
+
     match Args::parse().commands {
         Commands::Init {
             overwrite,
@@ -77,6 +92,11 @@ async fn main() -> Result<(), Error> {
                 token.as_deref(),
             );
             project::publish(&manifest, file).await
+        }
+        Commands::Add { package } => {
+            let package = Package::resolve(package).await?;
+
+            Ok(())
         }
         _ => todo!("other commands"),
     }
