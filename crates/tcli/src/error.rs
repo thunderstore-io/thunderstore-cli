@@ -1,11 +1,19 @@
 use std::path::{Path, PathBuf};
 
+use async_trait::async_trait;
+
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
 #[repr(u32)]
 pub enum Error {
     #[error("An API error occured.")]
-    ApiError(#[from] reqwest::Error) = 1,
+    ApiError {
+        source: reqwest::Error,
+        response_body: Option<String>,
+    } = 1,
+
+    #[error("A network error occured while sending an API request.")]
+    NetworkError(#[from] reqwest::Error),
 
     #[error("The path at {0} is actually a file.")]
     ProjectDirIsFile(PathBuf),
@@ -54,6 +62,24 @@ pub trait IoResultToTcli<R> {
 impl<R> IoResultToTcli<R> for Result<R, std::io::Error> {
     fn map_fs_error(self, path: impl AsRef<Path>) -> Result<R, Error> {
         self.map_err(|e| Error::FileIoError(path.as_ref().into(), e))
+    }
+}
+
+#[async_trait]
+pub trait ReqwestToTcli: Sized {
+    async fn error_for_status_tcli(self) -> Result<Self, Error>;
+}
+
+#[async_trait]
+impl ReqwestToTcli for reqwest::Response {
+    async fn error_for_status_tcli(self) -> Result<Self, Error> {
+        match self.error_for_status_ref() {
+            Ok(_) => Ok(self),
+            Err(err) => Err(Error::ApiError {
+                source: err,
+                response_body: self.text().await.ok(),
+            }),
+        }
     }
 }
 

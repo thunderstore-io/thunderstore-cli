@@ -99,7 +99,7 @@ pub enum Commands {
     },
 
     /// Uninstalls a mod from a profile.
-    Uninstall {
+    Remove {
         /// The identifier of the game to manage mods for.
         game_name: String,
 

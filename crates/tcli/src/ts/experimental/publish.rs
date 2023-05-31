@@ -10,7 +10,7 @@ use md5::Md5;
 use reqwest::{header, Body};
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 
-use crate::error::{Error, IoResultToTcli};
+use crate::error::{Error, IoResultToTcli, ReqwestToTcli};
 use crate::ts::experimental::models::publish::*;
 use crate::ts::{AUTH, CLIENT, EX};
 use crate::ui::PROGRESS_STYLE;
@@ -27,7 +27,8 @@ pub async fn usermedia_initiate(
         .json(params)
         .send()
         .await?
-        .error_for_status()?
+        .error_for_status_tcli()
+        .await?
         .json()
         .await?)
 }
@@ -45,7 +46,8 @@ pub async fn usermedia_finish(
         .json(params)
         .send()
         .await?
-        .error_for_status()?;
+        .error_for_status_tcli()
+        .await?;
     Ok(())
 }
 
@@ -58,7 +60,8 @@ pub async fn usermedia_abort(uuid: String) -> Result<(), Error> {
         )
         .send()
         .await?
-        .error_for_status()?;
+        .error_for_status_tcli()
+        .await?;
     Ok(())
 }
 
@@ -118,7 +121,8 @@ pub async fn upload_file(path: impl AsRef<Path>) -> Result<UserMedia, Error> {
                 )))
                 .send()
                 .await?
-                .error_for_status()?;
+                .error_for_status_tcli()
+                .await?;
             let etag = upload_response
                 .headers()
                 .get("ETag")
@@ -172,7 +176,8 @@ pub async fn package_submit(
         .json(params)
         .send()
         .await?
-        .error_for_status()?
+        .error_for_status_tcli()
+        .await?
         .json()
         .await?)
 }
