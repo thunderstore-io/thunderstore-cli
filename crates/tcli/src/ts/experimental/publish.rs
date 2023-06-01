@@ -1,4 +1,5 @@
 use std::io::{Read, Seek, SeekFrom};
+use std::os::windows::prelude::OpenOptionsExt;
 use std::path::Path;
 
 use base64::prelude::BASE64_STANDARD;

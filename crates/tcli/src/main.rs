@@ -5,8 +5,9 @@ use clap::Parser;
 use cli::InitSubcommand;
 use directories::BaseDirs;
 use once_cell::sync::Lazy;
-use package::Package;
+use package::resolver::PackageResolver;
 use project::ProjectKind;
+use ui::reporter::GenericProgressReporter;
 
 use crate::cli::{Args, Commands};
 use crate::error::Error;
@@ -29,8 +30,6 @@ pub static TCLI_HOME: Lazy<PathBuf> = Lazy::new(|| {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    ts::init_repository("https://thunderstore.io", None);
-
     match Args::parse().commands {
         Commands::Init {
             command,
@@ -104,8 +103,14 @@ async fn main() -> Result<(), Error> {
             );
             project::publish(&manifest, file).await
         }
-        Commands::Add { package } => {
-            let package = Package::resolve(package).await?;
+        Commands::Add {
+            packages,
+            project_path,
+        } => {
+            ts::init_repository("https://thunderstore.io", None);
+
+            let packages = PackageResolver::resolve_new(packages, project_path).await?;
+            packages.apply::<GenericProgressReporter>().await?;
 
             Ok(())
         }

@@ -106,7 +106,11 @@ pub enum Commands {
     /// Installs a mod into a profile.
     Add {
         /// Path to a package .zip or package name in the format 'namespace-name(-version)'.
-        package: PackageReference,
+        packages: Vec<PackageReference>,
+
+        /// Path of the project configuration file.
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
+        project_path: PathBuf,
     },
 
     /// Uninstalls a mod from a profile.

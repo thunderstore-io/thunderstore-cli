@@ -1,26 +1,21 @@
 mod cache;
+pub mod resolver;
 
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::iter;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
 
-use async_recursion::async_recursion;
+use async_zip::tokio::read::seek::ZipFileReader;
 use colored::Colorize;
-use futures::future::{join_all, try_join_all};
 use futures::prelude::*;
-use futures::stream::FuturesUnordered;
-use indicatif::{MultiProgress, ProgressBar};
-use tokio::fs::File;
+use tokio::fs::{self, File, OpenOptions};
 use tokio::io::AsyncWriteExt;
-use tokio::sync::RwLock;
+use tokio_util::compat::TokioAsyncWriteCompatExt;
 
 use crate::error::Error;
 use crate::ts::experimental::package;
+use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
-use crate::ts::version::Version;
 use crate::ts::CLIENT;
-use crate::ui::PROGRESS_STYLE;
+use crate::ui::reporter::ProgressReporter;
 use crate::TCLI_HOME;
 
 #[derive(Debug)]
@@ -33,191 +28,171 @@ pub enum PackageSource {
 pub struct Package {
     pub identifier: PackageReference,
     pub source: PackageSource,
-    pub dependencies: Vec<Package>,
+    pub dependencies: Vec<PackageReference>,
 }
 
 impl Package {
-    /// Resolve the package identifier from the remote repository / local cache, along with
-    /// all specified dependencies.
-    pub async fn resolve(ident: PackageReference) -> Result<Package, Error> {
-        let final_deps = Arc::new(RwLock::new(HashMap::new()));
-        let root_package = resolve_intern(ident.clone(), final_deps.clone())
-            .await?
-            .unwrap();
-
-        print!(
-            "{} resolved {}-{} ({}) ",
-            "[✓]".green(),
-            ident.namespace.bold(),
-            ident.name.bold(),
-            ident.version.to_string().truecolor(90, 90, 90),
-        );
-
-        if final_deps.read().await.len() == 2 {
-            print!("and {} other dependent package", "1".green());
-        } else {
-            print!(
-                "and {} other dependent packages",
-                (final_deps.read().await.len() - 1).to_string().green()
-            );
+    pub async fn resolve_new(ident: PackageReference) -> Result<Self, Error> {
+        if let Ok(package_path) = cache::get_cached(&ident) {
+            return Package::from_file(ident, &package_path).await;
         }
 
-        println!();
-
-        Ok(root_package)
+        Package::from_repo(ident).await
     }
 
-    pub async fn sync(&self, project: PathBuf) -> Result<(), Error> {
-        // Iterate down through package listings, downloading each into the package cache.
-        let mut queue = VecDeque::new();
-        let mut download_queue = VecDeque::new();
-        let mut visited = HashSet::new();
+    pub async fn from_file(ident: PackageReference, path: &Path) -> Result<Self, Error> {
+        let mut package_file = File::open(path).await?;
+        let mut zip = ZipFileReader::with_tokio(&mut package_file).await.unwrap();
 
-        queue.extend(&self.dependencies[..]);
+        let manifest_entry = zip
+            .file()
+            .entries()
+            .iter()
+            .position(|x| x.entry().filename().as_str().unwrap() == "manifest.json")
+            .expect("Package missing manifest.json, bailing.");
 
-        while let Some(package) = queue.pop_front() {
-            if visited.contains(&package.identifier.to_loose_ident_string()) {
-                continue;
+        let mut reader = zip.reader_with_entry(manifest_entry).await.unwrap();
+
+        let mut manifest_str = String::new();
+        reader.read_to_string(&mut manifest_str).await.unwrap();
+
+        let manifest_str = manifest_str.trim_start_matches('\u{feff}');
+
+        match serde_json::from_str::<PackageManifestV1>(manifest_str) {
+            Ok(manifest) => Ok(Package {
+                identifier: ident,
+                source: PackageSource::Local(path.to_path_buf()),
+                dependencies: manifest.dependencies,
+            }),
+            Err(_) => {
+                println!(
+                    "{} package \"{}\" has a malformed manifest, grabbing info from repo instead",
+                    "[!]".bright_yellow(),
+                    ident,
+                );
+
+                let mut package = Package::from_repo(ident).await?;
+                package.source = PackageSource::Local(path.into());
+
+                Ok(package)
             }
+        }
+    }
 
-            for dependency in &package.dependencies {
-                queue.push_back(dependency);
-            }
+    pub async fn from_repo(ident: PackageReference) -> Result<Self, Error> {
+        let package =
+            package::get_version_metadata(&ident.namespace, &ident.name, ident.version).await?;
 
-            visited.insert(package.identifier.to_loose_ident_string());
-            download_queue.push_back(package);
+        Ok(Package {
+            identifier: ident,
+            source: PackageSource::Remote(package.download_url),
+            dependencies: package.dependencies,
+        })
+    }
+
+    pub async fn add(&self, project: &Path, reporter: impl ProgressReporter) -> Result<(), Error> {
+        if matches!(self.source, PackageSource::Remote(_)) {
+            self.download(&reporter).await?;
         }
 
-        download_queue.push_back(self);
+        let project_state = project.join("project_state");
 
-        println!(
-            "{} downloading {} packages...",
-            "[#]".yellow(),
-            download_queue.len().to_string().bold(),
+        let package_path = cache::get_cached(&self.identifier)?;
+        let install_dir = project_state.join(self.identifier.to_string());
+
+        if install_dir.exists() {
+            fs::remove_dir_all(&install_dir).await?;
+        }
+
+        let mut package_file = File::open(package_path).await?;
+        let mut zip = ZipFileReader::with_tokio(&mut package_file).await.unwrap();
+
+        let uncompressed_size: u64 = zip
+            .file()
+            .entries()
+            .iter()
+            .map(|x| x.entry().uncompressed_size())
+            .sum();
+
+        reporter.set_length(uncompressed_size as _);
+
+        for index in 0..zip.file().entries().len() {
+            let entry = zip.file().entries().get(index).unwrap().entry();
+
+            if !entry.dir().unwrap() {
+                let out_path = install_dir.join(entry.filename().as_str().unwrap());
+                let out_parent = out_path.parent().unwrap();
+
+                if !out_parent.exists() {
+                    fs::create_dir_all(out_parent).await?;
+                }
+
+                let entry_len = entry.uncompressed_size();
+                let mut entry_reader = zip.reader_without_entry(index).await.unwrap();
+
+                let writer = OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(&out_path)
+                    .await?;
+
+                futures_util::io::copy(&mut entry_reader, &mut writer.compat_write())
+                    .await
+                    .unwrap();
+
+                reporter.inc(entry_len as _);
+            }
+        }
+
+        let finished_msg = format!(
+            "{} {}-{} ({})",
+            "[✓]".green(),
+            self.identifier.namespace.bold(),
+            self.identifier.name.bold(),
+            self.identifier.version.to_string().truecolor(90, 90, 90)
         );
 
-        let multi_bar = MultiProgress::new();
-        multi_bar.set_move_cursor(true);
-
-        let download_jobs = download_queue.into_iter().map(|package| async {
-            let package_source = match &package.source {
-                PackageSource::Local(_) => panic!("Not yet supported."),
-                PackageSource::Remote(url) => url,
-            };
-
-            let download_result = CLIENT.get(package_source).send().await.unwrap();
-            let download_size = download_result.content_length().unwrap();
-
-            let progress = ProgressBar::new(download_size);
-            let progress = multi_bar.add(progress);
-
-            progress.set_style(PROGRESS_STYLE.to_owned());
-
-            let progress_message = format!(
-                "{}-{} ({})",
-                package.identifier.namespace.bold(),
-                package.identifier.name.bold(),
-                package.identifier.version.to_string().truecolor(90, 90, 90)
-            );
-
-            progress.set_message(progress_message);
-
-            let mut download_stream = download_result.bytes_stream();
-
-            let dest_path = TCLI_HOME
-                .join("package_cache")
-                .join(format!("{}.zip", package.identifier));
-            let mut outfile = File::create(dest_path).await.unwrap();
-
-            while let Some(chunk) = download_stream.next().await {
-                let chunk = chunk.unwrap();
-                outfile.write_all(&chunk).await.unwrap();
-
-                progress.inc(chunk.len() as _);
-            }
-
-            let finished_msg = format!(
-                "{} {}-{} ({})",
-                "[✓]".green(),
-                package.identifier.namespace.bold(),
-                package.identifier.name.bold(),
-                package.identifier.version.to_string().truecolor(90, 90, 90)
-            );
-
-            progress.println(finished_msg);
-            progress.finish_and_clear();
-        });
-
-        join_all(download_jobs).await;
+        reporter.println(finished_msg);
+        reporter.finish_and_clear();
 
         Ok(())
     }
-}
 
-async fn package_already_resolved(
-    ident: &PackageReference,
-    final_deps: Arc<RwLock<HashMap<String, Version>>>,
-) -> bool {
-    let final_deps = final_deps.read().await;
-    let loose_ident = ident.to_loose_ident_string();
+    async fn download<T: ProgressReporter>(&self, reporter: &T) -> Result<(), Error> {
+        let package_source = match &self.source {
+            PackageSource::Remote(x) => x,
+            _ => panic!("Invalid use, this is a local package."),
+        };
 
-    final_deps.contains_key(&loose_ident) && final_deps.get(&loose_ident).unwrap() >= &ident.version
-}
+        let download_result = CLIENT.get(package_source).send().await.unwrap();
+        let download_size = download_result.content_length().unwrap() as usize;
 
-#[async_recursion]
-async fn resolve_intern(
-    ident: PackageReference,
-    final_deps: Arc<RwLock<HashMap<String, Version>>>,
-) -> Result<Option<Package>, Error> {
-    if package_already_resolved(&ident, final_deps.clone()).await {
-        return Ok(None);
+        let progress_message = format!(
+            "{}-{} ({})",
+            self.identifier.namespace.bold(),
+            self.identifier.name.bold(),
+            self.identifier.version.to_string().truecolor(90, 90, 90)
+        );
+
+        reporter.set_length(download_size);
+        reporter.set_message(progress_message);
+
+        let mut download_stream = download_result.bytes_stream();
+
+        let dest_path = TCLI_HOME
+            .join("package_cache")
+            .join(format!("{}.zip", self.identifier));
+        let mut outfile = File::create(dest_path).await.unwrap();
+
+        while let Some(chunk) = download_stream.next().await {
+            let chunk = chunk.unwrap();
+            outfile.write_all(&chunk).await.unwrap();
+
+            reporter.inc(chunk.len());
+        }
+
+        reporter.finish();
+
+        Ok(())
     }
-
-    let package_data =
-        package::get_version_metadata(&ident.namespace, &ident.name, ident.version).await?;
-
-    let dep_tree = package_data
-        .dependencies
-        .into_iter()
-        .filter(|x| !cache::package_exists(x).unwrap());
-
-    // Determine the list of dependencies that also need to be resolved.
-    let dep_tree = stream::iter(dep_tree)
-        .filter_map(|x| async {
-            let loose_ident = x.to_loose_ident_string();
-            let final_deps = final_deps.read().await;
-
-            if !final_deps.contains_key(&loose_ident)
-                || final_deps.get(&loose_ident).unwrap() < &ident.version
-            {
-                Some(x)
-            } else {
-                None
-            }
-        })
-        .map(|x| resolve_intern(x, final_deps.clone()))
-        .collect::<FuturesUnordered<_>>();
-
-    // Collect the result of the previous recursive resolution.
-    let dep_tree = try_join_all(dep_tree.await)
-        .await?
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
-
-    // Add the resolved dependencies to the final deps tree, including the parent.
-    let new_final_deps = dep_tree
-        .iter()
-        .map(|x| (x.identifier.to_loose_ident_string(), x.identifier.version))
-        .chain(iter::once((ident.to_loose_ident_string(), ident.version)));
-
-    final_deps.write().await.extend(new_final_deps);
-
-    let package = Package {
-        identifier: ident,
-        source: PackageSource::Remote(package_data.download_url),
-        dependencies: dep_tree,
-    };
-
-    Ok(Some(package))
 }
