@@ -3,7 +3,6 @@ use std::path::Path;
 
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
-use futures::stream::StreamExt;
 use indicatif::ProgressBar;
 use md5::digest::FixedOutput;
 use md5::Md5;
@@ -96,50 +95,46 @@ pub async fn upload_file(path: impl AsRef<Path>) -> Result<UserMedia, Error> {
 
     let progress_bar = &ProgressBar::new(length).with_style(PROGRESS_STYLE.clone());
 
-    let tags_result: Result<Vec<CompletedPart>, Error> = initiate_response
-        .upload_urls
-        .into_iter()
-        .map(|url| async move {
-            let mut file = open_options.open(path).map_fs_error(path)?;
-            file.seek(SeekFrom::Start(url.offset))?;
+    let tags_result: Result<Vec<CompletedPart>, Error> =
+        futures::future::try_join_all(initiate_response.upload_urls.into_iter().map(
+            |url| async move {
+                let mut file = open_options.open(path).map_fs_error(path)?;
+                file.seek(SeekFrom::Start(url.offset))?;
 
-            let mut md5 = Md5::default();
-            std::io::copy(&mut file.try_clone().unwrap().take(url.length), &mut md5)?;
-            let md5 = BASE64_STANDARD.encode(md5.finalize_fixed());
+                let mut md5 = Md5::default();
+                std::io::copy(&mut file.try_clone().unwrap().take(url.length), &mut md5)?;
+                let md5 = BASE64_STANDARD.encode(md5.finalize_fixed());
 
-            file.seek(SeekFrom::Start(url.offset))?;
+                file.seek(SeekFrom::Start(url.offset))?;
 
-            let data_stream = tokio::fs::File::from_std(file).take(url.length);
-            let with_progress = progress_bar.wrap_async_read(data_stream);
+                let data_stream = tokio::fs::File::from_std(file).take(url.length);
+                let with_progress = progress_bar.wrap_async_read(data_stream);
 
-            let upload_response = CLIENT
-                .put(url.url)
-                .header(header::CONTENT_LENGTH, url.length)
-                .header("Content-MD5", md5)
-                .body(Body::wrap_stream(tokio_util::io::ReaderStream::new(
-                    with_progress,
-                )))
-                .send()
-                .await?
-                .error_for_status_tcli()
-                .await?;
-            let etag = upload_response
-                .headers()
-                .get("ETag")
-                .expect("Expected ETag in upload response")
-                .to_str()
-                .expect("ETag was not a valid string");
+                let upload_response = CLIENT
+                    .put(url.url)
+                    .header(header::CONTENT_LENGTH, url.length)
+                    .header("Content-MD5", md5)
+                    .body(Body::wrap_stream(tokio_util::io::ReaderStream::new(
+                        with_progress,
+                    )))
+                    .send()
+                    .await?
+                    .error_for_status_tcli()
+                    .await?;
+                let etag = upload_response
+                    .headers()
+                    .get("ETag")
+                    .expect("Expected ETag in upload response")
+                    .to_str()
+                    .expect("ETag was not a valid string");
 
-            Ok(CompletedPart {
-                etag: etag.to_string(),
-                part_number: url.part_number,
-            })
-        })
-        .collect::<futures::stream::FuturesUnordered<_>>()
-        .collect::<Vec<_>>()
-        .await
-        .into_iter()
-        .collect();
+                Ok(CompletedPart {
+                    etag: etag.to_string(),
+                    part_number: url.part_number,
+                })
+            },
+        ))
+        .await;
 
     progress_bar.finish();
 

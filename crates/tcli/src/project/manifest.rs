@@ -33,6 +33,17 @@ impl ProjectManifest {
         }
     }
 
+    pub fn default_profile_project() -> Self {
+        ProjectManifest {
+            config: Default::default(),
+            package: None,
+            build: None,
+            publish: vec![],
+            dependencies: Default::default(),
+            project_dir: None,
+        }
+    }
+
     pub fn read_from_file(path: impl AsRef<Path>) -> Result<Self, Error> {
         let path = path.as_ref();
         let mut text = String::new();

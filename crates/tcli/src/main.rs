@@ -2,9 +2,11 @@ use std::env;
 use std::path::PathBuf;
 
 use clap::Parser;
+use cli::InitSubcommand;
 use directories::BaseDirs;
 use once_cell::sync::Lazy;
 use package::Package;
+use project::ProjectKind;
 
 use crate::cli::{Args, Commands};
 use crate::error::Error;
@@ -31,19 +33,28 @@ async fn main() -> Result<(), Error> {
 
     match Args::parse().commands {
         Commands::Init {
+            command,
             overwrite,
-            package_namespace,
-            package_name,
-            package_version,
             project_path,
-        } => project::create_new(
-            project_path,
-            overwrite,
-            ProjectOverrides::new()
-                .namespace_override(package_namespace)
-                .name_override(package_name)
-                .version_override(package_version),
-        ),
+        } => match command {
+            InitSubcommand::Project {
+                package_name,
+                package_namespace,
+                package_version,
+            } => project::create_new(
+                project_path,
+                overwrite,
+                ProjectKind::Dev(
+                    ProjectOverrides::new()
+                        .namespace_override(package_namespace)
+                        .name_override(package_name)
+                        .version_override(package_version),
+                ),
+            ),
+            InitSubcommand::Profile => {
+                project::create_new(project_path, overwrite, ProjectKind::Profile)
+            }
+        },
         Commands::Build {
             package_name,
             package_namespace,

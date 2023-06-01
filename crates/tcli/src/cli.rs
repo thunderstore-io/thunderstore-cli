@@ -12,16 +12,12 @@ pub struct Args {
     pub commands: Commands,
 }
 
-const DEFAULT_MANIFEST: &str = "./thunderstore.toml";
+const DEFAULT_MANIFEST: &str = "./Thunderstore.toml";
 
-#[derive(Subcommand, Debug)]
-pub enum Commands {
-    /// Initialize a new project configuration.
-    Init {
-        /// If present, overwrite current configuration.
-        #[clap(long, default_value = "false")]
-        overwrite: bool,
-
+#[derive(Subcommand, Debug, Clone)]
+pub enum InitSubcommand {
+    /// Creates a TCLI project, which can be used to build a package.
+    Project {
         /// Name for the package.
         #[clap(long)]
         package_name: Option<String>,
@@ -33,6 +29,21 @@ pub enum Commands {
         /// Version number for the package.
         #[clap(long)]
         package_version: Option<Version>,
+    },
+    /// Creates a TCLI profile, which can be used to build a mod installtion.
+    Profile,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    /// Initialize a new project configuration.
+    Init {
+        #[clap(subcommand)]
+        command: InitSubcommand,
+
+        /// If present, overwrite current configuration.
+        #[clap(long, default_value = "false")]
+        overwrite: bool,
 
         /// Path of the project configuration file.
         #[clap(long, default_value = DEFAULT_MANIFEST)]

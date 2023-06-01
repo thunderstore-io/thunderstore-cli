@@ -15,17 +15,19 @@ pub mod manifest;
 pub mod overrides;
 mod publish;
 
-pub fn create_new(
-    config_path: impl AsRef<Path>,
-    overwrite: bool,
-    overrides: ProjectOverrides,
-) -> Result<(), Error> {
-    let config_path = config_path.as_ref();
+pub enum ProjectKind {
+    Dev(ProjectOverrides),
+    Profile,
+}
 
-    let project_dir = config_path.parent().unwrap_or("./".as_ref());
-    let config_filename = config_path
-        .file_name()
-        .ok_or_else(|| Error::PathIsDirectory(config_path.into()))?;
+pub fn create_new(
+    project_path: impl AsRef<Path>,
+    overwrite: bool,
+    project_kind: ProjectKind,
+) -> Result<(), Error> {
+    let project_path = project_path.as_ref();
+
+    let project_dir = project_path.parent().unwrap_or("./".as_ref());
 
     if project_dir.is_file() {
         return Err(Error::ProjectDirIsFile(project_dir.into()));
@@ -35,12 +37,13 @@ pub fn create_new(
         fs::create_dir(project_dir).map_fs_error(project_dir)?;
     }
 
-    let manifest_path = project_dir.join(config_filename);
-
-    let manifest = {
-        let mut manifest = ProjectManifest::default_dev_project();
-        manifest.apply_overrides(overrides)?;
-        manifest
+    let manifest = match project_kind {
+        ProjectKind::Dev(overrides) => {
+            let mut manifest = ProjectManifest::default_dev_project();
+            manifest.apply_overrides(overrides)?;
+            manifest
+        }
+        ProjectKind::Profile => ProjectManifest::default_profile_project(),
     };
     let package = manifest.package.as_ref().unwrap();
 
@@ -53,10 +56,12 @@ pub fn create_new(
     }
 
     let mut manifest_file = options
-        .open(&manifest_path)
+        .open(&project_path)
         .map_err(move |e| match e.kind() {
-            std::io::ErrorKind::AlreadyExists => Error::ProjectAlreadyExists(manifest_path),
-            _ => Error::FileIoError(manifest_path, e),
+            std::io::ErrorKind::AlreadyExists => {
+                Error::ProjectAlreadyExists(project_path.to_path_buf())
+            }
+            _ => Error::FileIoError(project_path.to_path_buf(), e),
         })?;
 
     write!(
