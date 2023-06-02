@@ -1,4 +1,5 @@
 use std::io::{Read, Seek, SeekFrom};
+#[cfg(target_os = "windows")]
 use std::os::windows::prelude::OpenOptionsExt;
 use std::path::Path;
 

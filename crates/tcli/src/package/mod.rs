@@ -15,7 +15,7 @@ use crate::ts::experimental::package;
 use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
 use crate::ts::CLIENT;
-use crate::ui::reporter::ProgressReporter;
+use crate::ui::reporter::{ProgressBarTrait};
 use crate::TCLI_HOME;
 
 #[derive(Debug)]
@@ -90,9 +90,9 @@ impl Package {
         })
     }
 
-    pub async fn add(&self, project: &Path, reporter: impl ProgressReporter) -> Result<(), Error> {
+    pub async fn add(&self, project: &Path, reporter: Box<dyn ProgressBarTrait>) -> Result<(), Error> {
         if matches!(self.source, PackageSource::Remote(_)) {
-            self.download(&reporter).await?;
+            self.download(reporter.as_ref()).await?;
         }
 
         let project_state = project.join("project_state");
@@ -152,20 +152,20 @@ impl Package {
             self.identifier.version.to_string().truecolor(90, 90, 90)
         );
 
-        reporter.println(finished_msg);
+        reporter.println(&finished_msg);
         reporter.finish_and_clear();
 
         Ok(())
     }
 
-    async fn download<T: ProgressReporter>(&self, reporter: &T) -> Result<(), Error> {
+    async fn download(&self, reporter: &dyn ProgressBarTrait) -> Result<(), Error> {
         let package_source = match &self.source {
             PackageSource::Remote(x) => x,
             _ => panic!("Invalid use, this is a local package."),
         };
 
         let download_result = CLIENT.get(package_source).send().await.unwrap();
-        let download_size = download_result.content_length().unwrap() as usize;
+        let download_size = download_result.content_length().unwrap();
 
         let progress_message = format!(
             "{}-{} ({})",
@@ -182,13 +182,14 @@ impl Package {
         let dest_path = TCLI_HOME
             .join("package_cache")
             .join(format!("{}.zip", self.identifier));
+        fs::create_dir_all(dest_path.parent().unwrap()).await.unwrap();
         let mut outfile = File::create(dest_path).await.unwrap();
 
         while let Some(chunk) = download_stream.next().await {
             let chunk = chunk.unwrap();
             outfile.write_all(&chunk).await.unwrap();
 
-            reporter.inc(chunk.len());
+            reporter.inc(chunk.len() as u64);
         }
 
         reporter.finish();

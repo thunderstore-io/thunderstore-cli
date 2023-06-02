@@ -2,12 +2,11 @@ use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
 
 use futures_util::future::try_join_all;
-use indicatif::MultiProgress;
 
 use super::Package;
 use crate::error::Error;
 use crate::ts::package_reference::PackageReference;
-use crate::ui::reporter::ProgressReporter;
+use crate::ui::reporter::Reporter;
 
 pub struct PackageResolver {
     pub packages_to_install: Vec<Package>,
@@ -65,15 +64,18 @@ impl PackageResolver {
     }
 
     /// Apply the newly resolved packages onto the previously specified project.
-    pub async fn apply<T: ProgressReporter>(&self) -> Result<(), Error> {
-        let multi_progress = MultiProgress::new();
+    pub async fn apply(
+        &self,
+        reporter: Box<dyn Reporter>,
+    ) -> Result<(), Error> {
         let project_path = self.project.as_path();
 
-        let jobs = self.packages_to_install.iter().map(|package| {
-            let progress = T::from_multi(&multi_progress, 100);
+        let multi = reporter.create_progress();
 
-            package.add(project_path, progress)
-        });
+        let jobs = self
+            .packages_to_install
+            .iter()
+            .map(|package| package.add(project_path, multi.add_bar()));
 
         try_join_all(jobs).await?;
 

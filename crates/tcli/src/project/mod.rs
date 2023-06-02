@@ -56,7 +56,7 @@ pub fn create_new(
     }
 
     let mut manifest_file = options
-        .open(&project_path)
+        .open(project_path)
         .map_err(move |e| match e.kind() {
             std::io::ErrorKind::AlreadyExists => {
                 Error::ProjectAlreadyExists(project_path.to_path_buf())

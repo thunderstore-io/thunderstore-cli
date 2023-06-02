@@ -27,9 +27,6 @@ pub enum Error {
     #[error("A file IO error occured at path {0}: {1}")]
     FileIoError(PathBuf, std::io::Error),
 
-    #[error("The path {0} represents a directory.")]
-    PathIsDirectory(PathBuf),
-
     #[error("Invalid version.")]
     InvalidVersion(#[from] crate::ts::version::VersionParseError),
 

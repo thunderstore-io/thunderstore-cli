@@ -1,99 +1,100 @@
-use std::borrow::Cow;
+use indicatif::{MultiProgress, ProgressBar};
 
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use crate::ui::PROGRESS_STYLE;
 
-/// ProgressReporter is a wrapper around the ProgressBar struct.
-///
-/// This trait allows for recieving functions to report progress without needing to handle the
-/// details about *where* said progress is written to.
-pub trait ProgressReporter {
-    fn new(size: usize) -> Self;
-    fn from_multi(multi: &MultiProgress, size: usize) -> Self;
-    fn set_style(&self, style: ProgressStyle);
-    fn set_length(&self, len: usize);
-    fn set_message(&self, msg: impl Into<Cow<'static, str>>);
-    fn println(&self, msg: impl AsRef<str>);
+pub trait Reporter {
+    fn create_progress(&self) -> Box<dyn Progress>;
+}
+
+pub struct IndicatifReporter;
+
+impl Reporter for IndicatifReporter {
+    fn create_progress(&self) -> Box<dyn Progress> {
+        Box::new(MultiProgress::new())
+    }
+}
+
+pub struct VoidReporter;
+
+impl Reporter for VoidReporter {
+    fn create_progress(&self) -> Box<dyn Progress> {
+        Box::new(VoidProgress)
+    }
+}
+
+pub trait Progress {
+    fn add_bar(&self) -> Box<dyn ProgressBarTrait>;
+}
+
+impl Progress for MultiProgress {
+    fn add_bar(&self) -> Box<dyn ProgressBarTrait> {
+        Box::new(self.add(ProgressBar::new(10).with_style(PROGRESS_STYLE.clone())))
+    }
+}
+
+struct VoidProgress;
+
+impl Progress for VoidProgress {
+    fn add_bar(&self) -> Box<dyn ProgressBarTrait> {
+        Box::new(VoidProgressBar)
+    }
+}
+
+pub trait ProgressBarTrait {
+    fn inc(&self, count: u64);
+    fn set_length(&self, length: u64);
+    fn println(&self, message: &str);
+    fn set_message(&self, message: String);
     fn finish(&self);
     fn finish_and_clear(&self);
-    fn finish_with_message(&self, msg: impl Into<Cow<'static, str>>);
-    fn inc(&self, delta: usize);
+    fn finish_with_message(&self, message: String);
 }
 
-pub struct GenericProgressReporter {
-    progress: ProgressBar,
-}
-
-impl ProgressReporter for GenericProgressReporter {
-    fn new(len: usize) -> Self {
-        GenericProgressReporter {
-            progress: ProgressBar::new(len as _),
-        }
+impl ProgressBarTrait for ProgressBar {
+    fn inc(&self, count: u64) {
+        self.inc(count);
     }
 
-    fn from_multi(multi: &MultiProgress, len: usize) -> Self {
-        GenericProgressReporter {
-            progress: multi.add(ProgressBar::new(len as _)),
-        }
+    fn set_length(&self, length: u64) {
+        self.set_length(length);
     }
 
-    fn set_style(&self, style: ProgressStyle) {
-        self.progress.set_style(style);
+    fn println(&self, message: &str) {
+        self.println(message);
     }
 
-    fn set_length(&self, len: usize) {
-        self.progress.set_length(len as _);
-    }
-
-    fn set_message(&self, msg: impl Into<Cow<'static, str>>) {
-        self.progress.set_message(msg);
-    }
-
-    fn println(&self, msg: impl AsRef<str>) {
-        self.progress.println(msg);
+    fn set_message(&self, message: String) {
+        self.set_message(message)
     }
 
     fn finish(&self) {
-        self.progress.finish()
+        self.finish();
     }
 
     fn finish_and_clear(&self) {
-        self.progress.finish_and_clear();
+        self.finish_and_clear();
     }
 
-    fn finish_with_message(&self, msg: impl Into<Cow<'static, str>>) {
-        self.progress.finish_with_message(msg);
-    }
-
-    fn inc(&self, delta: usize) {
-        self.progress.inc(delta as _);
+    fn finish_with_message(&self, message: String) {
+        self.finish_with_message(message);
     }
 }
 
-pub struct VoidProgressReporter;
+struct VoidProgressBar;
 
-#[allow(unused_variables)]
-impl ProgressReporter for VoidProgressReporter {
-    fn new(size: usize) -> Self {
-        VoidProgressReporter {}
-    }
+#[allow(unused)]
+impl ProgressBarTrait for VoidProgressBar {
+    fn inc(&self, count: u64) {}
 
-    fn from_multi(multi: &MultiProgress, size: usize) -> Self {
-        VoidProgressReporter {}
-    }
+    fn set_length(&self, length: u64) {}
 
-    fn set_style(&self, style: ProgressStyle) {}
+    fn println(&self, message: &str) {}
 
-    fn set_length(&self, len: usize) {}
-
-    fn set_message(&self, msg: impl Into<Cow<'static, str>>) {}
-
-    fn println(&self, msg: impl AsRef<str>) {}
+    fn set_message(&self, message: String) {}
 
     fn finish(&self) {}
 
     fn finish_and_clear(&self) {}
 
-    fn finish_with_message(&self, msg: impl Into<Cow<'static, str>>) {}
-
-    fn inc(&self, delta: usize) {}
+    fn finish_with_message(&self, message: String) {}
 }

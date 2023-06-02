@@ -7,12 +7,12 @@ use directories::BaseDirs;
 use once_cell::sync::Lazy;
 use package::resolver::PackageResolver;
 use project::ProjectKind;
-use ui::reporter::GenericProgressReporter;
 
 use crate::cli::{Args, Commands};
 use crate::error::Error;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
+use crate::ui::reporter::IndicatifReporter;
 
 mod cli;
 mod error;
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Error> {
             output_dir,
             project_path,
         } => {
-            let mut manifest = ProjectManifest::read_from_file(&project_path)?;
+            let mut manifest = ProjectManifest::read_from_file(project_path)?;
             manifest.apply_overrides(
                 ProjectOverrides::new()
                     .namespace_override(package_namespace)
@@ -109,8 +109,10 @@ async fn main() -> Result<(), Error> {
         } => {
             ts::init_repository("https://thunderstore.io", None);
 
+            let reporter = Box::new(IndicatifReporter);
+
             let packages = PackageResolver::resolve_new(packages, project_path).await?;
-            packages.apply::<GenericProgressReporter>().await?;
+            packages.apply(reporter).await?;
 
             Ok(())
         }
