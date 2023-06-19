@@ -21,6 +21,7 @@ mod package;
 mod project;
 mod ts;
 mod ui;
+mod util;
 
 pub static TCLI_HOME: Lazy<PathBuf> = Lazy::new(|| {
     let default_home = BaseDirs::new().unwrap().data_dir().join("tcli");
