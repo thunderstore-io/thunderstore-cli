@@ -1,32 +1,24 @@
+use std::fs;
+
 use std::path::PathBuf;
 
+use once_cell::sync::Lazy;
+
+use crate::error::IoResultToTcli;
 use crate::ts::package_reference::PackageReference;
+use crate::util::TempFile;
 use crate::{Error, TCLI_HOME};
 
-/// Determine if the package exists within the local package cache.
-pub fn package_exists(
-    PackageReference {
-        namespace,
-        name,
-        version,
-    }: &PackageReference,
-) -> Result<bool, Error> {
-    let package_cache = TCLI_HOME.join("package_cache");
-    let package_file = package_cache.join(format!("{namespace}-{name}-{version}.zip"));
+static CACHE_LOCATION: Lazy<PathBuf> = Lazy::new(|| TCLI_HOME.join("package_cache"));
 
-    if !package_cache.exists() {
-        return Err(Error::BadPackageCache(package_cache));
-    }
-
-    Ok(package_file.exists())
+pub async fn get_temp_zip_file(
+    package: &PackageReference,
+) -> Result<TempFile<tokio::fs::File>, Error> {
+    fs::create_dir_all(CACHE_LOCATION.as_path()).map_fs_error(CACHE_LOCATION.as_path())?;
+    let path = CACHE_LOCATION.join(format!("{package}.zip.tmp"));
+    Ok(TempFile::open_async(path).await?)
 }
 
-pub fn get_cached(package: &PackageReference) -> Result<PathBuf, Error> {
-    let package_cache = TCLI_HOME.join("package_cache");
-    let package_file = package_cache.join(format!("{}.zip", package));
-
-    match package_file.exists() {
-        true => Ok(package_file),
-        false => Err(Error::BadPackageCache(package_file)),
-    }
+pub fn get_cache_location(package: &PackageReference) -> PathBuf {
+    CACHE_LOCATION.join(package.to_string())
 }

@@ -1,27 +1,26 @@
 mod cache;
 pub mod resolver;
 
+use std::io::{ErrorKind, Read, Seek};
 use std::path::{Path, PathBuf};
 
-use async_zip::tokio::read::seek::ZipFileReader;
 use colored::Colorize;
 use futures::prelude::*;
-use tokio::fs::{self, File, OpenOptions};
-use tokio::io::AsyncWriteExt;
-use tokio_util::compat::TokioAsyncWriteCompatExt;
+use tokio::fs;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-use crate::error::Error;
+use crate::error::{Error, IoResultToTcli};
 use crate::ts::experimental::package;
 use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
 use crate::ts::CLIENT;
-use crate::ui::reporter::{ProgressBarTrait};
-use crate::TCLI_HOME;
+use crate::ui::reporter::ProgressBarTrait;
 
 #[derive(Debug)]
 pub enum PackageSource {
     Remote(String),
     Local(PathBuf),
+    Cache(PathBuf),
 }
 
 #[derive(Debug)]
@@ -33,35 +32,32 @@ pub struct Package {
 
 impl Package {
     pub async fn resolve_new(ident: PackageReference) -> Result<Self, Error> {
-        if let Ok(package_path) = cache::get_cached(&ident) {
-            return Package::from_file(ident, &package_path).await;
+        if cache::get_cache_location(&ident).exists() {
+            return Package::from_cache(ident).await;
         }
 
         Package::from_repo(ident).await
     }
 
-    pub async fn from_file(ident: PackageReference, path: &Path) -> Result<Self, Error> {
-        let mut package_file = File::open(path).await?;
-        let mut zip = ZipFileReader::with_tokio(&mut package_file).await.unwrap();
-
-        let manifest_entry = zip
-            .file()
-            .entries()
-            .iter()
-            .position(|x| x.entry().filename().as_str().unwrap() == "manifest.json")
-            .expect("Package missing manifest.json, bailing.");
-
-        let mut reader = zip.reader_with_entry(manifest_entry).await.unwrap();
+    pub async fn from_cache(ident: PackageReference) -> Result<Self, Error> {
+        let path = cache::get_cache_location(&ident);
+        let manifest_path = path.join("manifest.json");
 
         let mut manifest_str = String::new();
-        reader.read_to_string(&mut manifest_str).await.unwrap();
+        tokio::fs::File::open(&manifest_path)
+            .await
+            .map_fs_error(&manifest_path)
+            .unwrap()
+            .read_to_string(&mut manifest_str)
+            .await
+            .unwrap();
 
         let manifest_str = manifest_str.trim_start_matches('\u{feff}');
 
         match serde_json::from_str::<PackageManifestV1>(manifest_str) {
             Ok(manifest) => Ok(Package {
                 identifier: ident,
-                source: PackageSource::Local(path.to_path_buf()),
+                source: PackageSource::Cache(path.to_path_buf()),
                 dependencies: manifest.dependencies,
             }),
             Err(_) => {
@@ -72,7 +68,7 @@ impl Package {
                 );
 
                 let mut package = Package::from_repo(ident).await?;
-                package.source = PackageSource::Local(path.into());
+                package.source = PackageSource::Cache(path.into());
 
                 Ok(package)
             }
@@ -90,57 +86,43 @@ impl Package {
         })
     }
 
-    pub async fn add(&self, project: &Path, reporter: Box<dyn ProgressBarTrait>) -> Result<(), Error> {
-        if matches!(self.source, PackageSource::Remote(_)) {
-            self.download(reporter.as_ref()).await?;
-        }
+    pub async fn add(
+        &self,
+        project: &Path,
+        reporter: Box<dyn ProgressBarTrait>,
+    ) -> Result<(), Error> {
+        let cache_path = match &self.source {
+            PackageSource::Local(path) => add_to_cache(
+                &self.identifier,
+                std::fs::File::open(path).map_fs_error(path)?,
+            )?,
+            PackageSource::Remote(_) => self.download(reporter.as_ref()).await?,
+            PackageSource::Cache(path) => path.clone(),
+        };
 
         let project_state = project.join("project_state");
 
-        let package_path = cache::get_cached(&self.identifier)?;
         let install_dir = project_state.join(self.identifier.to_string());
 
-        if install_dir.exists() {
-            fs::remove_dir_all(&install_dir).await?;
+        if install_dir.is_dir() {
+            fs::remove_dir_all(&install_dir)
+                .await
+                .map_fs_error(&install_dir)?;
         }
 
-        let mut package_file = File::open(package_path).await?;
-        let mut zip = ZipFileReader::with_tokio(&mut package_file).await.unwrap();
+        for item in walkdir::WalkDir::new(&cache_path).into_iter() {
+            let item = item?;
 
-        let uncompressed_size: u64 = zip
-            .file()
-            .entries()
-            .iter()
-            .map(|x| x.entry().uncompressed_size())
-            .sum();
+            let dest_path = install_dir.join(item.path().strip_prefix(&cache_path).unwrap());
 
-        reporter.set_length(uncompressed_size as _);
-
-        for index in 0..zip.file().entries().len() {
-            let entry = zip.file().entries().get(index).unwrap().entry();
-
-            if !entry.dir().unwrap() {
-                let out_path = install_dir.join(entry.filename().as_str().unwrap());
-                let out_parent = out_path.parent().unwrap();
-
-                if !out_parent.exists() {
-                    fs::create_dir_all(out_parent).await?;
-                }
-
-                let entry_len = entry.uncompressed_size();
-                let mut entry_reader = zip.reader_without_entry(index).await.unwrap();
-
-                let writer = OpenOptions::new()
-                    .write(true)
-                    .create_new(true)
-                    .open(&out_path)
-                    .await?;
-
-                futures_util::io::copy(&mut entry_reader, &mut writer.compat_write())
+            if item.file_type().is_dir() {
+                tokio::fs::create_dir_all(&dest_path)
                     .await
-                    .unwrap();
-
-                reporter.inc(entry_len as _);
+                    .map_fs_error(&dest_path)?;
+            } else if item.file_type().is_file() {
+                tokio::fs::copy(item.path(), &dest_path)
+                    .await
+                    .map_fs_error(&dest_path)?;
             }
         }
 
@@ -158,11 +140,17 @@ impl Package {
         Ok(())
     }
 
-    async fn download(&self, reporter: &dyn ProgressBarTrait) -> Result<(), Error> {
-        let package_source = match &self.source {
-            PackageSource::Remote(x) => x,
-            _ => panic!("Invalid use, this is a local package."),
+    async fn download(&self, reporter: &dyn ProgressBarTrait) -> Result<PathBuf, Error> {
+        let PackageSource::Remote(package_source) = &self.source else {
+            panic!("Invalid use, this is a local package.")
         };
+
+        let output_path = cache::get_cache_location(&self.identifier);
+
+        if output_path.is_dir() {
+            reporter.finish();
+            return Ok(output_path);
+        }
 
         let download_result = CLIENT.get(package_source).send().await.unwrap();
         let download_size = download_result.content_length().unwrap();
@@ -175,25 +163,41 @@ impl Package {
         );
 
         reporter.set_length(download_size);
-        reporter.set_message(progress_message);
+        reporter.set_message(format!("Downloading {progress_message}..."));
 
         let mut download_stream = download_result.bytes_stream();
 
-        let dest_path = TCLI_HOME
-            .join("package_cache")
-            .join(format!("{}.zip", self.identifier));
-        fs::create_dir_all(dest_path.parent().unwrap()).await.unwrap();
-        let mut outfile = File::create(dest_path).await.unwrap();
+        let mut temp_file = cache::get_temp_zip_file(&self.identifier).await?;
+        let zip_file = temp_file.file_mut();
 
         while let Some(chunk) = download_stream.next().await {
             let chunk = chunk.unwrap();
-            outfile.write_all(&chunk).await.unwrap();
+            zip_file.write_all(&chunk).await.unwrap();
 
             reporter.inc(chunk.len() as u64);
         }
 
+        reporter.set_message(format!("Unzipping {progress_message}..."));
+
+        let cache_path = add_to_cache(&self.identifier, temp_file.into_std().await.file())?;
+
         reporter.finish();
 
-        Ok(())
+        Ok(cache_path)
     }
+}
+
+fn add_to_cache(package: &PackageReference, zipfile: impl Read + Seek) -> Result<PathBuf, Error> {
+    let output_path = cache::get_cache_location(package);
+
+    match std::fs::remove_dir_all(&output_path) {
+        Ok(_) => (),
+        Err(e) if e.kind() == ErrorKind::NotFound => (),
+        Err(e) => return Err(e).map_fs_error(&output_path),
+    };
+
+    std::fs::create_dir_all(&output_path).map_fs_error(&output_path)?;
+    zip::read::ZipArchive::new(zipfile)?.extract(&output_path)?;
+
+    Ok(output_path)
 }

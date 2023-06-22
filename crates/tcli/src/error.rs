@@ -47,9 +47,6 @@ pub enum Error {
 
     #[error("Missing auth token.")]
     MissingAuthToken,
-
-    #[error("The package cache at {0} does not exist or is not writable.")]
-    BadPackageCache(PathBuf),
 }
 
 pub trait IoResultToTcli<R> {
