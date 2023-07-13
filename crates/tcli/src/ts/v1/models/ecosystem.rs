@@ -7,115 +7,115 @@ use crate::ts::version::Version;
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct EcosystemSchema {
-    schema_version: Version,
-    games: HashMap<String, GameDef>,
-    communities: HashMap<String, SchemaCommunity>,
+    pub schema_version: Version,
+    pub games: HashMap<String, GameDef>,
+    pub communities: HashMap<String, SchemaCommunity>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GameDef {
-    uuid: String,
-    label: String,
-    meta: GameDefMeta,
-    distributions: Vec<GameDefPlatform>,
-    r2modman: Option<GameDefR2MM>,
-    thunderstore: Option<GameDefThunderstore>,
+    pub uuid: String,
+    pub label: String,
+    pub meta: GameDefMeta,
+    pub distributions: Vec<GameDefPlatform>,
+    pub r2modman: Option<GameDefR2MM>,
+    pub thunderstore: Option<GameDefThunderstore>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct GameDefMeta {
-    display_name: String,
-    icon_url: Option<String>,
+pub struct GameDefMeta {
+    pub display_name: String,
+    pub icon_url: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct GameDefPlatform {
-    platform: String,
-    identifier: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct GameDefR2MM {
-    internal_folder_name: String,
-    data_folder_name: String,
-    settings_identifier: String,
-    package_index: String,
-    exclusions_url: String,
-    steam_folder_name: String,
-    exe_names: Vec<String>,
-    game_instancetype: String,
-    game_selection_display_mode: String,
-    mod_loader_packages: Vec<R2MMModLoaderPackage>,
-    install_rules: Vec<R2MMInstallRule>,
-    relative_file_exclusions: Vec<String>,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GameDefPlatform {
+    pub platform: String,
+    pub identifier: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct R2MMModLoaderPackage {
-    package_id: String,
-    root_folder: String,
-    loader: String,
+pub struct GameDefR2MM {
+    pub internal_folder_name: String,
+    pub data_folder_name: String,
+    pub settings_identifier: String,
+    pub package_index: String,
+    pub exclusions_url: String,
+    pub steam_folder_name: String,
+    pub exe_names: Vec<String>,
+    pub game_instancetype: String,
+    pub game_selection_display_mode: String,
+    pub mod_loader_packages: Vec<R2MMModLoaderPackage>,
+    pub install_rules: Vec<R2MMInstallRule>,
+    pub relative_file_exclusions: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct R2MMInstallRule {
-    route: String,
-    tracking_method: Option<String>,
-    children: Option<Vec<R2MMInstallRule>>,
-    default_file_extensions: Option<Vec<String>>,
-    is_default_location: Option<bool>,
+pub struct R2MMModLoaderPackage {
+    pub package_id: String,
+    pub root_folder: String,
+    pub loader: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct GameDefThunderstore {
-    display_name: String,
-    categories: HashMap<String, ThunderstoreCategory>,
-    sections: HashMap<String, ThunderstoreSection>,
-    discord_url: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ThunderstoreCategory {
-    label: String,
+pub struct R2MMInstallRule {
+    pub route: String,
+    pub tracking_method: Option<String>,
+    pub children: Option<Vec<R2MMInstallRule>>,
+    pub default_file_extensions: Option<Vec<String>>,
+    pub is_default_location: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct ThunderstoreSection {
-    name: String,
+pub struct GameDefThunderstore {
+    pub display_name: String,
+    pub categories: HashMap<String, ThunderstoreCategory>,
+    pub sections: HashMap<String, ThunderstoreSection>,
+    pub discord_url: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ThunderstoreCategory {
+    pub label: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ThunderstoreSection {
+    pub name: String,
     #[serde(default)]
-    exclude_categories: Vec<String>,
+    pub exclude_categories: Vec<String>,
     #[serde(default)]
-    require_categories: Vec<String>,
+    pub require_categories: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct SchemaCommunity {
-    display_name: String,
-    categories: HashMap<String, CommunityCategory>,
-    sections: HashMap<String, CommunitySection>,
-    discord_url: Option<String>,
+pub struct SchemaCommunity {
+    pub display_name: String,
+    pub categories: HashMap<String, CommunityCategory>,
+    pub sections: HashMap<String, CommunitySection>,
+    pub discord_url: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct CommunityCategory {
-    label: String,
+pub struct CommunityCategory {
+    pub label: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct CommunitySection {
-    name: String,
+pub struct CommunitySection {
+    pub name: String,
     #[serde(default)]
-    excluded_categories: Vec<String>,
+    pub excluded_categories: Vec<String>,
     #[serde(default)]
-    required_categories: Vec<String>,
+    pub required_categories: Vec<String>,
 }

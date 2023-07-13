@@ -200,4 +200,7 @@ pub enum Commands {
         #[clap(long)]
         tcli_directory: Option<PathBuf>,
     },
+
+    /// Ecoschema testing command
+    Schema {},
 }

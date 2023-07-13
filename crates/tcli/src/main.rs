@@ -120,6 +120,31 @@ async fn main() -> Result<(), Error> {
 
             Ok(())
         }
+        Commands::Schema {} => {
+            ts::init_repository("https://thunderstore.io", None);
+
+            let schema = ts::v1::ecosystem::get_schema().await.unwrap();
+
+            let games = dbg!(game::registry::create_from_schema(&schema));
+
+            let ato = dbg!(games
+                .iter()
+                .find(|g| g.identifier == "across-the-obelisk")
+                .unwrap());
+
+            let mut locater = steamlocate::SteamDir::locate().unwrap();
+
+            dbg!(locater.app(
+                &ato.possible_distributions[0]
+                    .identifier
+                    .as_ref()
+                    .unwrap()
+                    .parse()
+                    .unwrap()
+            ));
+
+            Ok(())
+        }
         _ => todo!("other commands"),
     }
 }
