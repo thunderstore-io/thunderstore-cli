@@ -1,19 +1,15 @@
 use std::env::{self, VarError};
-use std::fs::{self, File};
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use figment::providers::{Env, Format, Serialized, Toml};
 use figment::Figment;
-use figment::providers::{Format, Serialized, Toml, Env};
-
 use serde::{Deserialize, Serialize};
 
-use crate::error::Error;
 use crate::TCLI_HOME;
 
 pub enum Vars {
     HomeDir,
-    PackageCacheDir,
+    AuthKey,
 }
 
 impl Vars {
@@ -24,7 +20,7 @@ impl Vars {
     pub fn as_str(&self) -> &'static str {
         match self {
             Vars::HomeDir => "TCLI_HOME",
-            Vars::PackageCacheDir => "TCLI_PACKAGE_CACHE",
+            Vars::AuthKey => "TCLI_AUTH_KEY",
         }
     }
 }
@@ -45,7 +41,7 @@ impl Default for Config {
 impl Config {
     pub fn load(project_dir: &Path) -> Result<Self, figment::Error> {
         dbg!(project_dir.join("Config.toml"));
-        
+
         Figment::new()
             .merge(Toml::file(TCLI_HOME.join("Config.toml")))
             .merge(Toml::file(project_dir.join("Config.toml")))
