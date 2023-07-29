@@ -3,12 +3,17 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use cli::InitSubcommand;
+use config::Config;
 use directories::BaseDirs;
 use once_cell::sync::Lazy;
 use package::resolver::PackageResolver;
 use project::ProjectKind;
 
 use crate::cli::{Args, Commands};
+<<<<<<< Updated upstream
+=======
+use crate::config::Vars;
+>>>>>>> Stashed changes
 use crate::error::Error;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
@@ -26,7 +31,13 @@ mod util;
 pub static TCLI_HOME: Lazy<PathBuf> = Lazy::new(|| {
     let default_home = BaseDirs::new().unwrap().data_dir().join("tcli");
 
+<<<<<<< Updated upstream
     env::var("TCLI_HOME").map_or_else(|_| default_home, PathBuf::from)
+=======
+    Vars::HomeDir
+        .into_var()
+        .map_or_else(|_| default_home, PathBuf::from)
+>>>>>>> Stashed changes
 });
 
 #[tokio::main]
@@ -109,6 +120,11 @@ async fn main() -> Result<(), Error> {
             project_path,
         } => {
             ts::init_repository("https://thunderstore.io", None);
+
+            let config = Config::load(project_path.parent().unwrap()).unwrap();
+            dbg!(config);
+
+            panic!("");
 
             let reporter = Box::new(IndicatifReporter);
 
