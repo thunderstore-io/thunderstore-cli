@@ -6,8 +6,12 @@ use std::path::{Path, PathBuf};
 
 use colored::Colorize;
 use futures::prelude::*;
-use tokio::fs;
+
+use serde::{Deserialize, Serialize};
+use serde_with::{self, serde_as, DisplayFromStr};
+use tokio::fs::{self, File, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio_util::compat::TokioAsyncWriteCompatExt;
 
 use crate::error::{Error, IoResultToTcli};
 use crate::ts::experimental::package;
@@ -16,17 +20,22 @@ use crate::ts::package_reference::PackageReference;
 use crate::ts::CLIENT;
 use crate::ui::reporter::ProgressBarTrait;
 
-#[derive(Debug)]
+use crate::TCLI_HOME;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum PackageSource {
     Remote(String),
     Local(PathBuf),
     Cache(PathBuf),
 }
 
-#[derive(Debug)]
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Package {
+    #[serde_as(as = "DisplayFromStr")]
     pub identifier: PackageReference,
     pub source: PackageSource,
+    #[serde(with = "crate::ts::package_reference::ser::string_array")]
     pub dependencies: Vec<PackageReference>,
 }
 

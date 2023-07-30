@@ -109,7 +109,7 @@ pub enum Commands {
         packages: Vec<PackageReference>,
 
         /// Path of the project configuration file.
-        #[clap(long, default_value = DEFAULT_MANIFEST)]
+        #[clap(long, default_value = "./")]
         project_path: PathBuf,
     },
 
