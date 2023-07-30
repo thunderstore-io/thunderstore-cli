@@ -115,7 +115,7 @@ async fn main() -> Result<(), Error> {
 
             let reporter = Box::new(IndicatifReporter);
 
-            let packages = PackageResolver::resolve_new(packages, project_path).await?;
+            let mut packages = PackageResolver::resolve_new(packages, project_path).await?;
             packages.apply(reporter).await?;
 
             Ok(())

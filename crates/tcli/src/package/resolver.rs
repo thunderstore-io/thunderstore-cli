@@ -5,12 +5,14 @@ use futures_util::future::try_join_all;
 
 use super::Package;
 use crate::error::Error;
+use crate::project::lock::LockFile;
 use crate::ts::package_reference::PackageReference;
 use crate::ui::reporter::Reporter;
 
 pub struct PackageResolver {
     pub packages_to_install: Vec<Package>,
     project: PathBuf,
+    lockfile: LockFile,
 }
 
 impl PackageResolver {
@@ -27,6 +29,11 @@ impl PackageResolver {
     ) -> Result<Self, Error> {
         let mut dep_map: HashMap<String, Package> = HashMap::new();
         let mut queue: VecDeque<PackageReference> = VecDeque::from(packages.clone());
+
+        let lockfile = LockFile::open_or_new(project.join("Thunderstore.lock"))?;
+        dep_map.extend(lockfile.packages.clone());
+
+        println!("{:#?}", dep_map);
 
         // Generate top-level package dependencies first. We then iterate down through the tree
         // until all have been resolved.
@@ -60,14 +67,12 @@ impl PackageResolver {
         Ok(PackageResolver {
             packages_to_install,
             project,
+            lockfile,
         })
     }
 
     /// Apply the newly resolved packages onto the previously specified project.
-    pub async fn apply(
-        &self,
-        reporter: Box<dyn Reporter>,
-    ) -> Result<(), Error> {
+    pub async fn apply(mut self, reporter: Box<dyn Reporter>) -> Result<(), Error> {
         let project_path = self.project.as_path();
 
         let multi = reporter.create_progress();
@@ -78,6 +83,9 @@ impl PackageResolver {
             .map(|package| package.add(project_path, multi.add_bar()));
 
         try_join_all(jobs).await?;
+
+        self.lockfile.merge(&self.packages_to_install);
+        self.lockfile.commit()?;
 
         Ok(())
     }
