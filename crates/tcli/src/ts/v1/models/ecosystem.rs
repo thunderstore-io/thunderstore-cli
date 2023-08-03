@@ -30,10 +30,29 @@ pub struct GameDefMeta {
     pub icon_url: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct GameDefPlatform {
-    pub platform: String,
-    pub identifier: Option<String>,
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(tag = "platform")]
+#[serde(rename_all = "kebab-case")]
+pub enum GameDefPlatform {
+    #[serde(rename = "egs")]
+    EpicGames {
+        identifier: String,
+    },
+    #[serde(rename = "xbox-game-pass")]
+    GamePass {
+        identifier: String,
+    },
+    Origin {
+        identifier: String,
+    },
+    Steam {
+        identifier: String,
+    },
+    SteamDirect {
+        identifier: String,
+    },
+    Oculus,
+    Other,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
