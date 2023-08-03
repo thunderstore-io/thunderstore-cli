@@ -10,6 +10,7 @@ use project::ProjectKind;
 use crate::cli::{Args, Commands};
 use crate::config::Vars;
 use crate::error::Error;
+use crate::game::registry::GameImportBuilder;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
 use crate::ui::reporter::IndicatifReporter;
@@ -123,25 +124,41 @@ async fn main() -> Result<(), Error> {
         Commands::Schema {} => {
             ts::init_repository("https://thunderstore.io", None);
 
-            let schema = ts::v1::ecosystem::get_schema().await.unwrap();
+            let project_dir = env::current_dir()?.join("ignore");
 
-            let games = dbg!(game::registry::create_from_schema(&schema));
+            GameImportBuilder::new("totally-accurate-battle-simulator")
+                .await?
+                .import(&project_dir)?;
 
-            let ato = dbg!(games
-                .iter()
-                .find(|g| g.identifier == "across-the-obelisk")
-                .unwrap());
+            // let game_reg = GameRegistry::open(&env::current_dir().unwrap().join("ignore"))?;
+            // game_reg.import_game(game::registry::SparseGameId::Generic { game_id: "risk-of-rain2".into() }).await?;
 
-            let mut locater = steamlocate::SteamDir::locate().unwrap();
+            // dbg!(game_reg);
 
-            dbg!(locater.app(
-                &ato.possible_distributions[0]
-                    .identifier
-                    .as_ref()
-                    .unwrap()
-                    .parse()
-                    .unwrap()
-            ));
+            panic!();
+
+            // let schema = ts::v1::ecosystem::get_schema().await.unwrap();
+
+            // let games = dbg!(game::registry::create_from_schema(&schema));
+
+            // let ato = dbg!(games
+            //     .iter()
+            //     .find(|g| g.identifier == "across-the-obelisk")
+            //     .unwrap());
+
+            // dbg!(&ato);
+
+            // let mut locater = steamlocate::SteamDir::locate().unwrap();
+
+            // dbg!(locater.app(
+            //     &ato.possible_distributions[0]
+            //         .identifier
+            //         .unwrap()
+            //         .as_ref()
+            //         .unwrap()
+            //         .parse()
+            //         .unwrap()
+            // ));
 
             Ok(())
         }

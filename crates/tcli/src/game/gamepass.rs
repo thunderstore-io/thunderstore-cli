@@ -3,31 +3,36 @@ use std::path::PathBuf;
 use winreg::enums::HKEY_LOCAL_MACHINE;
 use winreg::RegKey;
 
-use crate::error::Error;
-
-pub fn get_game_path(id: &str) -> Result<Option<PathBuf>, Error> {
+pub fn get_game_path(id: &str) -> Option<PathBuf> {
     let local = RegKey::predef(HKEY_LOCAL_MACHINE);
-    let repo = local.open_subkey("Software\\Microsoft\\GamingServices\\PackageRepository")?;
+    let repo = local
+        .open_subkey("Software\\Microsoft\\GamingServices\\PackageRepository")
+        .ok()?;
 
     let game_uuid = repo
-        .open_subkey("Package\\")?
+        .open_subkey("Package\\")
+        .ok()?
         .enum_values()
         .find(|x| {
             let x = x.as_ref().unwrap();
 
             x.0.starts_with(id)
-        })
-        .unwrap()?
+        })?
+        .ok()?
         .1
         .to_string()
         .replace("\"", "");
 
     let game_path: String = {
-        let game_local = repo.open_subkey(format!("Root\\{}", game_uuid)).unwrap();
-        let subkey = game_local.enum_keys().next().unwrap()?;
+        let game_local = repo.open_subkey(format!("Root\\{}", game_uuid)).ok()?;
+        let subkey = game_local.enum_keys().next()?.ok()?;
 
-        game_local.open_subkey(subkey)?.get_value("Root")?
+        game_local
+            .open_subkey(subkey)
+            .ok()?
+            .get_value("Root")
+            .ok()?
     };
 
-    Ok(Some(game_path.into()))
+    Some(game_path.into())
 }
