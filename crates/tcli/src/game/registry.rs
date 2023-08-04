@@ -29,6 +29,7 @@ pub struct GameImportBuilder {
     game_def: GameDef,
     custom_id: Option<String>,
     custom_name: Option<String>,
+    custom_exe: Option<PathBuf>,
 }
 
 impl GameImportBuilder {
@@ -44,27 +45,30 @@ impl GameImportBuilder {
             game_def,
             custom_id: None,
             custom_name: None,
+            custom_exe: None,
         })
     }
 
     pub fn with_custom_id(self, custom_id: Option<String>) -> Self {
-        GameImportBuilder {
-            custom_id: custom_id.map(|x| Some(x)).unwrap_or(None),
-            ..self
-        }
+        GameImportBuilder { custom_id, ..self }
     }
 
     pub fn with_custom_name(self, custom_name: Option<String>) -> Self {
         GameImportBuilder {
-            custom_name: custom_name.map(|x| Some(x)).unwrap_or(None),
+            custom_name,
             ..self
         }
+    }
+
+    pub fn with_custom_exe(self, custom_exe: Option<PathBuf>) -> Self {
+        GameImportBuilder { custom_exe, ..self }
     }
 
     /// Import the game as a new game definition, automatically determining the
     /// correct platform to use.
     pub fn import(self, project_dir: &Path) -> Result<(), Error> {
-        let (dist, game_dir) = self.game_def
+        let (dist, game_dir) = self
+            .game_def
             .distributions
             .iter()
             .find_map(|dist| match dist {
@@ -85,19 +89,24 @@ impl GameImportBuilder {
         let data_dir = game_dir.join(r2modman.data_folder_name);
 
         // TODO: Determine the path of the game's executable via the platform.
-        let exe_path = r2modman
-            .exe_names
-            .iter()
-            .find_map(|x| {
-                let exe_path = game_dir.join(x);
+        let exe_path = self
+            .custom_exe
+            .unwrap_or_else(|| {
+                r2modman
+                    .exe_names
+                    .iter()
+                    .find_map(|x| {
+                        let exe_path = game_dir.join(x);
 
-                if exe_path.exists() {
-                    Some(exe_path)
-                } else {
-                    None
-                }
+                        if exe_path.exists() {
+                            Some(exe_path)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap()
             })
-            .unwrap();
+            .canonicalize()?;
 
         let active_dist = ActiveDistribution {
             dist: dist.to_owned(),
