@@ -142,7 +142,15 @@ pub enum Commands {
     /// Imports a new game for use by tcli.
     ImportGame {
         /// The identifier of the game to import.
-        game_name: String,
+        game_id: String,
+
+        #[clap(long)]
+        /// The custom identifier this game will be referenced by.
+        custom_id: Option<String>,
+
+        #[clap(long)]
+        /// The custom name this game will be displayed as.
+        custom_name: Option<String>,
 
         /// Path to the game executable to use when launching the game. Only works with servers.
         #[clap(long)]

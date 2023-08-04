@@ -121,44 +121,29 @@ async fn main() -> Result<(), Error> {
 
             Ok(())
         }
+        Commands::ImportGame {
+            game_id,
+            custom_id,
+            custom_name,
+            exe_path,
+            tcli_directory,
+            repository,
+            project_path,
+        } => {
+            ts::init_repository("https://thunderstore.io", None);
+
+            let project_dir = project_path.parent().unwrap();
+
+            GameImportBuilder::new(&game_id)
+                .await?
+                .with_custom_id(custom_id)
+                .with_custom_name(custom_name)
+                .import(&project_dir)
+        }
         Commands::Schema {} => {
             ts::init_repository("https://thunderstore.io", None);
 
             let project_dir = env::current_dir()?.join("ignore");
-
-            GameImportBuilder::new("totally-accurate-battle-simulator")
-                .await?
-                .import(&project_dir)?;
-
-            // let game_reg = GameRegistry::open(&env::current_dir().unwrap().join("ignore"))?;
-            // game_reg.import_game(game::registry::SparseGameId::Generic { game_id: "risk-of-rain2".into() }).await?;
-
-            // dbg!(game_reg);
-
-            panic!();
-
-            // let schema = ts::v1::ecosystem::get_schema().await.unwrap();
-
-            // let games = dbg!(game::registry::create_from_schema(&schema));
-
-            // let ato = dbg!(games
-            //     .iter()
-            //     .find(|g| g.identifier == "across-the-obelisk")
-            //     .unwrap());
-
-            // dbg!(&ato);
-
-            // let mut locater = steamlocate::SteamDir::locate().unwrap();
-
-            // dbg!(locater.app(
-            //     &ato.possible_distributions[0]
-            //         .identifier
-            //         .unwrap()
-            //         .as_ref()
-            //         .unwrap()
-            //         .parse()
-            //         .unwrap()
-            // ));
 
             Ok(())
         }
