@@ -138,6 +138,7 @@ async fn main() -> Result<(), Error> {
                 .await?
                 .with_custom_id(custom_id)
                 .with_custom_name(custom_name)
+                .with_custom_exe(exe_path)
                 .import(&project_dir)
         }
         Commands::Schema {} => {
