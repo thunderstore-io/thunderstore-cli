@@ -47,6 +47,9 @@ pub enum Error {
 
     #[error("Missing auth token.")]
     MissingAuthToken,
+
+    #[error("The game identifier '{0}' does not exist within the ecosystem schema.")]
+    InvalidGameId(String),
 }
 
 pub trait IoResultToTcli<R> {

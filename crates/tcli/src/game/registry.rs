@@ -1,45 +1,70 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 
 use super::{ecosystem, gamepass, steam};
 use crate::error::Error;
-use crate::ts::v1::models::ecosystem::{EcosystemSchema, GameDefPlatform};
+use crate::ts::v1::models::ecosystem::{GameDef, GameDefPlatform};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct GameData {
     pub ecosystem_label: String,
     pub identifier: String,
     pub display_name: String,
-    pub root_dir: PathBuf,
-    pub active_distribution: GameDefPlatform,
+    pub active_distribution: ActiveDistribution,
     pub possible_distributions: Vec<GameDefPlatform>,
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct ActiveDistribution {
+    pub dist: GameDefPlatform,
+    pub game_dir: PathBuf,
+    pub data_dir: PathBuf,
+    pub exe_path: PathBuf,
+}
+
 pub struct GameImportBuilder {
-    game_id: String,
-    ecosystem: Rc<EcosystemSchema>,
+    game_def: GameDef,
+    custom_id: Option<String>,
+    custom_name: Option<String>,
 }
 
 impl GameImportBuilder {
     pub async fn new(game_id: &str) -> Result<Self, Error> {
-        let ecosystem = Rc::new(ecosystem::get_schema().await?);
+        let game_def = ecosystem::get_schema()
+            .await?
+            .games
+            .get(game_id)
+            .ok_or_else(|| Error::InvalidGameId(game_id.into()))?
+            .clone();
 
         Ok(GameImportBuilder {
-            game_id: game_id.into(),
-            ecosystem,
+            game_def,
+            custom_id: None,
+            custom_name: None,
         })
+    }
+
+    pub fn with_custom_id(self, custom_id: Option<String>) -> Self {
+        GameImportBuilder {
+            custom_id: custom_id.map(|x| Some(x)).unwrap_or(None),
+            ..self
+        }
+    }
+
+    pub fn with_custom_name(self, custom_name: Option<String>) -> Self {
+        GameImportBuilder {
+            custom_name: custom_name.map(|x| Some(x)).unwrap_or(None),
+            ..self
+        }
     }
 
     /// Import the game as a new game definition, automatically determining the
     /// correct platform to use.
     pub fn import(self, project_dir: &Path) -> Result<(), Error> {
-        let schema_entry = self.ecosystem.games.get(&self.game_id).unwrap();
-
-        let (dist, game_dir) = schema_entry
+        let (dist, game_dir) = self.game_def
             .distributions
             .iter()
             .find_map(|dist| match dist {
@@ -55,13 +80,38 @@ impl GameImportBuilder {
             })
             .unwrap();
 
+        let r2modman = self.game_def.r2modman.unwrap();
+        let game_dir = game_dir.canonicalize()?;
+        let data_dir = game_dir.join(r2modman.data_folder_name);
+
+        // TODO: Determine the path of the game's executable via the platform.
+        let exe_path = r2modman
+            .exe_names
+            .iter()
+            .find_map(|x| {
+                let exe_path = game_dir.join(x);
+
+                if exe_path.exists() {
+                    Some(exe_path)
+                } else {
+                    None
+                }
+            })
+            .unwrap();
+
+        let active_dist = ActiveDistribution {
+            dist: dist.to_owned(),
+            game_dir,
+            data_dir,
+            exe_path,
+        };
+
         let data = GameData {
-            ecosystem_label: schema_entry.label.clone(),
-            identifier: schema_entry.label.clone(),
-            display_name: schema_entry.meta.display_name.clone(),
-            active_distribution: dist.to_owned(),
-            root_dir: game_dir.canonicalize().unwrap(),
-            possible_distributions: schema_entry.distributions.clone(),
+            identifier: self.custom_id.unwrap_or(self.game_def.label.clone()),
+            ecosystem_label: self.game_def.label,
+            display_name: self.custom_name.unwrap_or(self.game_def.meta.display_name),
+            active_distribution: active_dist,
+            possible_distributions: self.game_def.distributions,
         };
 
         write_data(project_dir, data)
@@ -69,15 +119,13 @@ impl GameImportBuilder {
 
     pub fn as_steam(self) -> SteamImportBuilder {
         SteamImportBuilder {
-            game_id: self.game_id,
-            ecosystem: self.ecosystem,
+            game_def: self.game_def,
         }
     }
 }
 
 pub struct SteamImportBuilder {
-    game_id: String,
-    ecosystem: Rc<EcosystemSchema>,
+    game_def: GameDef,
 }
 
 impl SteamImportBuilder {
@@ -89,6 +137,17 @@ impl SteamImportBuilder {
     pub async fn import(self) -> Result<(), Error> {
         todo!()
     }
+}
+
+pub fn get_game_data(project_dir: &Path, game_id: &str) -> Option<GameData> {
+    let game_registry: Vec<GameData> = {
+        let path = project_dir.join(".tcli/game_registry.json");
+        let contents = fs::read_to_string(path).ok()?;
+
+        serde_json::from_str(&contents).ok()?
+    };
+
+    game_registry.into_iter().find(|x| x.identifier == game_id)
 }
 
 fn write_data(project_dir: &Path, data: GameData) -> Result<(), Error> {
