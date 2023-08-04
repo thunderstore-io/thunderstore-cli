@@ -12,7 +12,7 @@ pub struct EcosystemSchema {
     pub communities: HashMap<String, SchemaCommunity>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GameDef {
     pub uuid: String,
@@ -23,7 +23,7 @@ pub struct GameDef {
     pub thunderstore: Option<GameDefThunderstore>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GameDefMeta {
     pub display_name: String,
@@ -55,7 +55,7 @@ pub enum GameDefPlatform {
     Other,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GameDefR2MM {
     pub internal_folder_name: String,
@@ -72,7 +72,7 @@ pub struct GameDefR2MM {
     pub relative_file_exclusions: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct R2MMModLoaderPackage {
     pub package_id: String,
@@ -80,7 +80,7 @@ pub struct R2MMModLoaderPackage {
     pub loader: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct R2MMInstallRule {
     pub route: String,
@@ -90,7 +90,7 @@ pub struct R2MMInstallRule {
     pub is_default_location: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GameDefThunderstore {
     pub display_name: String,
@@ -99,12 +99,12 @@ pub struct GameDefThunderstore {
     pub discord_url: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ThunderstoreCategory {
     pub label: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ThunderstoreSection {
     pub name: String,
