@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use super::{ecosystem, gamepass, steam};
+use super::{eadesktop, ecosystem, gamepass, steam, egs};
 use crate::error::Error;
 use crate::ts::v1::models::ecosystem::{GameDef, GameDefPlatform};
 
@@ -78,7 +78,13 @@ impl GameImportBuilder {
                     steam::get_game_path(id).map(|x| (dist, x))
                 }
                 GameDefPlatform::GamePass { identifier } => {
-                    gamepass::get_game_path(&identifier).map(|x| (dist, x))
+                    gamepass::get_game_path(identifier).map(|x| (dist, x))
+                }
+                GameDefPlatform::EADesktop { identifier } => {
+                    eadesktop::get_game_path(identifier).map(|x| (dist, x))
+                }
+                GameDefPlatform::EpicGames { identifier } => {
+                    egs::get_game_path(identifier).map(|x| (dist, x))
                 }
                 _ => None,
             })
@@ -170,7 +176,7 @@ fn write_data(project_dir: &Path, data: GameData) -> Result<(), Error> {
     let mut game_registry: Vec<GameData> = {
         let contents = fs::read_to_string(&game_registry)?;
 
-        if contents.len() == 0 {
+        if contents.is_empty() {
             Vec::new()
         } else {
             serde_json::from_str(&contents).unwrap()
@@ -184,7 +190,7 @@ fn write_data(project_dir: &Path, data: GameData) -> Result<(), Error> {
     game_registry.push(data);
 
     let data_json = serde_json::to_string_pretty(&game_registry).unwrap();
-    file.write_all(&data_json.as_bytes())?;
+    file.write_all(data_json.as_bytes())?;
 
     Ok(())
 }
