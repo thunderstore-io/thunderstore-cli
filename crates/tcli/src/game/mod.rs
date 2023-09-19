@@ -1,6 +1,6 @@
-mod eadesktop;
-mod ecosystem;
-mod egs;
-mod gamepass;
+pub mod ecosystem;
 pub mod registry;
 mod steam;
+
+#[cfg(windows)]
+mod win;

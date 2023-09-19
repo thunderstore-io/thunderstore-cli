@@ -2,11 +2,15 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
-use super::{eadesktop, ecosystem, gamepass, steam, egs};
+use super::{ecosystem, steam};
 use crate::error::Error;
+use crate::game::win;
+use crate::project::ProjectPath;
 use crate::ts::v1::models::ecosystem::{GameDef, GameDefPlatform};
+use crate::util::os::OS;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct GameData {
@@ -77,15 +81,27 @@ impl GameImportBuilder {
 
                     steam::get_game_path(id).map(|x| (dist, x))
                 }
+
+                #[cfg(windows)]
                 GameDefPlatform::GamePass { identifier } => {
-                    gamepass::get_game_path(identifier).map(|x| (dist, x))
+                    win::gamepass::get_game_path(identifier).map(|x| (dist, x))
                 }
-                GameDefPlatform::EADesktop { identifier } => {
-                    eadesktop::get_game_path(identifier).map(|x| (dist, x))
+                #[cfg(linux)]
+                GameDefPlatform::GamePass { _identifier } => None,
+
+                GameDefPlatform::Origin { identifier } => {
+                    win::eadesktop::get_game_path(identifier).map(|x| (dist, x))
                 }
+                #[cfg(linux)]
+                GameDefPlatform::Origin { _identifier } => None,
+
+                #[cfg(windows)]
                 GameDefPlatform::EpicGames { identifier } => {
-                    egs::get_game_path(identifier).map(|x| (dist, x))
+                    win::egs::get_game_path(identifier).map(|x| (dist, x))
                 }
+                #[cfg(linux)]
+                GameDefPlatform::EpicGames { _identifier } => None,
+
                 _ => None,
             })
             .unwrap();
