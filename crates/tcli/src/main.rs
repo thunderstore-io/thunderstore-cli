@@ -187,7 +187,7 @@ async fn main() -> Result<(), Error> {
 
                 Ok(())
             }
-            ListSubcommand::RegisteredGames { project_path } => {
+            ListSubcommand::ImportedGames { project_path } => {
                 let project_path = ProjectPath::new(&project_path)?;
                 let games = registry::get_registry(&project_path)?;
 

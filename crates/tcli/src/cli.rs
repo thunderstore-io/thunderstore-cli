@@ -17,7 +17,7 @@ const DEFAULT_MANIFEST: &str = "./Thunderstore.toml";
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum InitSubcommand {
-    /// Creates a TCLI project, which can be used to build a package.
+    /// Creates a tcli project which can be used to build and publish a package.
     Project {
         /// Name for the package.
         #[clap(long)]
@@ -31,14 +31,15 @@ pub enum InitSubcommand {
         #[clap(long)]
         package_version: Option<Version>,
     },
-    /// Creates a TCLI profile, which can be used to build a mod installation.
+    /// Creates a tcli profile which is used to build and run mod installations.
     Profile,
 }
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum ListSubcommand {
+    /// List the platforms tcli supports.
     Platforms {
-        /// List platforms on the specified target OS name.
+        /// List platforms which tcli has *explicit* support for on the specified OS.
         /// "windows", "linux", or "macos" are valid.
         #[clap(long, default_value = std::env::consts::OS)]
         target: OS,
@@ -47,10 +48,12 @@ pub enum ListSubcommand {
         #[clap(long, default_value = "false")]
         detected: bool,
     },
-    RegisteredGames {
+    /// List imported games and their metadata.
+    ImportedGames {
         #[clap(long, default_value = DEFAULT_MANIFEST)]
         project_path: PathBuf,
     },
+    /// List supported games and their metadata.
     SupportedGames {
         /// The search pattern that will be used to query and filter games listed from the schema.
         /// This pattern is tested against the game's display name AND id.
@@ -128,7 +131,7 @@ pub enum Commands {
         project_path: PathBuf,
     },
 
-    /// Installs a mod into a profile.
+    /// Adds a mod to a project.
     Add {
         /// Path to a package .zip or package name in the format 'namespace-name(-version)'.
         packages: Vec<PackageReference>,
@@ -138,7 +141,7 @@ pub enum Commands {
         project_path: PathBuf,
     },
 
-    /// Uninstalls a mod from a profile.
+    /// Removes a mod from the project.
     Remove {
         /// The identifier of the game to manage mods for.
         game_name: String,
@@ -167,6 +170,8 @@ pub enum Commands {
     /// Imports a new game for use by tcli.
     ImportGame {
         /// The identifier of the game to import.
+        ///
+        /// Use the `list` command to query the list of imported and supported games.
         game_id: String,
 
         #[clap(long)]
@@ -181,8 +186,8 @@ pub enum Commands {
         #[clap(long)]
         exe_path: Option<PathBuf>,
 
-        /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
-        /// ~/.config/ThunderstoreCLI on Linux.
+        /// Directory where tcli keeps its data.
+        /// %APPDATA%/Roaming/tcli on Windows, ~/.config/tcli on Linux.
         #[clap(long)]
         tcli_directory: Option<PathBuf>,
 
@@ -198,18 +203,16 @@ pub enum Commands {
     /// Run a game with mods.
     Run {
         /// The identifier of the game to run.
+        ///
+        /// Use the `list` command to query the list of imported and supported games.
         game_name: String,
-
-        /// Profile that the mod will be installed into.
-        #[clap(long, default_value = "DefaultProfile")]
-        profile: Option<String>,
 
         /// Arguments to run the game with. Anything after a trailing -- will be prioritized over this argument.
         #[clap(long)]
         args: Option<Vec<String>>,
 
-        /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
-        /// ~/.config/ThunderstoreCLI on Linux.
+        /// Directory where tcli keeps its data:
+        /// %APPDATA%/Roaming/tcli on Windows and ~/.config/tcli on Linux.
         #[clap(long)]
         tcli_directory: Option<PathBuf>,
 
@@ -232,6 +235,6 @@ pub enum Commands {
         command: ListSubcommand,
     },
 
-    /// Update the TCLI ecosystem schema from the configured remote repository.
-    UpdateSchema {},
+    /// Update the tcli ecosystem schema.
+    UpdateSchema,
 }
