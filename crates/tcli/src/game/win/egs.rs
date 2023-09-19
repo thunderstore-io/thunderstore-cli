@@ -47,17 +47,16 @@ pub fn get_game_path(ident: &str) -> Option<PathBuf> {
         .collect::<Vec<_>>();
 
     // Search for the manifest which contains the correct game AppName.
-    let game_path = manifest_files.into_iter()
-        .find_map(|x| {
-            let file_contents = fs::read_to_string(x).unwrap();
-            let manifest: PartialInstallManifest = serde_json::from_str(&file_contents).unwrap();
+    let game_path = manifest_files.into_iter().find_map(|x| {
+        let file_contents = fs::read_to_string(x).unwrap();
+        let manifest: PartialInstallManifest = serde_json::from_str(&file_contents).unwrap();
 
-            if manifest.app_name == ident {
-                Some(manifest.install_location)
-            } else {
-                None
-            }
-        })?;
+        if manifest.app_name == ident {
+            Some(manifest.install_location)
+        } else {
+            None
+        }
+    })?;
 
     if !game_path.is_dir() {
         return None;

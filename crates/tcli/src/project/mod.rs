@@ -21,13 +21,44 @@ pub enum ProjectKind {
     Profile,
 }
 
+#[derive(Clone)]
+pub struct ProjectPath(PathBuf);
+
+impl ProjectPath {
+    pub fn new(path: &Path) -> Result<ProjectPath, Error> {
+        let path = path.to_path_buf();
+
+        if !path.exists() {
+            return Err(Error::NoProjectFile(path));
+        }
+
+        let root_dir = if path.is_file() {
+            path.parent().unwrap().to_path_buf()
+        } else {
+            path
+        };
+
+        if !root_dir.join("Thunderstore.toml").is_file() {
+            return Err(Error::NoProjectFile(root_dir));
+        }
+
+        if !root_dir.join(".tcli/").is_dir() {
+            fs::create_dir(root_dir.join(".tcli/"))?;
+        }
+
+        Ok(ProjectPath(root_dir))
+    }
+
+    pub fn path(&self) -> &Path {
+        self.0.as_path()
+    }
+}
+
 pub fn create_new(
-    project_path: impl AsRef<Path>,
+    project_path: &Path,
     overwrite: bool,
     project_kind: ProjectKind,
 ) -> Result<(), Error> {
-    let project_path = project_path.as_ref();
-
     let project_dir = project_path.parent().unwrap_or("./".as_ref());
 
     if project_dir.is_file() {
@@ -46,7 +77,6 @@ pub fn create_new(
         }
         ProjectKind::Profile => ProjectManifest::default_profile_project(),
     };
-    let package = manifest.package.as_ref().unwrap();
 
     let mut options = File::options();
     options.write(true);
