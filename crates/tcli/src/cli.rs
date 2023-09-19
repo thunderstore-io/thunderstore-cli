@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 
 use crate::ts::package_reference::PackageReference;
 use crate::ts::version::Version;
+use crate::util::os::OS;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -30,8 +31,32 @@ pub enum InitSubcommand {
         #[clap(long)]
         package_version: Option<Version>,
     },
-    /// Creates a TCLI profile, which can be used to build a mod installtion.
+    /// Creates a TCLI profile, which can be used to build a mod installation.
     Profile,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum ListSubcommand {
+    Platforms {
+        /// List platforms on the specified target OS name.
+        /// "windows", "linux", or "macos" are valid.
+        #[clap(long, default_value = std::env::consts::OS)]
+        target: OS,
+
+        /// List platforms detected as installed on this machine.
+        #[clap(long, default_value = "false")]
+        detected: bool,
+    },
+    RegisteredGames {
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
+        project_path: PathBuf,
+    },
+    SupportedGames {
+        /// The search pattern that will be used to query and filter games listed from the schema.
+        /// This pattern is tested against the game's display name AND id.
+        #[clap(default_value = "*")]
+        search: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -203,12 +228,10 @@ pub enum Commands {
 
     /// List configured games, profiles, and mods.
     List {
-        /// Directory where tcli keeps its data: %APPDATA%/ThunderstoreCLI on Windows and
-        /// ~/.config/ThunderstoreCLI on Linux.
-        #[clap(long)]
-        tcli_directory: Option<PathBuf>,
+        #[clap(subcommand)]
+        command: ListSubcommand,
     },
 
-    /// Ecoschema testing command
-    Schema {},
+    /// Update the TCLI ecosystem schema from the configured remote repository.
+    UpdateSchema {},
 }

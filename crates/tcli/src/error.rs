@@ -12,7 +12,7 @@ pub enum Error {
         response_body: Option<String>,
     } = 1,
 
-    #[error("A network error occured while sending an API request.")]
+    #[error("A network error occurred while sending an API request.")]
     NetworkError(#[from] reqwest::Error),
 
     #[error("The path at {0} is actually a file.")]
@@ -21,10 +21,10 @@ pub enum Error {
     #[error("A project configuration already exists at {0}.")]
     ProjectAlreadyExists(PathBuf),
 
-    #[error("A generic IO error occured: {0}")]
+    #[error("A generic IO error occurred: {0}")]
     GenericIoError(#[from] std::io::Error),
 
-    #[error("A file IO error occured at path {0}: {1}")]
+    #[error("A file IO error occurred at path {0}: {1}")]
     FileIoError(PathBuf, std::io::Error),
 
     #[error("Invalid version.")]
@@ -50,6 +50,9 @@ pub enum Error {
 
     #[error("The game identifier '{0}' does not exist within the ecosystem schema.")]
     InvalidGameId(String),
+
+    #[error("An error occurred while parsing JSON: {0}")]
+    JsonParserError(#[from] serde_json::Error),
 }
 
 pub trait IoResultToTcli<R> {

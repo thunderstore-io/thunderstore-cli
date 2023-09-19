@@ -14,6 +14,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_util::compat::TokioAsyncWriteCompatExt;
 
 use crate::error::{Error, IoResultToTcli};
+use crate::project::ProjectPath;
 use crate::ts::experimental::package;
 use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
@@ -97,7 +98,7 @@ impl Package {
 
     pub async fn add(
         &self,
-        project: &Path,
+        project: &ProjectPath,
         reporter: Box<dyn ProgressBarTrait>,
     ) -> Result<(), Error> {
         let cache_path = match &self.source {
@@ -109,7 +110,7 @@ impl Package {
             PackageSource::Cache(path) => path.clone(),
         };
 
-        let project_state = project.join("project_state");
+        let project_state = project.path().join("project_state");
 
         let install_dir = project_state.join(self.identifier.to_string());
 
