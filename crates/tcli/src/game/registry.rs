@@ -70,7 +70,7 @@ impl GameImportBuilder {
 
     /// Import the game as a new game definition, automatically determining the
     /// correct platform to use.
-    pub fn import(self, project_dir: &Path) -> Result<(), Error> {
+    pub fn import(self, project: &ProjectPath) -> Result<(), Error> {
         let (dist, game_dir) = self
             .game_def
             .distributions
@@ -145,7 +145,7 @@ impl GameImportBuilder {
             possible_distributions: self.game_def.distributions,
         };
 
-        write_data(project_dir, data)
+        write_data(project, data)
     }
 
     pub fn as_steam(self) -> SteamImportBuilder {
@@ -170,9 +170,26 @@ impl SteamImportBuilder {
     }
 }
 
-pub fn get_game_data(project_dir: &Path, game_id: &str) -> Option<GameData> {
+pub fn get_supported_platforms(target_os: &OS) -> Vec<&'static str> {
+    let mut platforms = vec!["Steam", "DRM Free"];
+
+    if matches!(target_os, OS::Windows) {
+        platforms.extend(vec!["Epic Games Store (EGS)", "PC Game Pass", "EA Desktop"]);
+    };
+
+    platforms
+}
+
+pub fn get_registry(project: &ProjectPath) -> Result<Vec<GameData>, Error> {
+    let path = project.path().join(".tcli/game_registry.json");
+    let contents = fs::read_to_string(path)?;
+
+    Ok(serde_json::from_str(&contents)?)
+}
+
+pub fn get_game_data(project: &ProjectPath, game_id: &str) -> Option<GameData> {
     let game_registry: Vec<GameData> = {
-        let path = project_dir.join(".tcli/game_registry.json");
+        let path = project.path().join(".tcli/game_registry.json");
         let contents = fs::read_to_string(path).ok()?;
 
         serde_json::from_str(&contents).ok()?
@@ -181,8 +198,8 @@ pub fn get_game_data(project_dir: &Path, game_id: &str) -> Option<GameData> {
     game_registry.into_iter().find(|x| x.identifier == game_id)
 }
 
-fn write_data(project_dir: &Path, data: GameData) -> Result<(), Error> {
-    let game_registry = project_dir.join(".tcli/game_registry.json");
+fn write_data(project: &ProjectPath, data: GameData) -> Result<(), Error> {
+    let game_registry = project.path().join(".tcli/game_registry.json");
 
     let mut file = OpenOptions::new()
         .create(true)

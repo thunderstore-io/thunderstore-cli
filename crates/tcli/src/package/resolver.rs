@@ -6,13 +6,14 @@ use futures_util::future::try_join_all;
 use super::Package;
 use crate::error::Error;
 use crate::project::lock::LockFile;
+use crate::project::ProjectPath;
 use crate::ts::package_reference::PackageReference;
 use crate::ui::reporter::Reporter;
 
 pub struct PackageResolver {
     pub packages_to_install: Vec<Package>,
-    project: PathBuf,
     lockfile: LockFile,
+    project: ProjectPath,
 }
 
 impl PackageResolver {
@@ -25,7 +26,7 @@ impl PackageResolver {
     /// 3. Dependencies specified within the remote repository.
     pub async fn resolve_new(
         packages: Vec<PackageReference>,
-        project: PathBuf,
+        project: &ProjectPath,
     ) -> Result<Self, Error> {
         let mut dep_map: HashMap<String, Package> = HashMap::new();
         let mut queue: VecDeque<PackageReference> = VecDeque::from(packages.clone());
@@ -64,21 +65,19 @@ impl PackageResolver {
 
         Ok(PackageResolver {
             packages_to_install,
-            project,
             lockfile,
+            project: project.clone(),
         })
     }
 
     /// Apply the newly resolved packages onto the previously specified project.
-    pub async fn apply(mut self, reporter: Box<dyn Reporter>) -> Result<(), Error> {
-        let project_path = self.project.as_path();
-
+    pub async fn apply(&mut self, reporter: Box<dyn Reporter>) -> Result<(), Error> {
         let multi = reporter.create_progress();
 
         let jobs = self
             .packages_to_install
             .iter()
-            .map(|package| package.add(project_path, multi.add_bar()));
+            .map(|package| package.add(&self.project, multi.add_bar()));
 
         try_join_all(jobs).await?;
 

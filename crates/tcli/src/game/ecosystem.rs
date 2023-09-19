@@ -1,3 +1,4 @@
+use std::fs;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 
@@ -26,4 +27,19 @@ pub async fn get_schema() -> Result<EcosystemSchema, Error> {
             Ok(schema)
         }
     }
+}
+
+pub fn schema_exists() -> bool {
+    TCLI_HOME.join("ecosystem_schema.json").exists()
+}
+
+pub fn remove_schema() -> Result<(), Error> {
+    if !schema_exists() {
+        return Ok(());
+    }
+
+    let schema = TCLI_HOME.join("ecosystem_schema.json");
+    fs::remove_file(&schema)?;
+
+    Ok(())
 }

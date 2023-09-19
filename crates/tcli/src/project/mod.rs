@@ -102,6 +102,12 @@ pub fn create_new(
     )
     .unwrap();
 
+    if manifest.package.is_none() {
+        return Ok(());
+    }
+
+    let package = manifest.package.as_ref().unwrap();
+
     let icon_path = project_dir.join("icon.png");
     match File::options()
         .write(true)
