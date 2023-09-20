@@ -33,8 +33,6 @@ impl PackageResolver {
         let lockfile = LockFile::open_or_new(project.join("Thunderstore.lock"))?;
         dep_map.extend(lockfile.packages.clone());
 
-        println!("{:#?}", dep_map);
-
         // Generate top-level package dependencies first. We then iterate down through the tree
         // until all have been resolved.
         while let Some(package_ident) = queue.pop_front() {
