@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
+use colored::Colorize;
 use cli::InitSubcommand;
 use directories::BaseDirs;
 use once_cell::sync::Lazy;
@@ -13,6 +14,7 @@ use crate::config::Vars;
 use crate::error::Error;
 use crate::game::registry::GameImportBuilder;
 use crate::game::{ecosystem, registry};
+use crate::project::lock::LockFile;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
 use crate::project::ProjectPath;
@@ -218,6 +220,23 @@ async fn main() -> Result<(), Error> {
 
                 let count = filtered.len();
                 println!("\n{} games have been listed.", count);
+
+                Ok(())
+            },
+            ListSubcommand::InstalledMods { project_path } => {
+                let path = ProjectPath::new(&project_path)?.path().join("Thunderstore.lock");
+                let lock = LockFile::open_or_new(&path)?;
+
+                println!("Installed packages:");
+
+                for (_, package) in lock.packages {
+                    println!(
+                        "- {}-{} ({})",
+                        package.identifier.namespace.bold(),
+                        package.identifier.name.bold(),
+                        package.identifier.version.to_string().truecolor(90, 90, 90)
+                    );
+                }
 
                 Ok(())
             }

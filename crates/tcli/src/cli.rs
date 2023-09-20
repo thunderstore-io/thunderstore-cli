@@ -1,3 +1,4 @@
+use std::env;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
@@ -60,6 +61,11 @@ pub enum ListSubcommand {
         #[clap(default_value = "*")]
         search: String,
     },
+
+    InstalledMods {
+        #[clap(long, default_value = DEFAULT_MANIFEST)]
+        project_path: PathBuf,
+    }
 }
 
 #[derive(Subcommand, Debug)]
