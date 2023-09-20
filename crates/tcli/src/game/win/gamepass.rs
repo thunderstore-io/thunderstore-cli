@@ -21,7 +21,7 @@ pub fn get_game_path(id: &str) -> Option<PathBuf> {
         .ok()?
         .1
         .to_string()
-        .replace("\"", "");
+        .replace('\"', "");
 
     let game_path: String = {
         let game_local = repo.open_subkey(format!("Root\\{}", game_uuid)).ok()?;
