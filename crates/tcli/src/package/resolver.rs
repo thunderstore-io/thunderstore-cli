@@ -1,5 +1,4 @@
 use std::collections::{HashMap, VecDeque};
-use std::path::PathBuf;
 
 use futures_util::future::try_join_all;
 
@@ -31,8 +30,6 @@ impl PackageResolver {
         let mut dep_map: HashMap<String, Package> = HashMap::new();
         let mut queue: VecDeque<PackageReference> = VecDeque::from(packages.clone());
 
-        let lockfile = LockFile::open_or_new(project.join("Thunderstore.lock"))?;
-        dep_map.extend(lockfile.packages.clone());
 
         // Generate top-level package dependencies first. We then iterate down through the tree
         // until all have been resolved.
@@ -62,6 +59,7 @@ impl PackageResolver {
         }
 
         let packages_to_install = dep_map.into_values().collect::<Vec<_>>();
+        let lockfile = LockFile::open_or_new(&project.path().join("Thunderstore.lock"))?;
 
         Ok(PackageResolver {
             packages_to_install,
@@ -71,7 +69,7 @@ impl PackageResolver {
     }
 
     /// Apply the newly resolved packages onto the previously specified project.
-    pub async fn apply(&mut self, reporter: Box<dyn Reporter>) -> Result<(), Error> {
+    pub async fn apply(mut self, reporter: Box<dyn Reporter>) -> Result<(), Error> {
         let multi = reporter.create_progress();
 
         let jobs = self
