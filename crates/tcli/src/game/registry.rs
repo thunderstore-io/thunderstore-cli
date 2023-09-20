@@ -2,7 +2,6 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 use super::{ecosystem, steam};
@@ -70,6 +69,9 @@ impl GameImportBuilder {
 
     /// Import the game as a new game definition, automatically determining the
     /// correct platform to use.
+    ///
+    /// Note that this function does not yet support Linux native Wine interop. The Windows native
+    /// build of tcli must be run through Wine to detect games installed to the current prefix.
     pub fn import(self, project: &ProjectPath) -> Result<(), Error> {
         let (dist, game_dir) = self
             .game_def
@@ -86,20 +88,21 @@ impl GameImportBuilder {
                 GameDefPlatform::GamePass { identifier } => {
                     win::gamepass::get_game_path(identifier).map(|x| (dist, x))
                 }
-                #[cfg(linux)]
+                #[cfg(target_os = "linux")]
                 GameDefPlatform::GamePass { _identifier } => None,
 
+                #[cfg(windows)]
                 GameDefPlatform::Origin { identifier } => {
                     win::eadesktop::get_game_path(identifier).map(|x| (dist, x))
                 }
-                #[cfg(linux)]
+                #[cfg(target_os = "linux")]
                 GameDefPlatform::Origin { _identifier } => None,
 
                 #[cfg(windows)]
                 GameDefPlatform::EpicGames { identifier } => {
                     win::egs::get_game_path(identifier).map(|x| (dist, x))
                 }
-                #[cfg(linux)]
+                #[cfg(target_os = "linux")]
                 GameDefPlatform::EpicGames { _identifier } => None,
 
                 _ => None,
