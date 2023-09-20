@@ -21,9 +21,7 @@ pub struct LockFile {
 
 impl LockFile {
     /// Opens and reads or creates a new lockfile instance.
-    pub fn open_or_new(path: impl AsRef<Path>) -> Result<Self, Error> {
-        let path = path.as_ref();
-
+    pub fn open_or_new(path: &Path) -> Result<Self, Error> {
         if path.exists() {
             let contents = fs::read_to_string(path)?;
             let lockfile = serde_json::from_str(&contents).unwrap();

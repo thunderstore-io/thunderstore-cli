@@ -2,16 +2,15 @@ mod cache;
 pub mod resolver;
 
 use std::io::{ErrorKind, Read, Seek};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use colored::Colorize;
 use futures::prelude::*;
 
 use serde::{Deserialize, Serialize};
 use serde_with::{self, serde_as, DisplayFromStr};
-use tokio::fs::{self, File, OpenOptions};
+use tokio::fs;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio_util::compat::TokioAsyncWriteCompatExt;
 
 use crate::error::{Error, IoResultToTcli};
 use crate::project::ProjectPath;
@@ -20,8 +19,6 @@ use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
 use crate::ts::CLIENT;
 use crate::ui::reporter::ProgressBarTrait;
-
-use crate::TCLI_HOME;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum PackageSource {
@@ -54,7 +51,7 @@ impl Package {
         let manifest_path = path.join("manifest.json");
 
         let mut manifest_str = String::new();
-        tokio::fs::File::open(&manifest_path)
+        fs::File::open(&manifest_path)
             .await
             .map_fs_error(&manifest_path)
             .unwrap()
