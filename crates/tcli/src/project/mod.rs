@@ -13,6 +13,7 @@ use crate::ts::package_manifest::PackageManifestV1;
 
 pub mod manifest;
 pub mod overrides;
+pub mod lock;
 mod publish;
 
 pub enum ProjectKind {

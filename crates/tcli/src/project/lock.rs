@@ -53,7 +53,10 @@ impl LockFile {
 
     /// Writes the lockfile to disk.
     pub fn commit(self) -> Result<(), Error> {
-        let mut lockfile = OpenOptions::new().write(true).open(&self.path)?;
+        let mut lockfile = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&self.path)?;
 
         let new_contents = serde_json::to_string_pretty(&self).unwrap();
         lockfile.write_all(new_contents.as_bytes())?;
