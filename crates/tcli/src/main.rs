@@ -14,6 +14,7 @@ use crate::config::Vars;
 use crate::error::Error;
 use crate::game::registry::GameImportBuilder;
 use crate::game::{ecosystem, registry};
+use crate::package::install::Installer;
 use crate::project::lock::LockFile;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
@@ -124,6 +125,15 @@ async fn main() -> Result<(), Error> {
 
             let packages = PackageResolver::resolve_new(packages, &project_path).await?;
             packages.apply(reporter).await?;
+
+            let lockfile = LockFile::open_or_new(project_path.path()).unwrap();
+            let installer_package = lockfile.packages.get("TestInstaller-Metherul-0.1.0").unwrap();
+
+            println!("{:?}", installer_package);
+
+            let installer = Installer::load_and_prepare(&installer_package).await?;
+
+            println!("{:?}", installer.exec_path);
 
             Ok(())
         }

@@ -1,6 +1,7 @@
+use serde::{Serialize, Deserialize};
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum OS {
     Windows,
     MacOS,

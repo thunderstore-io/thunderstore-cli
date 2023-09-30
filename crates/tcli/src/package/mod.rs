@@ -1,5 +1,6 @@
 mod cache;
 pub mod resolver;
+pub mod install;
 
 use std::io::{ErrorKind, Read, Seek};
 use std::path::PathBuf;
@@ -18,7 +19,7 @@ use crate::ts::experimental::package;
 use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
 use crate::ts::CLIENT;
-use crate::ui::reporter::ProgressBarTrait;
+use crate::ui::reporter::{ProgressBarTrait, Progress};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum PackageSource {
@@ -93,19 +94,23 @@ impl Package {
         })
     }
 
+    pub async fn resolve(&self, reporter: &dyn ProgressBarTrait) -> Result<PathBuf, Error> {
+        match &self.source {
+            PackageSource::Local(path) => add_to_cache(
+                &self.identifier,
+                std::fs::File::open(path).map_fs_error(path)?,
+            ),
+            PackageSource::Remote(_) => self.download(reporter).await,
+            PackageSource::Cache(path) => Ok(path.clone()),
+        }
+    }
+
     pub async fn add(
         &self,
         project: &ProjectPath,
         reporter: Box<dyn ProgressBarTrait>,
     ) -> Result<(), Error> {
-        let cache_path = match &self.source {
-            PackageSource::Local(path) => add_to_cache(
-                &self.identifier,
-                std::fs::File::open(path).map_fs_error(path)?,
-            )?,
-            PackageSource::Remote(_) => self.download(reporter.as_ref()).await?,
-            PackageSource::Cache(path) => path.clone(),
-        };
+        let cache_path = self.resolve(reporter.as_ref()).await?;
 
         let project_state = project.path().join("project_state");
 

@@ -32,7 +32,7 @@ impl Progress for MultiProgress {
     }
 }
 
-struct VoidProgress;
+pub struct VoidProgress;
 
 impl Progress for VoidProgress {
     fn add_bar(&self) -> Box<dyn ProgressBarTrait> {

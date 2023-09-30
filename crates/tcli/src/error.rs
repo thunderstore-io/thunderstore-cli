@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
 
+use crate::package::Package;
+
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
 #[repr(u32)]

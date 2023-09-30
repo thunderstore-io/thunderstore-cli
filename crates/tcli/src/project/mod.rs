@@ -54,6 +54,97 @@ impl ProjectPath {
     }
 }
 
+struct Project {
+    base_dir: PathBuf,
+    state_dir: PathBuf,
+    manifest_path: PathBuf,
+    project_kind: ProjectKind,
+}
+
+impl Project {
+    pub fn create_new(project_dir: &Path, overwrite: bool, project_kind: ProjectKind) -> Result<Project, Error> {
+        if project_dir.is_file() {
+            return Err(Error::ProjectDirIsFile(project_dir.into()));
+        }
+
+        if !project_dir.is_dir() {
+            fs::create_dir(project_dir).map_fs_error(project_dir)?;
+        }
+
+        let manifest = match project_kind {
+            ProjectKind::Dev(overrides) => {
+                let mut manifest = ProjectManifest::default_dev_project();
+                manifest.apply_overrides(overrides.clone())?;
+                manifest
+            }
+            ProjectKind::Profile => ProjectManifest::default_profile_project(),
+        };
+
+        let mut options = File::options();
+        options.write(true);
+        if overwrite {
+            options.create(true);
+        } else {
+            options.create_new(true);
+        }
+
+        let manifest_path = project_dir.join("Thunderstore.toml");
+        let mut manifest_file = options
+            .open(manifest_path)
+            .map_err(move |e| match e.kind() {
+                std::io::ErrorKind::AlreadyExists => {
+                    Error::ProjectAlreadyExists(manifest_path.clone())
+                }
+                _ => Error::FileIoError(manifest_path.to_path_buf(), e),
+            })?;
+
+        write!(
+            manifest_file,
+            "{}",
+            toml::to_string_pretty(&manifest).unwrap()
+        ).unwrap();
+
+        if matches!(project_kind, ProjectKind::Profile) {
+            return Ok(());
+        }
+
+        let package = manifest.package.as_ref().unwrap();
+
+        let icon_path = project_dir.join("icon.png");
+        match File::options()
+            .write(true)
+            .create_new(true)
+            .open(&icon_path)
+        {
+            Ok(mut f) => f
+                .write_all(include_bytes!("../../resources/icon.png"))
+                .unwrap(),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(e) => Err(Error::FileIoError(icon_path, e))?,
+        }
+
+        let readme_path = project_dir.join("README.md");
+        match File::options()
+            .write(true)
+            .create_new(true)
+            .open(&readme_path)
+        {
+            Ok(mut f) => {
+                write!(
+                    f,
+                    include_str!("../../resources/readme_template.md"),
+                    package.namespace, package.name, package.description
+                )
+                    .unwrap();
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(e) => return Err(Error::FileIoError(readme_path, e)),
+        }
+
+        Ok(())
+    }
+}
+
 pub fn create_new(
     project_path: &Path,
     overwrite: bool,
