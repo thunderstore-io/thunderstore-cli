@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
-
-use crate::package::Package;
+use crate::ts::package_reference::PackageReference;
+use crate::ts::version::Version;
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
@@ -55,6 +55,20 @@ pub enum Error {
 
     #[error("An error occurred while parsing JSON: {0}")]
     JsonParserError(#[from] serde_json::Error),
+
+    #[error("An error occured while serializing TOML: {0}")]
+    TomlSerializer(#[from] toml::ser::Error),
+
+    #[error("
+        The installer '{package_id}' does not support the current tcli installer format.
+            Expected: {our_version:#?}
+            Recieved: {given_version:#?}
+    ")]
+    PackageInstallerVersionMismatch {
+        package_id: String,
+        given_version: Version,
+        our_version: Version,
+    },
 }
 
 pub trait IoResultToTcli<R> {

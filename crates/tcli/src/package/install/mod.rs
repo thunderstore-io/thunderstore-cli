@@ -1,12 +1,17 @@
 use std::fs;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
+use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::process::Command;
 
 use crate::package::install::manifest::InstallerManifest;
+use crate::package::install::runner::request::RequestVariant;
 use crate::ui::reporter::{Progress, VoidProgress};
 use crate::error::Error;
 
-use self::runner::{InstallerArgs, InstallerResponse};
+use self::runner::INSTALLER_VERSION;
+use self::runner::request::InstallerArgs;
+use self::runner::response::{InstallResponse, ResponseVariant};
 
 use super::Package;
 
@@ -42,17 +47,39 @@ impl Installer {
             Err(Error::MissingAuthToken)?
         }
 
-        Ok(Installer {
+        let installer = Installer {
             exec_path
-        })
+        };
+
+        // Test that (a) the executable can be run and (b) it's on a valid inter-comm version.
+        let version = match installer.run(&RequestVariant::Version).await? {
+            ResponseVariant::Version { version } => version,
+            _ => {
+                panic!("The installer '{}' returned data not serializable into a Version response variant.", package.identifier)
+            }
+        };
+
+        if version.major != INSTALLER_VERSION.major {
+            Err(Error::PackageInstallerVersionMismatch {
+                package_id: package.identifier.to_string(), 
+                given_version: version, 
+                our_version: INSTALLER_VERSION, 
+            })?
+        }
+
+        Ok(installer)
     }
 
-    pub async fn run(&self, args: &InstallerArgs) -> Result<InstallerResponse, Error> {
-        let args_json = serde_json::to_string(args)?;
-        let command = Command::new(&self.exec_path)
+    pub async fn run(&self, arg: &RequestVariant) -> Result<ResponseVariant, Error> {
+        let args_json = serde_json::to_string(arg)?;
+        let mut child = Command::new(&self.exec_path)
             .arg(&args_json)
-            .spawn()
-            .unwrap();
+            .spawn()?;
+
+        // Execute the installer, capturing and deserializing any output.
+        // TODO: Safety check here to warn / stop an installer from blowing up the heap.
+        let mut output_str = String::new();
+        child.stdout.unwrap().read_to_string(&mut output_str).await?;
 
         todo!()
     }
