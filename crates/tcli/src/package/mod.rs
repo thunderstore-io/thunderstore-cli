@@ -1,13 +1,13 @@
 mod cache;
-pub mod resolver;
+pub mod error;
 pub mod install;
+pub mod resolver;
 
 use std::io::{ErrorKind, Read, Seek};
 use std::path::PathBuf;
 
 use colored::Colorize;
 use futures::prelude::*;
-
 use serde::{Deserialize, Serialize};
 use serde_with::{self, serde_as, DisplayFromStr};
 use tokio::fs;
@@ -19,7 +19,7 @@ use crate::ts::experimental::package;
 use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
 use crate::ts::CLIENT;
-use crate::ui::reporter::{ProgressBarTrait, Progress};
+use crate::ui::reporter::{Progress, ProgressBarTrait};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum PackageSource {
