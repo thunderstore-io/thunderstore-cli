@@ -1,6 +1,6 @@
 use std::fs;
 use std::fs::File;
-use std::io::Write;
+use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
 pub use publish::publish;
@@ -11,9 +11,9 @@ use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
 use crate::ts::package_manifest::PackageManifestV1;
 
+pub mod lock;
 pub mod manifest;
 pub mod overrides;
-pub mod lock;
 mod publish;
 
 pub enum ProjectKind {
@@ -58,11 +58,14 @@ struct Project {
     base_dir: PathBuf,
     state_dir: PathBuf,
     manifest_path: PathBuf,
-    project_kind: ProjectKind,
 }
 
 impl Project {
-    pub fn create_new(project_dir: &Path, overwrite: bool, project_kind: ProjectKind) -> Result<Project, Error> {
+    pub fn create_new(
+        project_dir: &Path,
+        overwrite: bool,
+        project_kind: ProjectKind,
+    ) -> Result<Project, Error> {
         if project_dir.is_file() {
             return Err(Error::ProjectDirIsFile(project_dir.into()));
         }
@@ -71,7 +74,7 @@ impl Project {
             fs::create_dir(project_dir).map_fs_error(project_dir)?;
         }
 
-        let manifest = match project_kind {
+        let manifest = match &project_kind {
             ProjectKind::Dev(overrides) => {
                 let mut manifest = ProjectManifest::default_dev_project();
                 manifest.apply_overrides(overrides.clone())?;
@@ -89,23 +92,31 @@ impl Project {
         }
 
         let manifest_path = project_dir.join("Thunderstore.toml");
-        let mut manifest_file = options
-            .open(manifest_path)
-            .map_err(move |e| match e.kind() {
-                std::io::ErrorKind::AlreadyExists => {
-                    Error::ProjectAlreadyExists(manifest_path.clone())
-                }
-                _ => Error::FileIoError(manifest_path.to_path_buf(), e),
-            })?;
+        let mut manifest_file = match options.open(&manifest_path) {
+            Ok(x) => Ok(x),
+            Err(e) if e.kind() == ErrorKind::AlreadyExists => {
+                Err(Error::ProjectAlreadyExists(manifest_path.clone()))
+            }
+            Err(e) => Err(Error::FileIoError(manifest_path.to_path_buf(), e)),
+        }?;
 
         write!(
             manifest_file,
             "{}",
             toml::to_string_pretty(&manifest).unwrap()
-        ).unwrap();
+        )?;
+
+        let project_state = project_dir.join(".tcli/project_state");
+        fs::create_dir_all(&project_state)?;
+
+        let project = Project {
+            base_dir: project_dir.to_path_buf(),
+            state_dir: project_state,
+            manifest_path,
+        };
 
         if matches!(project_kind, ProjectKind::Profile) {
-            return Ok(());
+            return Ok(project);
         }
 
         let package = manifest.package.as_ref().unwrap();
@@ -119,7 +130,7 @@ impl Project {
             Ok(mut f) => f
                 .write_all(include_bytes!("../../resources/icon.png"))
                 .unwrap(),
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(e) if e.kind() == ErrorKind::AlreadyExists => {}
             Err(e) => Err(Error::FileIoError(icon_path, e))?,
         }
 
@@ -134,14 +145,13 @@ impl Project {
                     f,
                     include_str!("../../resources/readme_template.md"),
                     package.namespace, package.name, package.description
-                )
-                    .unwrap();
+                )?
             }
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
             Err(e) => return Err(Error::FileIoError(readme_path, e)),
         }
 
-        Ok(())
+        Ok(project)
     }
 }
 

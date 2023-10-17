@@ -30,7 +30,6 @@ impl PackageResolver {
         let mut dep_map: HashMap<String, Package> = HashMap::new();
         let mut queue: VecDeque<PackageReference> = VecDeque::from(packages.clone());
 
-
         // Generate top-level package dependencies first. We then iterate down through the tree
         // until all have been resolved.
         while let Some(package_ident) = queue.pop_front() {
