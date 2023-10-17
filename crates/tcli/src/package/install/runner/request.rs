@@ -1,5 +1,6 @@
 use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
+
+use serde::{Deserialize, Serialize};
 
 use crate::package::Package;
 
@@ -8,7 +9,7 @@ use crate::package::Package;
 /// instead of a funky arg-parsing library.
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type", content = "payload")]
-pub enum RequestVariant {
+pub enum Request {
     Version,
     PackageInstall {
         package: Package,

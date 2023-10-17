@@ -1,32 +1,20 @@
 use std::path::PathBuf;
-use serde::{Serialize, Deserialize};
+
+use serde::{Deserialize, Serialize};
+
 use crate::ts::version::Version;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type", content = "payload")]
-pub enum ResponseVariant {
+pub enum Response {
     Version {
-        version: Version,
+        installer_version: Version,
+        protocol_version: Version,
     },
-    InstallResponse {
+    PackageInstall {
         tracked_files: Vec<PathBuf>,
     },
-    UninstallResponse {
+    PackageUninstall {
         tracked_files: Vec<PathBuf>,
     },
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct VersionResponse {
-    version: Version,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct InstallResponse {
-    tracked_files: Vec<PathBuf>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct UninstallResponse {
-    tracked_files: Vec<PathBuf>,
 }
