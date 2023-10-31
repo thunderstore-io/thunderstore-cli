@@ -4,7 +4,7 @@ use std::str::FromStr;
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 
 #[derive(
-    SerializeDisplay, DeserializeFromStr, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord,
+    SerializeDisplay, DeserializeFromStr, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 pub struct Version {
     pub major: u32,

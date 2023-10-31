@@ -1,10 +1,11 @@
 mod cache;
 pub mod error;
+pub mod index;
 pub mod install;
 pub mod resolver;
 
 use std::io::{ErrorKind, Read, Seek};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use colored::Colorize;
 use futures::prelude::*;
@@ -31,9 +32,9 @@ pub enum PackageSource {
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Package {
+    pub source: PackageSource,
     #[serde_as(as = "DisplayFromStr")]
     pub identifier: PackageReference,
-    pub source: PackageSource,
     #[serde(with = "crate::ts::package_reference::ser::string_array")]
     pub dependencies: Vec<PackageReference>,
 }
@@ -60,6 +61,7 @@ impl Package {
             .await
             .unwrap();
 
+        // Remove UTF-8 BOM: https://github.com/serde-rs/serde/issues/1753
         let manifest_str = manifest_str.trim_start_matches('\u{feff}');
 
         match serde_json::from_str::<PackageManifestV1>(manifest_str) {
@@ -94,6 +96,19 @@ impl Package {
         })
     }
 
+    /// Loads a package .zip from an arbitrary location. The package will be extracted into the cache,
+    /// where it can then be worked with.
+    pub async fn from_path(ident: PackageReference, path: &Path) -> Result<Self, Error> {
+        let package =
+            package::get_version_metadata(&ident.namespace, &ident.name, ident.version).await?;
+
+        Ok(Package {
+            identifier: ident,
+            source: PackageSource::Local(path.to_path_buf()),
+            dependencies: package.dependencies,
+        })
+    }
+
     pub async fn resolve(&self, reporter: &dyn ProgressBarTrait) -> Result<PathBuf, Error> {
         match &self.source {
             PackageSource::Local(path) => add_to_cache(
@@ -111,7 +126,6 @@ impl Package {
         reporter: Box<dyn ProgressBarTrait>,
     ) -> Result<(), Error> {
         let cache_path = self.resolve(reporter.as_ref()).await?;
-
         let project_state = project.path().join("project_state");
 
         let install_dir = project_state.join(self.identifier.to_string());

@@ -1,11 +1,14 @@
 use std::fmt::{Display, Formatter};
+use std::hash::Hash;
 use std::str::FromStr;
+
+use serde_with::{DeserializeFromStr, SerializeDisplay};
 
 use crate::ts::version::{Version, VersionParseError};
 
 pub mod ser;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(SerializeDisplay, DeserializeFromStr, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PackageReference {
     pub namespace: String,
     pub name: String,
@@ -49,14 +52,6 @@ impl PackageReference {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum PackageReferenceParseError {
-    #[error("Expected {expected} sections, got {got}.")]
-    NumSections { expected: usize, got: usize },
-    #[error("Failed to parse version: {0}.")]
-    VersionParseFail(#[from] VersionParseError),
-}
-
 impl FromStr for PackageReference {
     type Err = PackageReferenceParseError;
 
@@ -82,4 +77,12 @@ impl Display for PackageReference {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}-{}-{}", self.namespace, self.name, self.version)
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum PackageReferenceParseError {
+    #[error("Expected {expected} sections, got {got}.")]
+    NumSections { expected: usize, got: usize },
+    #[error("Failed to parse version: {0}.")]
+    VersionParseFail(#[from] VersionParseError),
 }

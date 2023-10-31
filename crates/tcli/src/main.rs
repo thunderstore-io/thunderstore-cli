@@ -1,8 +1,10 @@
 use std::path::PathBuf;
+use std::str::FromStr;
+use std::time::Instant;
 
 use clap::Parser;
-use colored::Colorize;
 use cli::InitSubcommand;
+use colored::Colorize;
 use directories::BaseDirs;
 use once_cell::sync::Lazy;
 use package::resolver::PackageResolver;
@@ -14,11 +16,13 @@ use crate::config::Vars;
 use crate::error::Error;
 use crate::game::registry::GameImportBuilder;
 use crate::game::{ecosystem, registry};
+use crate::package::index::PackageIndex;
 use crate::package::install::Installer;
 use crate::project::lock::LockFile;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
 use crate::project::ProjectPath;
+use crate::ts::package_reference::PackageReference;
 use crate::ui::reporter::IndicatifReporter;
 
 mod cli;
@@ -41,6 +45,20 @@ pub static TCLI_HOME: Lazy<PathBuf> = Lazy::new(|| {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    // println!("start");
+    // let start = Instant::now();
+    // let index = PackageIndex::open().await?;
+    // let stop = Instant::now();
+    // let delta = stop - start;
+    // println!("stop, took {}ms", delta.as_millis());
+
+    // let pkg_ref = PackageReference::from_str("rob_gaming-Driver-1.2.7").unwrap();
+    // println!("{}: {:#?}", pkg_ref, index.get_package(&pkg_ref));
+
+    // let loose = "rob_gaming-Driver";
+    // let loose_packages = index.get_packages(loose.to_string()).unwrap();
+    // let loose_packages = index.get_packages(pkg_ref.to_loose_ident_string());
+
     match Args::parse().commands {
         Commands::Init {
             command,
@@ -127,7 +145,10 @@ async fn main() -> Result<(), Error> {
             packages.apply(reporter).await?;
 
             let lockfile = LockFile::open_or_new(project_path.path()).unwrap();
-            let installer_package = lockfile.packages.get("TestInstaller-Metherul-0.1.0").unwrap();
+            let installer_package = lockfile
+                .packages
+                .get("TestInstaller-Metherul-0.1.0")
+                .unwrap();
 
             println!("{:?}", installer_package);
 
@@ -232,9 +253,11 @@ async fn main() -> Result<(), Error> {
                 println!("\n{} games have been listed.", count);
 
                 Ok(())
-            },
+            }
             ListSubcommand::InstalledMods { project_path } => {
-                let path = ProjectPath::new(&project_path)?.path().join("Thunderstore.lock");
+                let path = ProjectPath::new(&project_path)?
+                    .path()
+                    .join("Thunderstore.lock");
                 let lock = LockFile::open_or_new(&path)?;
 
                 println!("Installed packages:");

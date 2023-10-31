@@ -6,8 +6,8 @@ use tokio::process::Command;
 
 use self::runner::response::Response;
 use self::runner::INSTALLER_VERSION;
-use super::Package;
 use super::error::Error;
+use super::Package;
 use crate::package::install::manifest::InstallerManifest;
 use crate::package::install::runner::request::Request;
 use crate::ui::reporter::{Progress, VoidProgress};

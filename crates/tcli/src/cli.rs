@@ -64,7 +64,7 @@ pub enum ListSubcommand {
     InstalledMods {
         #[clap(long, default_value = DEFAULT_MANIFEST)]
         project_path: PathBuf,
-    }
+    },
 }
 
 #[derive(Subcommand, Debug)]

@@ -1,6 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
+use miette::Diagnostic;
+
+use crate::ts::package_reference::PackageReference;
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]

@@ -140,13 +140,11 @@ impl Project {
             .create_new(true)
             .open(&readme_path)
         {
-            Ok(mut f) => {
-                write!(
-                    f,
-                    include_str!("../../resources/readme_template.md"),
-                    package.namespace, package.name, package.description
-                )?
-            }
+            Ok(mut f) => write!(
+                f,
+                include_str!("../../resources/readme_template.md"),
+                package.namespace, package.name, package.description
+            )?,
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
             Err(e) => return Err(Error::FileIoError(readme_path, e)),
         }
