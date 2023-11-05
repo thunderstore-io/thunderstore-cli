@@ -4,6 +4,7 @@ pub mod index;
 pub mod install;
 pub mod resolver;
 
+use std::borrow::Borrow;
 use std::io::{ErrorKind, Read, Seek};
 use std::path::{Path, PathBuf};
 
@@ -40,15 +41,17 @@ pub struct Package {
 }
 
 impl Package {
-    pub async fn resolve_new(ident: PackageReference) -> Result<Self, Error> {
-        if cache::get_cache_location(&ident).exists() {
+    pub async fn resolve_new(ident: impl Borrow<PackageReference>) -> Result<Self, Error> {
+        if cache::get_cache_location(ident.borrow()).exists() {
             return Package::from_cache(ident).await;
         }
 
         Package::from_repo(ident).await
     }
 
-    pub async fn from_cache(ident: PackageReference) -> Result<Self, Error> {
+    pub async fn from_cache(ident: impl Borrow<PackageReference>) -> Result<Self, Error> {
+        let ident = ident.borrow();
+
         let path = cache::get_cache_location(&ident);
         let manifest_path = path.join("manifest.json");
 
@@ -66,7 +69,7 @@ impl Package {
 
         match serde_json::from_str::<PackageManifestV1>(manifest_str) {
             Ok(manifest) => Ok(Package {
-                identifier: ident,
+                identifier: ident.clone(),
                 source: PackageSource::Cache(path.to_path_buf()),
                 dependencies: manifest.dependencies,
             }),
@@ -85,12 +88,13 @@ impl Package {
         }
     }
 
-    pub async fn from_repo(ident: PackageReference) -> Result<Self, Error> {
+    pub async fn from_repo(ident: impl Borrow<PackageReference>) -> Result<Self, Error> {
+        let ident = ident.borrow();
         let package =
             package::get_version_metadata(&ident.namespace, &ident.name, ident.version).await?;
 
         Ok(Package {
-            identifier: ident,
+            identifier: ident.clone(),
             source: PackageSource::Remote(package.download_url),
             dependencies: package.dependencies,
         })
