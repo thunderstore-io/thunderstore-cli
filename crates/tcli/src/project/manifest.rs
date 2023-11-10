@@ -1,8 +1,9 @@
-use std::fs::File;
-use std::io::Read;
+use std::fs::{File, self};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
 use crate::error::Error;
 use crate::project::overrides::ProjectOverrides;
@@ -57,6 +58,13 @@ impl ProjectManifest {
                 .unwrap_or_else(|| PathBuf::from("./")),
         );
         Ok(manifest)
+    }
+
+    pub fn write_to_file(self, path: &Path) -> Result<(), Error> {
+        let manifest_str = toml::to_string_pretty(&self)?;
+        fs::write(path, manifest_str)?;
+
+        Ok(())
     }
 
     pub fn apply_overrides(&mut self, overrides: ProjectOverrides) -> Result<(), Error> {
