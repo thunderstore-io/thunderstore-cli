@@ -1,15 +1,22 @@
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
+use futures::future::try_join_all;
 pub use publish::publish;
 use zip::write::FileOptions;
 
 use crate::error::{Error, IoResultToTcli};
+use crate::package::{resolver, Package};
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
 use crate::ts::package_manifest::PackageManifestV1;
+use crate::ts::package_reference::PackageReference;
+use crate::ui::reporter::Reporter;
+
+use self::lock::LockFile;
 
 pub mod lock;
 pub mod manifest;
@@ -54,13 +61,26 @@ impl ProjectPath {
     }
 }
 
-struct Project {
+pub struct Project {
     base_dir: PathBuf,
     state_dir: PathBuf,
     manifest_path: PathBuf,
+    lockfile_path: PathBuf,
 }
 
 impl Project {
+    pub fn open(project_dir: &Path) -> Result<Self, Error> {
+        // TODO: Validate that the following paths exist.
+
+        Ok(Project {
+            base_dir: project_dir.to_path_buf(),
+            state_dir: project_dir.join(".tcli/project_state"),
+            manifest_path: project_dir.join("Thunderstore.toml"),
+            lockfile_path: project_dir.join("Thunderstore.lock"),
+        })
+    }
+
+    /// Create a new project within the given directory.
     pub fn create_new(
         project_dir: &Path,
         overwrite: bool,
@@ -113,6 +133,7 @@ impl Project {
             base_dir: project_dir.to_path_buf(),
             state_dir: project_state,
             manifest_path,
+            lockfile_path: project_dir.join("Thunderstore.lock"),
         };
 
         if matches!(project_kind, ProjectKind::Profile) {
@@ -151,94 +172,76 @@ impl Project {
 
         Ok(project)
     }
-}
 
-pub fn create_new(
-    project_path: &Path,
-    overwrite: bool,
-    project_kind: ProjectKind,
-) -> Result<(), Error> {
-    let project_dir = project_path.parent().unwrap_or("./".as_ref());
+    /// Add one or more packages to this project. 
+    /// 
+    /// Note: This function does not COMMIT the packages, it only adds them to the project manifest.
+    pub fn add_packages(&self, packages: &[PackageReference]) -> Result<(), Error> {
+        let mut manifest = ProjectManifest::read_from_file(&self.manifest_path)?;
+        let mut manifest_deps = manifest.dependencies.dependencies.clone();
 
-    if project_dir.is_file() {
-        return Err(Error::ProjectDirIsFile(project_dir.into()));
-    }
+        // Merge the manifest's dependencies with the given packages.
+        // The rule here is:
+        // 1. Add if the package does not exist within the manifest.
+        // 2. Replace with given version if manifest.version < given.version.
+        let manifest_index = manifest_deps
+            .iter()
+            .enumerate()
+            .map(|(index, x)| (x.to_loose_ident_string(), index))
+            .collect::<HashMap<_, _>>();
 
-    if !project_dir.is_dir() {
-        fs::create_dir(project_dir).map_fs_error(project_dir)?;
-    }
+        for package in packages.iter() {
+            match manifest_index.get(&package.to_loose_ident_string()) {
+                Some(x) if manifest_deps[*x].version < package.version => {
+                    manifest_deps[*x] = package.clone();
+                }
 
-    let manifest = match project_kind {
-        ProjectKind::Dev(overrides) => {
-            let mut manifest = ProjectManifest::default_dev_project();
-            manifest.apply_overrides(overrides)?;
-            manifest
-        }
-        ProjectKind::Profile => ProjectManifest::default_profile_project(),
-    };
+                None => {
+                    manifest_deps.push(package.clone());
+                }
 
-    let mut options = File::options();
-    options.write(true);
-    if overwrite {
-        options.create(true);
-    } else {
-        options.create_new(true);
-    }
-
-    let mut manifest_file = options
-        .open(project_path)
-        .map_err(move |e| match e.kind() {
-            std::io::ErrorKind::AlreadyExists => {
-                Error::ProjectAlreadyExists(project_path.to_path_buf())
+                _ => (),
             }
-            _ => Error::FileIoError(project_path.to_path_buf(), e),
-        })?;
-
-    write!(
-        manifest_file,
-        "{}",
-        toml::to_string_pretty(&manifest).unwrap()
-    )
-    .unwrap();
-
-    if manifest.package.is_none() {
-        return Ok(());
-    }
-
-    let package = manifest.package.as_ref().unwrap();
-
-    let icon_path = project_dir.join("icon.png");
-    match File::options()
-        .write(true)
-        .create_new(true)
-        .open(&icon_path)
-    {
-        Ok(mut f) => f
-            .write_all(include_bytes!("../../resources/icon.png"))
-            .unwrap(),
-        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
-        Err(e) => Err(Error::FileIoError(icon_path, e))?,
-    }
-
-    let readme_path = project_dir.join("README.md");
-    match File::options()
-        .write(true)
-        .create_new(true)
-        .open(&readme_path)
-    {
-        Ok(mut f) => {
-            write!(
-                f,
-                include_str!("../../resources/readme_template.md"),
-                package.namespace, package.name, package.description
-            )
-            .unwrap();
         }
-        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
-        Err(e) => return Err(Error::FileIoError(readme_path, e)),
+
+        manifest.dependencies.dependencies = manifest_deps;
+        manifest.write_to_file(&self.manifest_path)?;
+
+        Ok(())
     }
 
-    Ok(())
+    /// Commit changes made to the project manifest to the project.
+    pub async fn commit(&self, reporter: Box<dyn Reporter>) -> Result<(), Error> {
+        let manifest = ProjectManifest::read_from_file(&self.manifest_path)?;
+
+        let packages = resolver::resolve_packages(manifest.dependencies.dependencies).await?;
+        let resolved_packages = try_join_all(packages
+            .iter()
+            .rev()
+            .map(|x| async {
+                Package::resolve_new(x.clone()).await
+            })).await?;
+
+        // Temporary solution until we remove ProjectPath.
+        let project_path = ProjectPath::new(&self.base_dir)?;
+
+        // Download / install each package as needed.
+        let multi = reporter.create_progress();
+        let jobs = resolved_packages
+            .iter()
+            .map(|package| async {
+                package.add(&project_path, multi.add_bar()).await
+            });
+
+        try_join_all(jobs).await?;
+
+        // For now we can regenerate the lockfile from scratch.
+        let mut lockfile = LockFile::open_or_new(&self.lockfile_path)?;
+        lockfile.merge(&resolved_packages);
+        lockfile.commit()?;
+
+        Ok(())
+    }
 }
 
 pub fn build(manifest: &ProjectManifest) -> Result<PathBuf, Error> {
@@ -339,3 +342,4 @@ pub fn build(manifest: &ProjectManifest) -> Result<PathBuf, Error> {
 
     Ok(output_path)
 }
+
