@@ -1,13 +1,10 @@
 use std::path::PathBuf;
-use std::str::FromStr;
-use std::time::Instant;
 
 use clap::Parser;
 use cli::InitSubcommand;
 use colored::Colorize;
 use directories::BaseDirs;
 use once_cell::sync::Lazy;
-use package::resolver::PackageResolver;
 use project::ProjectKind;
 use wildmatch::WildMatch;
 
@@ -16,13 +13,11 @@ use crate::config::Vars;
 use crate::error::Error;
 use crate::game::registry::GameImportBuilder;
 use crate::game::{ecosystem, registry};
-use crate::package::index::PackageIndex;
 use crate::package::install::Installer;
 use crate::project::lock::LockFile;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
-use crate::project::ProjectPath;
-use crate::ts::package_reference::PackageReference;
+use crate::project::{ProjectPath, Project};
 use crate::ui::reporter::IndicatifReporter;
 
 mod cli;
@@ -45,43 +40,32 @@ pub static TCLI_HOME: Lazy<PathBuf> = Lazy::new(|| {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    // println!("start");
-    // let start = Instant::now();
-    // let index = PackageIndex::open().await?;
-    // let stop = Instant::now();
-    // let delta = stop - start;
-    // println!("stop, took {}ms", delta.as_millis());
-
-    // let pkg_ref = PackageReference::from_str("rob_gaming-Driver-1.2.7").unwrap();
-    // println!("{}: {:#?}", pkg_ref, index.get_package(&pkg_ref));
-
-    // let loose = "rob_gaming-Driver";
-    // let loose_packages = index.get_packages(loose.to_string()).unwrap();
-    // let loose_packages = index.get_packages(pkg_ref.to_loose_ident_string());
-
     match Args::parse().commands {
         Commands::Init {
             command,
             overwrite,
             project_path,
-        } => match command {
-            InitSubcommand::Project {
-                package_name,
-                package_namespace,
-                package_version,
-            } => project::create_new(
-                &project_path,
-                overwrite,
-                ProjectKind::Dev(
-                    ProjectOverrides::new()
+        } => {
+            match command {
+                InitSubcommand::Project {
+                    package_name,
+                    package_namespace,
+                    package_version,
+                } => {
+                    let overrides = ProjectOverrides::new()
                         .namespace_override(package_namespace)
                         .name_override(package_name)
-                        .version_override(package_version),
-                ),
-            ),
-            InitSubcommand::Profile => {
-                project::create_new(&project_path, overwrite, ProjectKind::Profile)
+                        .version_override(package_version);
+
+                    Project::create_new(&project_path, overwrite, ProjectKind::Dev(overrides))?;
+                }
+
+                InitSubcommand::Profile => {
+                    Project::create_new(&project_path, overwrite, ProjectKind::Profile)?;
+                }
             }
+
+            Ok(())
         },
         Commands::Build {
             package_name,
@@ -139,12 +123,14 @@ async fn main() -> Result<(), Error> {
             ts::init_repository("https://thunderstore.io", None);
 
             let reporter = Box::new(IndicatifReporter);
-            let project_path = ProjectPath::new(&project_path)?;
 
-            let packages = PackageResolver::resolve_new(packages, &project_path).await?;
-            packages.apply(reporter).await?;
+            let project = Project::open(&project_path)?;
+            project.add_packages(&packages[..])?;
+            project.commit(reporter).await?;
 
-            let lockfile = LockFile::open_or_new(project_path.path()).unwrap();
+            panic!("");
+
+            let lockfile = LockFile::open_or_new(&project_path).unwrap();
             let installer_package = lockfile
                 .packages
                 .get("TestInstaller-Metherul-0.1.0")
@@ -277,3 +263,4 @@ async fn main() -> Result<(), Error> {
         _ => todo!("other commands"),
     }
 }
+
