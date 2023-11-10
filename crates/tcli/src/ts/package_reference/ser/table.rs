@@ -13,7 +13,7 @@ pub fn serialize<S: Serializer>(
     packages
         .as_ref()
         .iter()
-        .map(|p| (format!("{}-{}", p.namespace, p.name), p.version))
+        .map(|p| (format!("{}-{}", p.name, p.namespace), p.version))
         .collect::<HashMap<_, _>>()
         .serialize(ser)
 }
