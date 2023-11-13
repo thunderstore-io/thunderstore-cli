@@ -7,17 +7,16 @@ use crate::ts::experimental::publish;
 
 pub async fn publish(
     manifest: &ProjectManifest,
-    archive_path: Option<PathBuf>,
+    archive_path: PathBuf,
 ) -> Result<(), Error> {
     let package = manifest
         .package
         .as_ref()
         .ok_or(Error::MissingTable("package"))?;
 
-    let archive_path = match archive_path {
-        Some(path) => path,
-        None => super::build(manifest)?,
-    };
+    if !archive_path.is_file() {
+        Err(Error::FileNotFound(archive_path.clone()))?;
+    }
 
     let usermedia = publish::upload_file(archive_path).await?;
     publish::package_submit(&PackageSubmissionMetadata {

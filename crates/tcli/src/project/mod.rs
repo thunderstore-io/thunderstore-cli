@@ -141,6 +141,11 @@ impl Project {
             Err(e) => return Err(Error::FileIoError(readme_path, e)),
         }
 
+        let dist_dir = project.base_dir.join("dist");
+        if !dist_dir.exists() {
+            fs::create_dir(dist_dir)?;
+        }
+
         Ok(project)
     }
 
@@ -210,104 +215,115 @@ impl Project {
 
         Ok(())
     }
-}
 
-pub fn build(manifest: &ProjectManifest) -> Result<PathBuf, Error> {
-    let project_dir = manifest
-        .project_dir
-        .as_deref()
-        .expect("Project should be loaded from a file to build");
+    pub fn build(&self, overrides: ProjectOverrides) -> Result<PathBuf, Error> {
+        let mut manifest = self.get_manifest()?;
+        manifest.apply_overrides(overrides)?;
+                
+        let project_dir = manifest
+            .project_dir
+            .as_deref()
+            .expect("Project should be loaded from a file to build");
 
-    let package = manifest
-        .package
-        .as_ref()
-        .ok_or(Error::MissingTable("package"))?;
-    let build = manifest
-        .build
-        .as_ref()
-        .ok_or(Error::MissingTable("build"))?;
+        let package = manifest
+            .package
+            .as_ref()
+            .ok_or(Error::MissingTable("package"))?;
+        
+        let build = manifest
+            .build
+            .as_ref()
+            .ok_or(Error::MissingTable("build"))?;
 
-    let output_dir = project_dir.join(&build.outdir);
+        let output_dir = project_dir.join(&build.outdir);
+        match fs::create_dir_all(&output_dir) {
+            Ok(_) => Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+            Err(e) => Err(Error::FileIoError(output_dir.clone(), e)),
+        }?;
 
-    let output_path = output_dir.join(format!(
-        "{}-{}-{}.zip",
-        package.namespace, package.name, package.version
-    ));
+        let output_path = output_dir.join(format!(
+            "{}-{}-{}.zip",
+            package.namespace, package.name, package.version
+        ));
 
-    match fs::create_dir_all(output_path.parent().unwrap()) {
-        Ok(_) => Ok(()),
-        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
-        Err(e) => Err(Error::FileIoError(output_path.clone(), e)),
-    }?;
+        let mut zip = zip::ZipWriter::new(
+            File::options()
+                .create(true)
+                .write(true)
+                .open(&output_path)
+                .map_fs_error(&output_path)?,
+        );
 
-    let mut zip = zip::ZipWriter::new(
-        File::options()
-            .create(true)
-            .write(true)
-            .open(&output_path)
-            .map_fs_error(&output_path)?,
-    );
+        for copy in &build.copy {
+            let source_path = project_dir.join(&copy.source);
 
-    for copy in &build.copy {
-        let source_path = project_dir.join(&copy.source);
+            // first elem is always the root, even when the path given is to a file
+            for file in walkdir::WalkDir::new(&source_path).follow_links(true) {
+                let file = file?;
 
-        // first elem is always the root, even when the path given is to a file
-        for file in walkdir::WalkDir::new(&source_path).follow_links(true) {
-            let file = file?;
+                let inner_path = file
+                    .path()
+                    .strip_prefix(&source_path)
+                    .expect("Path was made by walking source, but was not rooted in source?");
 
-            let inner_path = file
-                .path()
-                .strip_prefix(&source_path)
-                .expect("Path was made by walking source, but was not rooted in source?");
-
-            if file.file_type().is_dir() {
-                zip.add_directory(
-                    copy.target.join(inner_path).to_string_lossy(),
-                    FileOptions::default(),
-                )?;
-            } else if file.file_type().is_file() {
-                zip.start_file(
-                    copy.target.join(inner_path).to_string_lossy(),
-                    FileOptions::default(),
-                )?;
-                std::io::copy(
-                    &mut File::open(file.path()).map_fs_error(file.path())?,
-                    &mut zip,
-                )?;
-            } else {
-                unreachable!("paths should always be either a file or a dir")
+                if file.file_type().is_dir() {
+                    zip.add_directory(
+                        copy.target.join(inner_path).to_string_lossy(),
+                        FileOptions::default(),
+                    )?;
+                } else if file.file_type().is_file() {
+                    zip.start_file(
+                        copy.target.join(inner_path).to_string_lossy(),
+                        FileOptions::default(),
+                    )?;
+                    std::io::copy(
+                        &mut File::open(file.path()).map_fs_error(file.path())?,
+                        &mut zip,
+                    )?;
+                } else {
+                    unreachable!("paths should always be either a file or a dir")
+                }
             }
         }
+
+        zip.start_file("manifest.json", FileOptions::default())?;
+        write!(
+            zip,
+            "{}",
+            serde_json::to_string_pretty(&PackageManifestV1::from_manifest(
+                package.clone(),
+                manifest.dependencies.dependencies.clone()
+            ))
+            .unwrap()
+        )?;
+
+        let icon_path = project_dir.join(&build.icon);
+        zip.start_file("icon.png", FileOptions::default())?;
+        std::io::copy(
+            &mut File::open(&icon_path).map_fs_error(icon_path)?,
+            &mut zip,
+        )?;
+
+        let readme_path = project_dir.join(&build.readme);
+        zip.start_file("README.md", FileOptions::default())?;
+        write!(
+            zip,
+            "{}",
+            fs::read_to_string(&readme_path).map_fs_error(readme_path)?
+        )?;
+
+        zip.finish()?;
+
+        Ok(output_path)
     }
 
-    zip.start_file("manifest.json", FileOptions::default())?;
-    write!(
-        zip,
-        "{}",
-        serde_json::to_string_pretty(&PackageManifestV1::from_manifest(
-            package.clone(),
-            manifest.dependencies.dependencies.clone()
-        ))
-        .unwrap()
-    )?;
+    pub fn get_manifest(&self) -> Result<ProjectManifest, Error> {
+        ProjectManifest::read_from_file(&self.manifest_path)
+    }
 
-    let icon_path = project_dir.join(&build.icon);
-    zip.start_file("icon.png", FileOptions::default())?;
-    std::io::copy(
-        &mut File::open(&icon_path).map_fs_error(icon_path)?,
-        &mut zip,
-    )?;
-
-    let readme_path = project_dir.join(&build.readme);
-    zip.start_file("README.md", FileOptions::default())?;
-    write!(
-        zip,
-        "{}",
-        fs::read_to_string(&readme_path).map_fs_error(readme_path)?
-    )?;
-
-    zip.finish()?;
-
-    Ok(output_path)
+    pub fn get_lockfile(&self) -> Result<LockFile, Error> {
+        LockFile::open_or_new(&self.lockfile_path)
+    }
 }
 

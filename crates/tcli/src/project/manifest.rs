@@ -1,5 +1,4 @@
-use std::fs::{File, self};
-use std::io::Read;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};

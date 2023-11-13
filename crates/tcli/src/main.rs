@@ -15,7 +15,6 @@ use crate::game::registry::GameImportBuilder;
 use crate::game::{ecosystem, registry};
 use crate::package::install::Installer;
 use crate::project::lock::LockFile;
-use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
 use crate::project::Project;
 use crate::ui::reporter::IndicatifReporter;
@@ -74,19 +73,18 @@ async fn main() -> Result<(), Error> {
             output_dir,
             project_path,
         } => {
-            let mut manifest = ProjectManifest::read_from_file(project_path)?;
-            manifest.apply_overrides(
-                ProjectOverrides::new()
-                    .namespace_override(package_namespace)
-                    .name_override(package_name)
-                    .version_override(package_version)
-                    .output_dir_override(output_dir),
-            )?;
-            project::build(&manifest)?;
+            let project = Project::open(&project_path)?;
+            let overrides = ProjectOverrides::new()
+                .namespace_override(package_namespace)
+                .name_override(package_name)
+                .version_override(package_version)
+                .output_dir_override(output_dir);
+            
+            project.build(overrides)?;
             Ok(())
         }
         Commands::Publish {
-            file,
+            package_archive,
             mut token,
             package_name,
             package_namespace,
@@ -98,14 +96,10 @@ async fn main() -> Result<(), Error> {
             if token.is_none() {
                 return Err(Error::MissingAuthToken);
             }
-            let mut manifest = ProjectManifest::read_from_file(&project_path)?;
-            manifest.apply_overrides(
-                ProjectOverrides::new()
-                    .namespace_override(package_namespace)
-                    .name_override(package_name)
-                    .version_override(package_version)
-                    .repository_override(repository),
-            )?;
+            
+            let project = Project::open(&project_path)?;
+            let manifest = project.get_manifest()?;
+            
             ts::init_repository(
                 manifest
                     .config
@@ -114,7 +108,22 @@ async fn main() -> Result<(), Error> {
                     .ok_or(Error::MissingRepository)?,
                 token.as_deref(),
             );
-            project::publish(&manifest, file).await
+
+            let archive_path = match package_archive {
+                Some(x) if x.is_file() => Ok(x),
+                Some(x) => Err(Error::FileNotFound(x)),
+                None => {
+                    let overrides = ProjectOverrides::new()
+                        .namespace_override(package_namespace)
+                        .name_override(package_name)
+                        .version_override(package_version)
+                        .repository_override(repository);
+            
+                    project.build(overrides)
+                }
+            }?;
+
+            project::publish(&manifest, archive_path).await
         }
         Commands::Add {
             packages,

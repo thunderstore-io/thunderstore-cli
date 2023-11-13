@@ -105,11 +105,11 @@ pub enum Commands {
         project_path: PathBuf,
     },
 
-    /// Publish a package. By default this will also build a new package.
+    /// Build and publish a package.
     Publish {
         /// If provided, use defined package instead of building.
         #[clap(long)]
-        file: Option<PathBuf>,
+        package_archive: Option<PathBuf>,
 
         /// Authentication token to use when publishing the package.
         #[clap(long)]
