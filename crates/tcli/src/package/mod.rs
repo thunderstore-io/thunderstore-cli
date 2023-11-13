@@ -1,5 +1,4 @@
 mod cache;
-pub mod error;
 pub mod index;
 pub mod install;
 pub mod resolver;
@@ -16,7 +15,6 @@ use tokio::fs;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use crate::error::{Error, IoResultToTcli};
-use crate::project::ProjectPath;
 use crate::ts::experimental::package;
 use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
@@ -41,6 +39,8 @@ pub struct Package {
 }
 
 impl Package {
+    /// Attempt to resolve the package from the local cache or remote. 
+    /// This does not download the package, it just finds its "source".
     pub async fn resolve_new(ident: impl Borrow<PackageReference>) -> Result<Self, Error> {
         if cache::get_cache_location(ident.borrow()).exists() {
             return Package::from_cache(ident).await;
@@ -49,6 +49,9 @@ impl Package {
         Package::from_repo(ident).await
     }
 
+    /// Load package metadata by parsing its cached manifest.
+    ///
+    /// This function will fall back to Package::from_repo if the manifest is invalid.
     pub async fn from_cache(ident: impl Borrow<PackageReference>) -> Result<Self, Error> {
         let ident = ident.borrow();
 
@@ -88,6 +91,7 @@ impl Package {
         }
     }
 
+    /// Load package metadata by querying the repository.
     pub async fn from_repo(ident: impl Borrow<PackageReference>) -> Result<Self, Error> {
         let ident = ident.borrow();
         let package =
@@ -100,8 +104,8 @@ impl Package {
         })
     }
 
-    /// Loads a package .zip from an arbitrary location. The package will be extracted into the cache,
-    /// where it can then be worked with.
+    /// Load package metadata from an arbitrary path, extracting it into the cache if it passes
+    // manifest validation.
     pub async fn from_path(ident: PackageReference, path: &Path) -> Result<Self, Error> {
         let package =
             package::get_version_metadata(&ident.namespace, &ident.name, ident.version).await?;
@@ -113,6 +117,8 @@ impl Package {
         })
     }
 
+    /// Resolve the package into a discrete path. This will download the package if it is not cached,
+    // otherwise it will return its cached path.
     pub async fn resolve(&self, reporter: &dyn ProgressBarTrait) -> Result<PathBuf, Error> {
         match &self.source {
             PackageSource::Local(path) => add_to_cache(
@@ -126,12 +132,10 @@ impl Package {
 
     pub async fn add(
         &self,
-        project: &ProjectPath,
+        project_state: &Path,
         reporter: Box<dyn ProgressBarTrait>,
     ) -> Result<(), Error> {
         let cache_path = self.resolve(reporter.as_ref()).await?;
-        let project_state = project.path().join("project_state");
-
         let install_dir = project_state.join(self.identifier.to_string());
 
         if install_dir.is_dir() {

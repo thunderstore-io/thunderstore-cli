@@ -28,44 +28,12 @@ pub enum ProjectKind {
     Profile,
 }
 
-#[derive(Clone)]
-pub struct ProjectPath(PathBuf);
-
-impl ProjectPath {
-    pub fn new(path: &Path) -> Result<ProjectPath, Error> {
-        let path = path.to_path_buf();
-
-        if !path.exists() {
-            return Err(Error::NoProjectFile(path));
-        }
-
-        let root_dir = if path.is_file() {
-            path.parent().unwrap().to_path_buf()
-        } else {
-            path
-        };
-
-        if !root_dir.join("Thunderstore.toml").is_file() {
-            return Err(Error::NoProjectFile(root_dir));
-        }
-
-        if !root_dir.join(".tcli/").is_dir() {
-            fs::create_dir(root_dir.join(".tcli/"))?;
-        }
-
-        Ok(ProjectPath(root_dir))
-    }
-
-    pub fn path(&self) -> &Path {
-        self.0.as_path()
-    }
-}
-
 pub struct Project {
-    base_dir: PathBuf,
-    state_dir: PathBuf,
-    manifest_path: PathBuf,
-    lockfile_path: PathBuf,
+    pub base_dir: PathBuf,
+    pub state_dir: PathBuf,
+    pub manifest_path: PathBuf,
+    pub lockfile_path: PathBuf,
+    pub game_registry_path: PathBuf,
 }
 
 impl Project {
@@ -77,6 +45,7 @@ impl Project {
             state_dir: project_dir.join(".tcli/project_state"),
             manifest_path: project_dir.join("Thunderstore.toml"),
             lockfile_path: project_dir.join("Thunderstore.lock"),
+            game_registry_path: project_dir.join(".tcli/game_registry.json"),
         })
     }
 
@@ -134,8 +103,10 @@ impl Project {
             state_dir: project_state,
             manifest_path,
             lockfile_path: project_dir.join("Thunderstore.lock"),
+            game_registry_path: project_dir.join(".tcli/game_registry.json"),
         };
 
+        // Stop here if all we need is a profile.
         if matches!(project_kind, ProjectKind::Profile) {
             return Ok(project);
         }
@@ -222,15 +193,12 @@ impl Project {
                 Package::resolve_new(x.clone()).await
             })).await?;
 
-        // Temporary solution until we remove ProjectPath.
-        let project_path = ProjectPath::new(&self.base_dir)?;
-
         // Download / install each package as needed.
         let multi = reporter.create_progress();
         let jobs = resolved_packages
             .iter()
             .map(|package| async {
-                package.add(&project_path, multi.add_bar()).await
+                package.add(&self.state_dir, multi.add_bar()).await
             });
 
         try_join_all(jobs).await?;

@@ -17,7 +17,7 @@ use crate::package::install::Installer;
 use crate::project::lock::LockFile;
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
-use crate::project::{ProjectPath, Project};
+use crate::project::Project;
 use crate::ui::reporter::IndicatifReporter;
 
 mod cli;
@@ -155,14 +155,14 @@ async fn main() -> Result<(), Error> {
         } => {
             ts::init_repository("https://thunderstore.io", None);
 
-            let project_path = ProjectPath::new(&project_path)?;
+            let project = Project::open(&project_path)?;
 
             GameImportBuilder::new(&game_id)
                 .await?
                 .with_custom_id(custom_id)
                 .with_custom_name(custom_name)
                 .with_custom_exe(exe_path)
-                .import(&project_path)
+                .import(&project.game_registry_path)
         }
         Commands::UpdateSchema {} => {
             ts::init_repository("https://thunderstore.io", None);
@@ -207,8 +207,8 @@ async fn main() -> Result<(), Error> {
                 Ok(())
             }
             ListSubcommand::ImportedGames { project_path } => {
-                let project_path = ProjectPath::new(&project_path)?;
-                let games = registry::get_registry(&project_path)?;
+                let project = Project::open(&project_path)?;
+                let games = registry::get_registry(&project.game_registry_path)?;
 
                 for game in games {
                     println!("{game:#?}");
@@ -241,10 +241,8 @@ async fn main() -> Result<(), Error> {
                 Ok(())
             }
             ListSubcommand::InstalledMods { project_path } => {
-                let path = ProjectPath::new(&project_path)?
-                    .path()
-                    .join("Thunderstore.lock");
-                let lock = LockFile::open_or_new(&path)?;
+                let project = Project::open(&project_path)?;
+                let lock = LockFile::open_or_new(&project.lockfile_path)?;
 
                 println!("Installed packages:");
 

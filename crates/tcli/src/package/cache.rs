@@ -1,10 +1,8 @@
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
 use once_cell::sync::Lazy;
 
-use super::Package;
 use crate::error::IoResultToTcli;
 use crate::ts::package_reference::PackageReference;
 use crate::util::TempFile;

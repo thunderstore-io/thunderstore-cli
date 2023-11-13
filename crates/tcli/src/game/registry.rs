@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use super::{ecosystem, steam};
 use crate::error::Error;
 use crate::game::win;
-use crate::project::ProjectPath;
 use crate::ts::v1::models::ecosystem::{GameDef, GameDefPlatform};
 use crate::util::os::OS;
 
@@ -72,7 +71,7 @@ impl GameImportBuilder {
     ///
     /// Note that this function does not yet support Linux native Wine interop. The Windows native
     /// build of tcli must be run through Wine to detect games installed to the current prefix.
-    pub fn import(self, project: &ProjectPath) -> Result<(), Error> {
+    pub fn import(self, game_registry: &Path) -> Result<(), Error> {
         let (dist, game_dir) = self
             .game_def
             .distributions
@@ -148,7 +147,7 @@ impl GameImportBuilder {
             possible_distributions: self.game_def.distributions,
         };
 
-        write_data(project, data)
+        write_data(game_registry, data)
     }
 
     pub fn as_steam(self) -> SteamImportBuilder {
@@ -183,17 +182,15 @@ pub fn get_supported_platforms(target_os: &OS) -> Vec<&'static str> {
     platforms
 }
 
-pub fn get_registry(project: &ProjectPath) -> Result<Vec<GameData>, Error> {
-    let path = project.path().join(".tcli/game_registry.json");
-    let contents = fs::read_to_string(path)?;
+pub fn get_registry(game_registry: &Path) -> Result<Vec<GameData>, Error> {
+    let contents = fs::read_to_string(game_registry)?;
 
     Ok(serde_json::from_str(&contents)?)
 }
 
-pub fn get_game_data(project: &ProjectPath, game_id: &str) -> Option<GameData> {
+pub fn get_game_data(game_registry: &Path, game_id: &str) -> Option<GameData> {
     let game_registry: Vec<GameData> = {
-        let path = project.path().join(".tcli/game_registry.json");
-        let contents = fs::read_to_string(path).ok()?;
+        let contents = fs::read_to_string(game_registry).ok()?;
 
         serde_json::from_str(&contents).ok()?
     };
@@ -201,9 +198,7 @@ pub fn get_game_data(project: &ProjectPath, game_id: &str) -> Option<GameData> {
     game_registry.into_iter().find(|x| x.identifier == game_id)
 }
 
-fn write_data(project: &ProjectPath, data: GameData) -> Result<(), Error> {
-    let game_registry = project.path().join(".tcli/game_registry.json");
-
+fn write_data(game_registry: &Path, data: GameData) -> Result<(), Error> {
     let mut file = OpenOptions::new()
         .create(true)
         .write(true)
