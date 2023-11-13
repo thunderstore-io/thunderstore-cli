@@ -1,9 +1,8 @@
 use std::fs::{File, self};
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 
 use crate::error::Error;
 use crate::project::overrides::ProjectOverrides;
@@ -15,9 +14,13 @@ pub struct ProjectManifest {
     pub config: ConfigData,
     pub package: Option<PackageData>,
     pub build: Option<BuildData>,
+    
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub publish: Vec<PublishData>,
+    
     #[serde(flatten)]
     pub dependencies: DependencyData,
+    
     #[serde(skip)]
     pub project_dir: Option<PathBuf>,
 }
@@ -25,7 +28,10 @@ pub struct ProjectManifest {
 impl ProjectManifest {
     pub fn default_dev_project() -> Self {
         ProjectManifest {
-            config: Default::default(),
+            config: ConfigData {
+                game: Some("risk-of-rain-2".to_string()),
+                ..ConfigData::default()
+            },
             package: Some(Default::default()),
             build: Some(Default::default()),
             publish: vec![Default::default()],
@@ -47,11 +53,10 @@ impl ProjectManifest {
 
     pub fn read_from_file(path: impl AsRef<Path>) -> Result<Self, Error> {
         let path = path.as_ref();
-        let mut text = String::new();
-        File::open(path)
-            .map_err(|_| Error::NoProjectFile(path.into()))?
-            .read_to_string(&mut text)?;
+        let text = fs::read_to_string(path).map_err(|_| Error::NoProjectFile(path.into()))?;
+      
         let mut manifest: ProjectManifest = toml::from_str(&text)?;
+        
         manifest.project_dir = Some(
             path.parent()
                 .map(|p| p.to_path_buf())
@@ -74,6 +79,7 @@ impl ProjectManifest {
                 .package
                 .as_mut()
                 .ok_or(Error::MissingTable("package"))?;
+            
             if let Some(namespace) = overrides.namespace {
                 package.namespace = namespace;
             }
@@ -111,7 +117,7 @@ impl Default for ConfigData {
         ConfigData {
             schema_version: Version::new(0, 0, 1),
             repository: Some("https://thunderstore.io".to_string()),
-            game: Some("risk-of-rain2".to_string()),
+            game: None,
         }
     }
 }
@@ -197,21 +203,18 @@ pub struct DependencyData {
     #[serde(default)]
     #[serde(with = "package_reference::ser::table")]
     pub dependencies: Vec<PackageReference>,
+    
     #[serde(default)]
     #[serde(rename = "dev-dependencies")]
     #[serde(with = "package_reference::ser::table")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub dev_dependencies: Vec<PackageReference>,
 }
 
 impl Default for DependencyData {
     fn default() -> Self {
         DependencyData {
-            dependencies: vec![PackageReference::new(
-                "AuthorName",
-                "PackageName",
-                Version::new(0, 0, 1),
-            )
-            .unwrap()],
+            dependencies: vec![],
             dev_dependencies: vec![],
         }
     }

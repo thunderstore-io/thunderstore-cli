@@ -13,7 +13,7 @@ pub struct Args {
     pub commands: Commands,
 }
 
-const DEFAULT_MANIFEST: &str = "./Thunderstore.toml";
+const DEFAULT_MANIFEST: &str = "./";
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum InitSubcommand {
@@ -72,7 +72,7 @@ pub enum Commands {
     /// Initialize a new project configuration.
     Init {
         #[clap(subcommand)]
-        command: InitSubcommand,
+        command: Option<InitSubcommand>,
 
         /// If present, overwrite current configuration.
         #[clap(long, default_value = "false")]

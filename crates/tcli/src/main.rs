@@ -47,11 +47,11 @@ async fn main() -> Result<(), Error> {
             project_path,
         } => {
             match command {
-                InitSubcommand::Project {
+                Some(InitSubcommand::Project {
                     package_name,
                     package_namespace,
                     package_version,
-                } => {
+                }) => {
                     let overrides = ProjectOverrides::new()
                         .namespace_override(package_namespace)
                         .name_override(package_name)
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Error> {
                     Project::create_new(&project_path, overwrite, ProjectKind::Dev(overrides))?;
                 }
 
-                InitSubcommand::Profile => {
+                Some(InitSubcommand::Profile) | None => {
                     Project::create_new(&project_path, overwrite, ProjectKind::Profile)?;
                 }
             }
