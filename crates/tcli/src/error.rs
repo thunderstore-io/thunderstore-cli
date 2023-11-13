@@ -1,9 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
-use miette::Diagnostic;
 
-use crate::ts::package_reference::PackageReference;
+use crate::ts::version::Version;
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
@@ -63,8 +62,34 @@ pub enum Error {
     #[error("An error occured while serializing TOML: {0}")]
     TomlSerializer(#[from] toml::ser::Error),
 
-    #[error(transparent)]
-    Package(#[from] crate::package::error::Error),
+    #[error("The installer does not contain a valid manifest.")]
+    InstallerNoManifest,
+
+    #[error(
+        "The installer executable for the current OS and architecture combination does not exist."
+    )]
+    InstallerNotExecutable,
+
+    #[error(
+        "
+        The installer '{package_id}' does not support the current tcli installer protocol.
+            Expected: {our_version:#?}
+            Recieved: {given_version:#?}
+    "
+    )]
+    InstallerBadVersion {
+        package_id: String,
+        given_version: Version,
+        our_version: Version,
+    },
+
+    #[error(
+        "
+        The installer '{package_id}' did not respond correctly:
+            {message}
+    "
+    )]
+    InstallerBadResponse { package_id: String, message: String },
 }
 
 pub trait IoResultToTcli<R> {

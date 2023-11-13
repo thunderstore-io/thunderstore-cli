@@ -6,8 +6,8 @@ use tokio::process::Command;
 
 use self::runner::response::Response;
 use self::runner::INSTALLER_VERSION;
-use super::error::Error;
 use super::Package;
+use crate::Error;
 use crate::package::install::manifest::InstallerManifest;
 use crate::package::install::runner::request::Request;
 use crate::ui::reporter::{Progress, VoidProgress};
@@ -23,7 +23,7 @@ pub struct Installer {
 impl Installer {
     /// Loads the given package as an Installer and prepares it for execution.
     /// Note that cached installers can skip the prepare step.
-    pub async fn load_and_prepare(package: &Package) -> Result<Installer, crate::Error> {
+    pub async fn load_and_prepare(package: &Package) -> Result<Installer, Error> {
         // Temp, we'll figure out a good solution from the progress reporter later.
         let test = VoidProgress {};
         let cache_dir = package.resolve(test.add_bar().as_ref()).await?;
@@ -82,7 +82,7 @@ impl Installer {
         Ok(installer)
     }
 
-    pub async fn run(&self, arg: &Request) -> Result<Response, crate::Error> {
+    pub async fn run(&self, arg: &Request) -> Result<Response, Error> {
         let args_json = serde_json::to_string(arg)?;
         let mut child = Command::new(&self.exec_path).arg(&args_json).spawn()?;
 
