@@ -194,8 +194,8 @@ impl Project {
         let resolved_packages = try_join_all(packages
             .iter()
             .rev()
-            .map(|x| async {
-                Package::resolve_new(x.clone()).await
+            .map(|x| async move {
+                Package::resolve_new(x).await
             })).await?;
 
         // Download / install each package as needed.

@@ -4,17 +4,17 @@ use std::{env, fs};
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
 
-use self::runner::response::Response;
-use self::runner::INSTALLER_VERSION;
+use self::api::Response;
+use self::api::Request;
+use self::api::INSTALLER_VERSION;
+use self::manifest::InstallerManifest;
 use super::Package;
 use crate::Error;
-use crate::package::install::manifest::InstallerManifest;
-use crate::package::install::runner::request::Request;
 use crate::ui::reporter::{Progress, VoidProgress};
 
 mod legacy_compat;
 pub mod manifest;
-pub mod runner;
+pub mod api;
 
 pub struct Installer {
     pub exec_path: PathBuf,
@@ -84,7 +84,7 @@ impl Installer {
 
     pub async fn run(&self, arg: &Request) -> Result<Response, Error> {
         let args_json = serde_json::to_string(arg)?;
-        let mut child = Command::new(&self.exec_path).arg(&args_json).spawn()?;
+        let child = Command::new(&self.exec_path).arg(&args_json).spawn()?;
 
         // Execute the installer, capturing and deserializing any output.
         // TODO: Safety check here to warn / stop an installer from blowing up the heap.
