@@ -1,11 +1,107 @@
 use std::collections::{HashMap, VecDeque};
 
 use petgraph::prelude::NodeIndex;
-use petgraph::{Directed, Graph};
+use petgraph::{algo, Directed, Graph};
 
 use crate::error::Error;
-use crate::package::index::{PackageIndex, self};
+use crate::package::index::{self, PackageIndex};
 use crate::ts::package_reference::PackageReference;
+
+pub enum Granularity {
+    All,
+    IgnoreVersion,
+    LesserVersion,
+    GreaterVersion,
+}
+
+pub struct DependencyGraph {
+    graph: Graph::<PackageReference, (), Directed>,
+    index: HashMap<String, NodeIndex>,
+}
+
+impl DependencyGraph {
+    pub fn new() -> Self {
+        DependencyGraph {
+            graph: Graph::new(),
+            index: HashMap::new(),
+        }
+    }
+
+    /// Add a node to the dependency graph, replacing if it already exists within the graph
+    /// but is of a lesser semver.
+    pub fn add(&mut self, value: PackageReference) {
+        let node_index = *self.index
+            .entry(value.to_loose_ident_string())
+            .or_insert_with(|| self.graph.add_node(value.clone()));
+
+        let graph_value = &self.graph[node_index];
+
+        if graph_value.version < value.version {
+            self.graph[node_index] = value;
+        }
+    }
+
+    /// Add an edge between two values in the graph.
+    pub fn add_edge(&mut self, parent: &PackageReference, child: &PackageReference) {
+        let parent_index = self.index[&parent.to_loose_ident_string()];
+        let child_index = self.index[&child.to_loose_ident_string()];
+
+        self.graph.add_edge(parent_index, child_index, ());
+    }
+
+    /// Determine if the given value exists within the graph within the specified granularity.
+    pub fn exists(&self, value: &PackageReference, granularity: Granularity) -> bool {
+        let loose = value.to_loose_ident_string();
+        let node_index = self.index.get(&loose);
+
+        if let None = node_index {
+            return false;
+        }
+
+        let node_index = node_index.unwrap();
+        let graph_value = &self.graph[*node_index];
+
+        match granularity {
+            Granularity::All => graph_value.version == value.version,
+            Granularity::IgnoreVersion => true,
+            Granularity::LesserVersion => graph_value.version < value.version,
+            Granularity::GreaterVersion => graph_value.version > value.version,
+        }
+    }
+
+    /// Get the dependencies of value's node within the graph.
+    ///
+    /// The resultant Vec is not guarenteed to be in "install order"; instead it is ordered
+    /// by traversal cost.
+    pub fn get_dependencies(&self, value: &PackageReference) -> Option<Vec<&PackageReference>> {
+        let loose = value.to_loose_ident_string();
+        let node_index = self.index.get(&loose)?;
+
+        // Compute the shortest path to every child node.
+        let mut children  = algo::dijkstra(&self.graph, *node_index, None, |_| 1)
+            .into_iter()
+            .map(|(index, cost)| (&self.graph[index], cost))
+            .collect::<Vec<_>>();
+
+        // Sort the children by their cost, which describes the number of "steps" that were required
+        // to path to each node.
+        children.sort_by(|first, second| first.1.cmp(&second.1));
+
+        Some(children.into_iter().map(|(package_ref, _)| package_ref).collect::<Vec<_>>())
+    }
+
+    /// Perform a topological sort on the dependency graph.
+    pub fn topo_sort(&self) -> Vec<&PackageReference> {
+        let topo = algo::toposort(&self.graph, None).unwrap();
+
+        topo
+            .into_iter()
+            .map(|index| &self.graph[index])
+            .collect::<Vec<_>>()
+    }
+}
+
+// type DependencyGraph<'a> = Graph::<&'a PackageReference, (), Directed>;
 
 /// Generate a deduplicated list of package dependencies. This describes every package that
 /// needs to be downloaded and installed for all of the root packages to function.
@@ -22,52 +118,36 @@ pub async fn resolve_packages(
 
     let start = std::time::Instant::now();
 
-    let mut graph = Graph::<&PackageReference, (), Directed>::new();
-    let mut graph_lookup: HashMap<String, NodeIndex> = HashMap::new();
+    let mut graph = DependencyGraph::new();
 
-    let mut iter_queue: VecDeque<&PackageReference> = VecDeque::from(packages.iter().collect::<Vec<_>>());
+    let mut iter_queue: VecDeque<&PackageReference> =
+        VecDeque::from(packages.iter().collect::<Vec<_>>());
 
     while let Some(package_ident) = iter_queue.pop_front() {
         let package = package_index.get_package(package_ident).unwrap();
-        let loose_ident = package_ident.to_loose_ident_string();
+        // let loose_ident = package_ident.to_loose_ident_string();
 
-        // If the graph DOES NOT contain the identifier, add it.
-        let node_index = *graph_lookup
-            .entry(loose_ident.clone())
-            .or_insert_with(|| graph.add_node(package_ident));
-
-        let graph_package_ident = graph[node_index];
-
-        // If the graph's package is of a lesser version, replace it with the new package ident.
-        if graph_package_ident.version < package.version {
-            graph[node_index] = package_ident;
-        }
+        // Add the package to the dependency graph.
+        graph.add(package_ident.clone());
 
         for dependency in package.dependencies.iter() {
-            let cntrpart_index = graph_lookup.get(&dependency.to_loose_ident_string());
-
             // Queue up this dependency for processing if:
             // 1. This dependency already exists within the graph, but is a lesser version.
             // 2. This dependency does not exist within the graph.
-            if matches!(cntrpart_index, Some(index) if graph[*index].version < dependency.version) || cntrpart_index.is_none() {
+            if !graph.exists(dependency, Granularity::GreaterVersion) {
                 iter_queue.push_back(dependency);
-            }
+                graph.add(dependency.clone());
+            }           
 
-            // Get the already existing dependency's node to the graph, adding it if it DNE.
-            let dep_index = *graph_lookup
-                .entry(dependency.to_loose_ident_string())
-                .or_insert_with(|| graph.add_node(dependency));
-
-            graph.add_edge(node_index, dep_index, ());
+            graph.add_edge(package_ident, dependency);
         }
     }
 
-    let topo_packages = petgraph::algo::toposort(&graph, None).unwrap();
+    let topo_packages = graph.topo_sort();
     let stop = std::time::Instant::now();
     let pkg_count = topo_packages.len();
 
     println!("{} packages in {}ms", pkg_count, (stop - start).as_millis());
 
-    Ok(topo_packages.iter().rev().map(|x| graph[*x].clone()).collect::<Vec<_>>())
+    Ok(topo_packages.into_iter().map(|x| x.clone()).collect::<Vec<_>>())
 }
-
