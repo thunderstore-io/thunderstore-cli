@@ -190,12 +190,14 @@ impl Project {
     pub async fn commit(&self, reporter: Box<dyn Reporter>) -> Result<(), Error> {
         let manifest = ProjectManifest::read_from_file(&self.manifest_path)?;
 
-        let packages = resolver::resolve_packages(manifest.dependencies.dependencies).await?;
+        let package_graph = resolver::resolve_packages(manifest.dependencies.dependencies).await?;
+        let packages = package_graph.digest();
+        
         let resolved_packages = try_join_all(packages
             .iter()
             .rev()
             .map(|x| async move {
-                Package::resolve_new(x).await
+                Package::resolve_new(*x).await
             })).await?;
 
         // Download / install each package as needed.

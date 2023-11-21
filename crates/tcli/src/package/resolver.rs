@@ -190,7 +190,7 @@ mod tests {
                 .into_iter()
                 .map(|x| PackageReference::from_str(x).unwrap())
                 .collect::<HashSet<_>>()
-        };
+    };
 
         let target = PackageReference::from_str("bbepis-BepInExPack-5.4.2113").unwrap();
         let got = resolver::resolve_packages(vec![target]).await.unwrap();
@@ -222,7 +222,9 @@ mod tests {
 
         let target = PackageReference::from_str("bbepis-BepInExPack-5.4.2113").unwrap();
         let disrupt = PackageReference::from_str("bbepis-BepInExPack-5.4.2112").unwrap();
-        let got = resolver::resolve_packages(vec![target, disrupt]).await.unwrap().digest();
+
+        let graph = resolver::resolve_packages(vec![target, disrupt]).await.unwrap();
+        let got = graph.digest();
 
         for package in got.iter() {
             assert!(expected.contains(package));
