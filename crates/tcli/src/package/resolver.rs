@@ -154,4 +154,80 @@ pub async fn resolve_packages(
 
     Ok(graph)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+    use std::str::FromStr;
+    use std::sync::Once;
+
+    use crate::ts;
+    use crate::package::resolver;
+    use crate::ts::package_reference::PackageReference;
+
+    static INIT: Once = Once::new();
+
+    fn init() {
+        INIT.call_once(|| {
+            ts::init_repository("https://thunderstore.io", None);
+        })
+    }
+
+    #[tokio::test]
+    /// Test the resolver's general ability to resolve package dependencies.
+    async fn test_resolver() {
+        init();
+
+        let expected = {
+            let expected = vec![
+                "bbepis-BepInExPack-5.4.2113",
+                "RiskofThunder-BepInEx_GUI-3.0.1",
+                "RiskofThunder-FixPluginTypesSerialization-1.0.3",
+                "RiskofThunder-RoR2BepInExPack-1.9.0",
+            ];
+
+            expected
+                .into_iter()
+                .map(|x| PackageReference::from_str(x).unwrap())
+                .collect::<HashSet<_>>()
+        };
+
+        let target = PackageReference::from_str("bbepis-BepInExPack-5.4.2113").unwrap();
+        let got = resolver::resolve_packages(vec![target]).await.unwrap();
+
+        for package in got.digest().iter() {
+            assert!(expected.contains(package));
+        }
+
+    }
+
+    #[tokio::test]
+    /// Test the resolver's ability to handle version collisions.
+    async fn test_resolver_version_hiearchy() {
+        init();
+        
+        let expected = {
+            let expected = vec![
+                "bbepis-BepInExPack-5.4.2113",
+                "RiskofThunder-BepInEx_GUI-3.0.1",
+                "RiskofThunder-FixPluginTypesSerialization-1.0.3",
+                "RiskofThunder-RoR2BepInExPack-1.9.0",
+            ];
+
+            expected
+                .into_iter()
+                .map(|x| PackageReference::from_str(x).unwrap())
+                .collect::<HashSet<_>>()
+        };
+
+        let target = PackageReference::from_str("bbepis-BepInExPack-5.4.2113").unwrap();
+        let disrupt = PackageReference::from_str("bbepis-BepInExPack-5.4.2112").unwrap();
+        let got = resolver::resolve_packages(vec![target, disrupt]).await.unwrap().digest();
+
+        for package in got.iter() {
+            assert!(expected.contains(package));
+        }
+
+        assert_eq!(expected.len(), got.len());
+    }
 }
