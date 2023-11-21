@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use petgraph::prelude::NodeIndex;
+use petgraph::visit::Dfs;
 use petgraph::{algo, Directed, Graph};
 
 use crate::error::Error;
@@ -90,14 +91,16 @@ impl DependencyGraph {
         Some(children.into_iter().map(|(package_ref, _)| package_ref).collect::<Vec<_>>())
     }
 
-    /// Perform a topological sort on the dependency graph.
-    pub fn topo_sort(&self) -> Vec<&PackageReference> {
-        let topo = algo::toposort(&self.graph, None).unwrap();
+    /// Digest the dependency graph, resolving its contents into a DFS-ordered list of package references.
+    pub fn digest(&self) -> Vec<&PackageReference> {
+        let mut dfs= Dfs::new(&self.graph, NodeIndex::new(0));
+        let mut dependencies = Vec::new();
 
-        topo
-            .into_iter()
-            .map(|index| &self.graph[index])
-            .collect::<Vec<_>>()
+        while let Some(element) = dfs.next(&self.graph) {
+            dependencies.push(&self.graph[element]);
+        }
+
+        dependencies
     }
 }
 
@@ -112,7 +115,7 @@ impl DependencyGraph {
 /// 3. Dependencies specified within the remote repository.
 pub async fn resolve_packages(
     packages: Vec<PackageReference>,
-) -> Result<Vec<PackageReference>, Error> {
+) -> Result<DependencyGraph, Error> {
     index::sync_index().await?;
     let package_index = PackageIndex::open().await?;
 
@@ -125,7 +128,6 @@ pub async fn resolve_packages(
 
     while let Some(package_ident) = iter_queue.pop_front() {
         let package = package_index.get_package(package_ident).unwrap();
-        // let loose_ident = package_ident.to_loose_ident_string();
 
         // Add the package to the dependency graph.
         graph.add(package_ident.clone());
@@ -143,11 +145,13 @@ pub async fn resolve_packages(
         }
     }
 
-    let topo_packages = graph.topo_sort();
+    let packages = graph.digest();
+
     let stop = std::time::Instant::now();
-    let pkg_count = topo_packages.len();
+    let pkg_count = packages.len();
 
     println!("{} packages in {}ms", pkg_count, (stop - start).as_millis());
 
-    Ok(topo_packages.into_iter().map(|x| x.clone()).collect::<Vec<_>>())
+    Ok(graph)
+}
 }
