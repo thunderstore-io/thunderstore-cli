@@ -16,7 +16,7 @@ pub enum Granularity {
 }
 
 pub struct DependencyGraph {
-    graph: Graph::<PackageReference, (), Directed>,
+    graph: Graph<PackageReference, (), Directed>,
     index: HashMap<String, NodeIndex>,
 }
 
@@ -31,7 +31,8 @@ impl DependencyGraph {
     /// Add a node to the dependency graph, replacing if it already exists within the graph
     /// but is of a lesser semver.
     pub fn add(&mut self, value: PackageReference) {
-        let node_index = *self.index
+        let node_index = *self
+            .index
             .entry(value.to_loose_ident_string())
             .or_insert_with(|| self.graph.add_node(value.clone()));
 
@@ -79,7 +80,7 @@ impl DependencyGraph {
         let node_index = self.index.get(&loose)?;
 
         // Compute the shortest path to every child node.
-        let mut children  = algo::dijkstra(&self.graph, *node_index, None, |_| 1)
+        let mut children = algo::dijkstra(&self.graph, *node_index, None, |_| 1)
             .into_iter()
             .map(|(index, cost)| (&self.graph[index], cost))
             .collect::<Vec<_>>();
@@ -88,12 +89,17 @@ impl DependencyGraph {
         // to path to each node.
         children.sort_by(|first, second| first.1.cmp(&second.1));
 
-        Some(children.into_iter().map(|(package_ref, _)| package_ref).collect::<Vec<_>>())
+        Some(
+            children
+                .into_iter()
+                .map(|(package_ref, _)| package_ref)
+                .collect::<Vec<_>>(),
+        )
     }
 
     /// Digest the dependency graph, resolving its contents into a DFS-ordered list of package references.
     pub fn digest(&self) -> Vec<&PackageReference> {
-        let mut dfs= Dfs::new(&self.graph, NodeIndex::new(0));
+        let mut dfs = Dfs::new(&self.graph, NodeIndex::new(0));
         let mut dependencies = Vec::new();
 
         while let Some(element) = dfs.next(&self.graph) {
@@ -113,9 +119,7 @@ impl DependencyGraph {
 /// 1. Packages already installed into the project.
 /// 2. Dependencies specified within local packages within the cache.
 /// 3. Dependencies specified within the remote repository.
-pub async fn resolve_packages(
-    packages: Vec<PackageReference>,
-) -> Result<DependencyGraph, Error> {
+pub async fn resolve_packages(packages: Vec<PackageReference>) -> Result<DependencyGraph, Error> {
     index::sync_index().await?;
     let package_index = PackageIndex::open().await?;
 
@@ -127,7 +131,9 @@ pub async fn resolve_packages(
         VecDeque::from(packages.iter().collect::<Vec<_>>());
 
     while let Some(package_ident) = iter_queue.pop_front() {
-        let package = package_index.get_package(package_ident).unwrap();
+        let package = package_index
+            .get_package(package_ident)
+            .expect(&format!("{} does not exist in the index.", package_ident));
 
         // Add the package to the dependency graph.
         graph.add(package_ident.clone());
@@ -139,7 +145,7 @@ pub async fn resolve_packages(
             if !graph.exists(dependency, Granularity::GreaterVersion) {
                 iter_queue.push_back(dependency);
                 graph.add(dependency.clone());
-            }           
+            }
 
             graph.add_edge(package_ident, dependency);
         }
@@ -161,15 +167,14 @@ mod tests {
     use std::str::FromStr;
     use std::sync::Once;
 
-    use crate::ts;
+    use super::*;
     use crate::package::resolver;
-    use crate::ts::package_reference::PackageReference;
 
     static INIT: Once = Once::new();
 
     fn init() {
         INIT.call_once(|| {
-            ts::init_repository("https://thunderstore.io", None);
+            crate::ts::init_repository("https://thunderstore.io", None);
         })
     }
 
@@ -190,7 +195,7 @@ mod tests {
                 .into_iter()
                 .map(|x| PackageReference::from_str(x).unwrap())
                 .collect::<HashSet<_>>()
-    };
+        };
 
         let target = PackageReference::from_str("bbepis-BepInExPack-5.4.2113").unwrap();
         let got = resolver::resolve_packages(vec![target]).await.unwrap();
@@ -198,14 +203,13 @@ mod tests {
         for package in got.digest().iter() {
             assert!(expected.contains(package));
         }
-
     }
 
     #[tokio::test]
     /// Test the resolver's ability to handle version collisions.
     async fn test_resolver_version_hiearchy() {
         init();
-        
+
         let expected = {
             let expected = vec![
                 "bbepis-BepInExPack-5.4.2113",
@@ -223,7 +227,9 @@ mod tests {
         let target = PackageReference::from_str("bbepis-BepInExPack-5.4.2113").unwrap();
         let disrupt = PackageReference::from_str("bbepis-BepInExPack-5.4.2112").unwrap();
 
-        let graph = resolver::resolve_packages(vec![target, disrupt]).await.unwrap();
+        let graph = resolver::resolve_packages(vec![target, disrupt])
+            .await
+            .unwrap();
         let got = graph.digest();
 
         for package in got.iter() {
