@@ -90,6 +90,9 @@ pub enum Error {
     "
     )]
     InstallerBadResponse { package_id: String, message: String },
+
+    #[error("The installer returned an error:\n\t{message}")]
+    InstallerError { message: String },
 }
 
 pub trait IoResultToTcli<R> {

@@ -211,11 +211,11 @@ impl Package {
             reporter.inc(chunk.len() as u64);
         }
 
-        reporter.set_message(format!("Unzipping {progress_message}..."));
+        reporter.set_message(format!("Extracting {progress_message}..."));
 
         let cache_path = add_to_cache(&self.identifier, temp_file.into_std().await.file())?;
 
-        reporter.finish();
+        // reporter.finish();
 
         Ok(cache_path)
     }
