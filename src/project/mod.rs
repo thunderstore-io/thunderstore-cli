@@ -4,19 +4,21 @@ use std::fs::File;
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
+use colored::Colorize;
 use futures::future::try_join_all;
 pub use publish::publish;
 use zip::write::FileOptions;
 
+use self::lock::LockFile;
 use crate::error::{Error, IoResultToTcli};
+use crate::game::registry;
+use crate::package::install::Installer;
 use crate::package::{resolver, Package};
 use crate::project::manifest::ProjectManifest;
 use crate::project::overrides::ProjectOverrides;
 use crate::ts::package_manifest::PackageManifestV1;
 use crate::ts::package_reference::PackageReference;
 use crate::ui::reporter::Reporter;
-
-use self::lock::LockFile;
 
 pub mod lock;
 pub mod manifest;
@@ -149,8 +151,8 @@ impl Project {
         Ok(project)
     }
 
-    /// Add one or more packages to this project. 
-    /// 
+    /// Add one or more packages to this project.
+    ///
     /// Note: This function does not COMMIT the packages, it only adds them to the project manifest.
     pub fn add_packages(&self, packages: &[PackageReference]) -> Result<(), Error> {
         let mut manifest = ProjectManifest::read_from_file(&self.manifest_path)?;
@@ -192,28 +194,84 @@ impl Project {
 
         let package_graph = resolver::resolve_packages(manifest.dependencies.dependencies).await?;
         let packages = package_graph.digest();
-        
-        let resolved_packages = try_join_all(packages
-            .iter()
-            .rev()
-            .map(|x| async move {
-                Package::resolve_new(*x).await
-            })).await?;
 
+        let resolved_packages = try_join_all(
+            packages
+                .iter()
+                .rev()
+                .map(|x| async move { 
+                    Package::resolve_new(*x).await 
+                }),
+        )
+        .await?;
+
+        let installer = Installer::dummy_new();
+        let game_dir = PathBuf::from("C:\\Users\\Ethan\\Dev\\rust\\thunderstore-cli\\testing\\game\\");
+        
         // Download / install each package as needed.
         let multi = reporter.create_progress();
         let jobs = resolved_packages
             .iter()
             .map(|package| async {
-                package.add(&self.state_dir, multi.add_bar()).await
+                let bar = multi.add_bar();
+                let bar = bar.as_ref();
+
+                // Resolve the package, either downloading it or returning its cached path.
+                let package_dir = package.resolve(bar).await?;
+                let tracked_files = installer.install_package(
+                    package, 
+                    &package_dir, 
+                    &self.state_dir,
+                    &game_dir,
+                    bar
+                ).await;
+
+                let finished_msg = format!(
+                    "{} Installed {}-{} {}",
+                    "[✓]".green(),
+                    package.identifier.namespace.bold(),
+                    package.identifier.name.bold(),
+                    package.identifier.version.to_string().truecolor(90, 90, 90)
+                );
+
+                bar.println(&finished_msg);
+                bar.finish_and_clear();
+                
+                tracked_files
             });
 
         try_join_all(jobs).await?;
 
         // For now we can regenerate the lockfile from scratch.
-        let mut lockfile = LockFile::open_or_new(&self.lockfile_path)?;
-        lockfile.merge(&resolved_packages);
-        lockfile.commit()?;
+        // let mut lockfile = LockFile::open_or_new(&self.lockfile_path)?;
+        // lockfile.merge(&resolved_packages);
+        // lockfile.commit()?;
+
+        Ok(())
+    }
+
+    pub async fn start_game(&self, game_id: &str, mods_enabled: bool, args: Vec<String>) -> Result<(), Error> {
+        let game_data = registry::get_game_data(&self.game_registry_path, game_id)
+            .ok_or_else(|| Error::InvalidGameId(game_id.to_string()))?;
+        let game_dist = game_data.active_distribution;
+        
+        let installer = Installer::dummy_new();
+        let pid = installer.start_game(
+            mods_enabled,
+            &self.state_dir,
+            &game_dist.game_dir,
+            &game_dist.exe_path,
+            args,
+        ).await?;
+        
+        // The PID file is contained within the state dir and is of name `game.exe.pid`.
+        let game_name = game_dist.exe_path.file_name().unwrap().to_string_lossy();
+        let pid_path = self.base_dir.join(".tcli").join(format!("{}.pid", game_name));
+
+        let mut pid_file = File::create(&pid_path)?;
+        pid_file.write(format!("{}", pid).as_bytes())?;
+
+        println!("Started {} with PID {}", game_id, pid);
 
         Ok(())
     }
@@ -221,7 +279,7 @@ impl Project {
     pub fn build(&self, overrides: ProjectOverrides) -> Result<PathBuf, Error> {
         let mut manifest = self.get_manifest()?;
         manifest.apply_overrides(overrides)?;
-                
+
         let project_dir = manifest
             .project_dir
             .as_deref()
@@ -231,7 +289,7 @@ impl Project {
             .package
             .as_ref()
             .ok_or(Error::MissingTable("package"))?;
-        
+
         let build = manifest
             .build
             .as_ref()
@@ -328,4 +386,3 @@ impl Project {
         LockFile::open_or_new(&self.lockfile_path)
     }
 }
-

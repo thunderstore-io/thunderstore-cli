@@ -205,12 +205,16 @@ pub enum Commands {
         project_path: PathBuf,
     },
 
-    /// Run a game with mods.
+    /// Run a game with or without mods.
     Run {
         /// The identifier of the game to run.
         ///
         /// Use the `list` command to query the list of imported and supported games.
-        game_name: String,
+        game_id: String,
+
+        /// Run the game with mods disabled (vanilla).
+        #[clap(long, default_value = "false")]
+        vanilla: bool,
 
         /// Arguments to run the game with. Anything after a trailing -- will be prioritized over this argument.
         #[clap(long)]

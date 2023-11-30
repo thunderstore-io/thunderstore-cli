@@ -137,7 +137,7 @@ async fn main() -> Result<(), Error> {
             project.add_packages(&packages[..])?;
             project.commit(reporter).await?;
 
-            panic!("");
+            return Ok(());
 
             let lockfile = LockFile::open_or_new(&project_path).unwrap();
             let installer_package = lockfile
@@ -173,6 +173,31 @@ async fn main() -> Result<(), Error> {
                 .with_custom_exe(exe_path)
                 .import(&project.game_registry_path)
         }
+        
+        Commands::Run { 
+            game_id, 
+            vanilla, 
+            args, 
+            tcli_directory, 
+            repository, 
+            project_path, 
+            trailing_args
+        } => {
+            let project = Project::open(&project_path)?;
+            let args = args.unwrap_or(vec![])
+                .into_iter()
+                .chain(trailing_args.into_iter())
+                .collect::<Vec<_>>();
+            
+            project.start_game(
+                &game_id,
+                !vanilla,
+                args,
+            ).await?;
+
+            Ok(())
+        }
+        
         Commands::UpdateSchema {} => {
             ts::init_repository("https://thunderstore.io", None);
 

@@ -4,6 +4,7 @@ use petgraph::prelude::NodeIndex;
 use petgraph::visit::Dfs;
 use petgraph::{algo, Directed, Graph};
 
+use crate::ts;
 use crate::error::Error;
 use crate::package::index::{self, PackageIndex};
 use crate::ts::package_reference::PackageReference;
@@ -120,10 +121,10 @@ impl DependencyGraph {
 /// 2. Dependencies specified within local packages within the cache.
 /// 3. Dependencies specified within the remote repository.
 pub async fn resolve_packages(packages: Vec<PackageReference>) -> Result<DependencyGraph, Error> {
-    index::sync_index().await?;
-    let package_index = PackageIndex::open().await?;
-
+    // index::sync_index().await?;
     let start = std::time::Instant::now();
+
+    let package_index = PackageIndex::open().await?;
 
     let mut graph = DependencyGraph::new();
 
@@ -156,7 +157,7 @@ pub async fn resolve_packages(packages: Vec<PackageReference>) -> Result<Depende
     let stop = std::time::Instant::now();
     let pkg_count = packages.len();
 
-    println!("{} packages in {}ms", pkg_count, (stop - start).as_millis());
+    println!("Resolved {} packages in {}ms", pkg_count, (stop - start).as_millis());
 
     Ok(graph)
 }
