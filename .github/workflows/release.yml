@@ -9,6 +9,8 @@ jobs:
   # Validate tag with proper regex since the check above is very limited.
   validate-tag:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - id: tag
