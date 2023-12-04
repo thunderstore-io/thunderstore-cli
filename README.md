@@ -1,5 +1,6 @@
 # thunderstore-cli
 
+[![Build & Test](https://github.com/thunderstore-io/thunderstore-cli/actions/workflows/test.yml/badge.svg)](https://github.com/thunderstore-io/thunderstore-cli/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/thunderstore-io/thunderstore-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/thunderstore-io/thunderstore-cli)
 
 Thunderstore CLI (just "TCLI" from here on) is a command line tool for building and uploading mod packages to
