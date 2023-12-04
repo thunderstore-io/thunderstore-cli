@@ -17,7 +17,7 @@ jobs:
         uses: actions-ecosystem/action-regex-match@v2
         with:
           text: ${{ steps.tag.outputs.tag }}
-          regex: '^([1-9][0-9]*|[0-9])\.([1-9][0-9]*|[0-9])\.([1-9][0-9]*|[0-9])$'
+          regex: '^([1-9][0-9]*|0)\.([1-9][0-9]*|0)\.([1-9][0-9]*|0)$'
       - id: fail-fast
         if: ${{ steps.regex-match.outputs.match == '' }}
         uses: actions/github-script@v3
