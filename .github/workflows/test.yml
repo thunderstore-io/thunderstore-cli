@@ -7,14 +7,17 @@ jobs:
     name: Code style check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout ref that triggered workflow
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '7'
-      - uses: actions/setup-python@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
         with:
           python-version: '3.8'
-      - name: Install pre-commit
+      - name: Install pre-commit framework
         run: curl https://pre-commit.com/install-local.py | python -
       - name: Install dotnet-format
         run: dotnet tool install -g dotnet-format
@@ -30,11 +33,13 @@ jobs:
     env:
       OS: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout ref that triggered workflow
+        uses: actions/checkout@v4
+      - name: setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '7'
-      - name: Setup Rust/Cargo
+      - name: Setup Cargo/Rust
         uses: moonrepo/setup-rust@v1
       - name: Install dependencies
         run: dotnet restore
