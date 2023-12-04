@@ -8,12 +8,15 @@ on:
 jobs:
   # Validate tag with proper regex since the check above is very limited.
   validate-tag:
+    name: Validate tag's semantic version
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
-      - id: tag
+      - name: Checkout ref that triggered workflow
+        uses: actions/checkout@v4
+      - name: Ensure triggering ref is a tag 
+        id: tag
         uses: dawidd6/action-get-tag@v1
       - id: regex-match
         uses: actions-ecosystem/action-regex-match@v2
@@ -27,9 +30,9 @@ jobs:
           script: core.setFailed('Tag is invalid')
 
   platform-binary:
+    name: Create binary ${{ matrix.target }}
     needs: validate-tag
     if: github.event.base_ref == 'refs/heads/master'
-    name: Create binary ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -45,8 +48,10 @@ jobs:
             target: osx-x64
             os: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout ref that triggered workflow
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '7'
      
@@ -67,7 +72,7 @@ jobs:
 
           rm -r ${release_name}
 
-      - name: Publish to GitHub
+      - name: Add build artifacts to draft GitHub release
         uses: softprops/action-gh-release@v1
         with:
           files: "tcli*"
@@ -77,13 +82,15 @@ jobs:
           prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
 
   nupkg:
+    name: Create .nupkg
     needs: validate-tag
     if: github.event.base_ref == 'refs/heads/master'
-    name: Create .nupkg
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout ref that triggered workflow
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '7'
       
@@ -94,7 +101,7 @@ jobs:
         shell: bash
         run: dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "." -p:EnableInstallers=false -p:PublishSelfContained=false -p:PublishSingleFile=false -p:PublishTrimmed=false -p:PublishReadyToRun=false
 
-      - name: Publish to GitHub
+      - name: Add build artifacts to draft GitHub release
         uses: softprops/action-gh-release@v1
         with:
           files: "tcli*"
