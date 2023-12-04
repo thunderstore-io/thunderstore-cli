@@ -8,7 +8,7 @@ on:
 jobs:
   # Validate tag with proper regex since the check above is very limited.
   validate-tag:
-    name: Validate tag's semantic version
+    name: Validate tag semantic version
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
@@ -33,7 +33,7 @@ jobs:
           script: core.setFailed('Tag is invalid')
 
   platform-binary:
-    name: Create binary ${{ matrix.target }}
+    name: Build binaries for ${{ matrix.target }}
     needs: validate-tag
     if: github.event.base_ref == 'refs/heads/master'
     runs-on: ${{ matrix.os }}
@@ -89,7 +89,7 @@ jobs:
           prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
 
   nupkg:
-    name: Create .nupkg
+    name: Build NuGet Package
     needs: validate-tag
     if: github.event.base_ref == 'refs/heads/master'
     runs-on: ubuntu-latest
