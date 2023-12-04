@@ -8,6 +8,9 @@ charset = utf-8
 indent_style = space
 indent_size = 4
 
+[*.yml]
+indent_size = 2
+
 [*.{cs,vb}]
 # https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/formatting-rules
 csharp_new_line_before_open_brace = all
