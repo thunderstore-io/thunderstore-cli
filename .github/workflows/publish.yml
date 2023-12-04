@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Checkout ref that triggered workflow
         uses: actions/checkout@v4
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -23,7 +24,6 @@ jobs:
           version: "tags/${{ github.ref_name }}"
           file: "tcli.${{ github.ref_name }}.nupkg"
           target: "tcli.nupkg"
-
 
       - name: Publish to NuGet
         shell: bash
