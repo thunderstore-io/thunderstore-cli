@@ -1,6 +1,11 @@
 name: Build & Test
 
-on: [push]
+on: 
+  # Trigger on pushes to the main branch
+  push:
+    branches: [ main ]
+  # Trigger on any pull request
+  pull_request: 
 
 jobs:
   pre-commit:
