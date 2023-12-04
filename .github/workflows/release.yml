@@ -62,6 +62,9 @@ jobs:
       - name: Install dependencies
         run: dotnet restore
 
+      - name: Setup Cargo/Rust
+        uses: moonrepo/setup-rust@v1
+
       - name: Build
         shell: bash
         run: |
@@ -101,6 +104,9 @@ jobs:
 
       - name: Install dependencies
         run: dotnet restore
+
+      - name: Setup Cargo/Rust
+        uses: moonrepo/setup-rust@v1
 
       - name: Build
         shell: bash
