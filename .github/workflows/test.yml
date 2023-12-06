@@ -3,7 +3,7 @@ name: Build & Test
 on: 
   # Trigger on pushes to the main branch
   push:
-    branches: [ main ]
+    branches: [ master ]
   # Trigger on any pull request
   pull_request: 
 
