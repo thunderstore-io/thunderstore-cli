@@ -1,11 +1,11 @@
 name: Build & Test
 
-on: 
+on:
   # Trigger on pushes to the main branch
   push:
     branches: [ master ]
   # Trigger on any pull request
-  pull_request: 
+  pull_request:
 
 jobs:
   pre-commit:
@@ -62,7 +62,7 @@ jobs:
 
       - name: Run xUnit tests
         run: dotnet test -p:EnableInstallers=false --collect:"XPlat Code Coverage"
-        
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
