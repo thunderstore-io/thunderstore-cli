@@ -16,7 +16,7 @@ jobs:
       - name: Checkout ref that triggered workflow
         uses: actions/checkout@v4
 
-      - name: Ensure triggering ref is a tag 
+      - name: Ensure triggering ref is a tag
         id: tag
         uses: devops-actions/action-get-tag@v1.0.2
 
@@ -28,7 +28,7 @@ jobs:
 
       - id: fail-fast
         if: ${{ steps.regex-match.outputs.match == '' }}
-        uses: actions/github-script@v3
+        uses: actions/github-script@v7
         with:
           script: core.setFailed('Tag is invalid')
 
