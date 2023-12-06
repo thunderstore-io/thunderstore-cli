@@ -69,3 +69,4 @@ jobs:
           directory: ./ThunderstoreCLI.Tests/TestResults/
           env_vars: OS
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
