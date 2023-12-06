@@ -1,6 +1,9 @@
 # thunderstore-cli
 
+[![Build & Test](https://github.com/thunderstore-io/thunderstore-cli/actions/workflows/test.yml/badge.svg)](https://github.com/thunderstore-io/thunderstore-cli/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/thunderstore-io/thunderstore-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/thunderstore-io/thunderstore-cli)
+[![NuGet Package](https://img.shields.io/nuget/v/tcli)](https://www.nuget.org/packages/tcli)
+[![downloads](https://img.shields.io/nuget/dt/tcli)](https://www.nuget.org/packages/tcli)
 
 Thunderstore CLI (just "TCLI" from here on) is a command line tool for building and uploading mod packages to
 [Thunderstore](https://thunderstore.io/) mod database, and installing mods via the command line.

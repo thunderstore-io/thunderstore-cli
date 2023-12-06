@@ -8,26 +8,34 @@ on:
 jobs:
   # Validate tag with proper regex since the check above is very limited.
   validate-tag:
+    name: Validate tag semantic version
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v2
-      - id: tag
-        uses: dawidd6/action-get-tag@v1
+      - name: Checkout ref that triggered workflow
+        uses: actions/checkout@v4
+
+      - name: Ensure triggering ref is a tag
+        id: tag
+        uses: devops-actions/action-get-tag@v1.0.2
+
       - id: regex-match
         uses: actions-ecosystem/action-regex-match@v2
         with:
           text: ${{ steps.tag.outputs.tag }}
-          regex: '^([1-9][0-9]*|[0-9])\.([1-9][0-9]*|[0-9])\.([1-9][0-9]*|[0-9])$'
+          regex: '^([1-9][0-9]*|0)\.([1-9][0-9]*|0)\.([1-9][0-9]*|0)$'
+
       - id: fail-fast
         if: ${{ steps.regex-match.outputs.match == '' }}
-        uses: actions/github-script@v3
+        uses: actions/github-script@v7
         with:
           script: core.setFailed('Tag is invalid')
 
   platform-binary:
+    name: Build binaries for ${{ matrix.target }}
     needs: validate-tag
     if: github.event.base_ref == 'refs/heads/master'
-    name: Create binary ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -43,19 +51,24 @@ jobs:
             target: osx-x64
             os: macos-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-dotnet@v3
+      - name: Checkout ref that triggered workflow
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '7'
-      - id: tag
-        uses: dawidd6/action-get-tag@v1
+
       - name: Install dependencies
         run: dotnet restore
+
+      - name: Setup Cargo/Rust
+        uses: moonrepo/setup-rust@v1
 
       - name: Build
         shell: bash
         run: |
-          release_name="tcli-${{ steps.tag.outputs.tag }}-${{ matrix.target }}"
+          release_name="tcli-${{ needs.validate-tag.outputs.tag }}-${{ matrix.target }}"
           dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" --self-contained true -f net7.0 -o "${release_name}"
 
           if [ "${{ matrix.target }}" == "win-x64" ]; then
@@ -66,39 +79,44 @@ jobs:
 
           rm -r ${release_name}
 
-      - name: Publish to GitHub
+      - name: Add build artifacts to draft GitHub release
         uses: softprops/action-gh-release@v1
         with:
           files: "tcli*"
-          name: "Thunderstore CLI ${{ steps.tag.outputs.tag }}"
+          name: "Thunderstore CLI ${{ needs.validate-tag.outputs.tag }}"
           body_path: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
           draft: true
           prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
 
   nupkg:
+    name: Build NuGet Package
     needs: validate-tag
     if: github.event.base_ref == 'refs/heads/master'
-    name: Create .nupkg
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-dotnet@v3
+      - name: Checkout ref that triggered workflow
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '7'
-      - id: tag
-        uses: dawidd6/action-get-tag@v1
+
       - name: Install dependencies
         run: dotnet restore
+
+      - name: Setup Cargo/Rust
+        uses: moonrepo/setup-rust@v1
 
       - name: Build
         shell: bash
         run: dotnet pack ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -o "." -p:EnableInstallers=false -p:PublishSelfContained=false -p:PublishSingleFile=false -p:PublishTrimmed=false -p:PublishReadyToRun=false
 
-      - name: Publish to GitHub
+      - name: Add build artifacts to draft GitHub release
         uses: softprops/action-gh-release@v1
         with:
           files: "tcli*"
-          name: "Thunderstore CLI ${{ steps.tag.outputs.tag }}"
+          name: "Thunderstore CLI ${{ needs.validate-tag.outputs.tag }}"
           body_path: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
           draft: true
           prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
