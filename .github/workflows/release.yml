@@ -86,7 +86,7 @@ jobs:
           name: "Thunderstore CLI ${{ needs.validate-tag.outputs.tag }}"
           body_path: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
           draft: true
-          prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
+          prerelease: ${{ startsWith(needs.validate-tag.outputs.tag, '0.') }}
 
   nupkg:
     name: Build NuGet Package
@@ -119,4 +119,4 @@ jobs:
           name: "Thunderstore CLI ${{ needs.validate-tag.outputs.tag }}"
           body_path: ${{ github.workspace }}/.github/RELEASE_TEMPLATE.md
           draft: true
-          prerelease: ${{ startsWith(steps.tag.outputs.tag, '0.') }}
+          prerelease: ${{ startsWith(needs.validate-tag.outputs.tag, '0.') }}
