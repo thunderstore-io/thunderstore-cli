@@ -23,8 +23,8 @@ public static class MiscUtils
             throw new Exception("Reading app version from assembly failed");
         }
 
-        // Drop possible pre-release cruft ("-alpha.0.1") from the end.
-        var versionParts = version.Split('-')[0].Split('.');
+        // Drop possible pre-release or build metadata cruft ("-alpha.0.1", "+abcde") from the end.
+        var versionParts = version.Split('-', '+')[0].Split('.');
 
         if (versionParts is null || versionParts.Length != 3)
         {
