@@ -138,6 +138,7 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
         Package = new PackageData();
         Build = new BuildData();
         Publish = new PublishData();
+        Install = new InstallData();
     }
 
     public ThunderstoreProject(Config config)
