@@ -296,7 +296,7 @@ public static class BuildCommand
         var dependencies = config.PackageConfig.Dependencies ?? new Dictionary<string, string>();
         IEnumerable<InstallerDeclaration>? installerDeclarations = config.InstallConfig.InstallerDeclarations;
         installerDeclarations ??= Array.Empty<InstallerDeclaration>();
-        var manifest = new PackageManifestV1()
+        var manifest = new PackageManifestV1
         {
             Namespace = config.PackageConfig.Namespace,
             Name = config.PackageConfig.Name,

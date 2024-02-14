@@ -100,7 +100,7 @@ public class Config
 
     public PackageUploadMetadata GetUploadMetadata(string fileUuid)
     {
-        return new PackageUploadMetadata()
+        return new PackageUploadMetadata
         {
             AuthorName = PackageConfig.Namespace,
             Categories = PublishConfig.Categories!.GetOrDefault("") ?? Array.Empty<string>(),

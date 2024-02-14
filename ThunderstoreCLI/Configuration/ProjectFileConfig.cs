@@ -25,7 +25,7 @@ internal class ProjectFileConfig : EmptyConfig
 
     public override GeneralConfig? GetGeneralConfig()
     {
-        return new GeneralConfig()
+        return new GeneralConfig
         {
             Repository = Project.Publish?.Repository!
         };
@@ -33,7 +33,7 @@ internal class ProjectFileConfig : EmptyConfig
 
     public override PackageConfig? GetPackageMeta()
     {
-        return new PackageConfig()
+        return new PackageConfig
         {
             Namespace = Project.Package?.Namespace,
             Name = Project.Package?.Name,
@@ -48,7 +48,7 @@ internal class ProjectFileConfig : EmptyConfig
 
     public override BuildConfig? GetBuildConfig()
     {
-        return new BuildConfig()
+        return new BuildConfig
         {
             CopyPaths = Project.Build?.CopyPaths
                 .Select(static path => new CopyPathMap(path.Source, path.Target))
@@ -61,7 +61,7 @@ internal class ProjectFileConfig : EmptyConfig
 
     public override PublishConfig? GetPublishConfig()
     {
-        return new PublishConfig()
+        return new PublishConfig
         {
             Categories = Project.Publish?.Categories.Categories,
             Communities = Project.Publish?.Communities

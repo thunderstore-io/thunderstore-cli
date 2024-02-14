@@ -11,7 +11,7 @@ public abstract class BaseConfig<T> : EmptyConfig where T : BaseOptions
 
     public override GeneralConfig GetGeneralConfig()
     {
-        return new GeneralConfig()
+        return new GeneralConfig
         {
             TcliConfig = options.TcliDirectory,
             Repository = options.Repository
@@ -29,7 +29,7 @@ public abstract class CLIParameterConfig<T> : BaseConfig<T>, CLIConfig where T :
     {
         if (options == null)
             return null;
-        return new PackageConfig()
+        return new PackageConfig
         {
             ProjectConfigPath = options.ConfigPath,
             Namespace = options.Namespace,
@@ -45,7 +45,7 @@ public class CLIInitCommandConfig : CLIParameterConfig<InitOptions>
 
     public override InitConfig GetInitConfig()
     {
-        return new InitConfig()
+        return new InitConfig
         {
             Overwrite = options.Overwrite
         };
@@ -63,7 +63,7 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
 
     public override PublishConfig GetPublishConfig()
     {
-        return new PublishConfig()
+        return new PublishConfig
         {
             File = options.File
         };
@@ -71,7 +71,7 @@ public class CLIPublishCommandConfig : CLIParameterConfig<PublishOptions>
 
     public override AuthConfig GetAuthConfig()
     {
-        return new AuthConfig()
+        return new AuthConfig
         {
             AuthToken = options.Token
         };
@@ -84,7 +84,7 @@ public class ModManagementCommandConfig : BaseConfig<ModManagementOptions>
 
     public override ModManagementConfig? GetModManagementConfig()
     {
-        return new ModManagementConfig()
+        return new ModManagementConfig
         {
             GameIdentifer = options.GameName,
             ProfileName = options.Profile,
@@ -99,7 +99,7 @@ public class GameImportCommandConfig : BaseConfig<GameImportOptions>
 
     public override GameImportConfig? GetGameImportConfig()
     {
-        return new GameImportConfig()
+        return new GameImportConfig
         {
             ExePath = options.ExePath,
             GameId = options.GameId,
@@ -113,7 +113,7 @@ public class RunGameCommandConfig : BaseConfig<RunGameOptions>
 
     public override RunGameConfig? GetRunGameConfig()
     {
-        return new RunGameConfig()
+        return new RunGameConfig
         {
             GameName = options.GameName,
             ProfileName = options.Profile,

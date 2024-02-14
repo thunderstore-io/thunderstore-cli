@@ -143,12 +143,12 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
 
     public ThunderstoreProject(Config config)
     {
-        Package = new PackageData()
+        Package = new PackageData
         {
             Namespace = config.PackageConfig.Namespace!,
             Name = config.PackageConfig.Name!
         };
-        Build = new BuildData()
+        Build = new BuildData
         {
             Icon = config.GetPackageIconPath(),
             OutDir = config.GetBuildOutputDir(),
@@ -157,13 +157,13 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
                 .Select(x => new BuildData.CopyPath { Source = x.From, Target = x.To })
                 .ToArray()!
         };
-        Publish = new PublishData()
+        Publish = new PublishData
         {
             Categories = new CategoryDictionary { Categories = config.PublishConfig.Categories! },
             Communities = config.PublishConfig.Communities!,
             Repository = config.GeneralConfig.Repository
         };
-        Install = new InstallData()
+        Install = new InstallData
         {
             InstallerDeclarations = config.InstallConfig.InstallerDeclarations!
                 .Select(x => new InstallData.InstallerDeclaration { Identifier = x.Identifier })

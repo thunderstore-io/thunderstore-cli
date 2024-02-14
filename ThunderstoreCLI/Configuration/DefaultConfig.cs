@@ -4,7 +4,7 @@ class DefaultConfig : EmptyConfig
 {
     public override GeneralConfig? GetGeneralConfig()
     {
-        return new GeneralConfig()
+        return new GeneralConfig
         {
             Repository = Defaults.REPOSITORY_URL
         };
@@ -12,7 +12,7 @@ class DefaultConfig : EmptyConfig
 
     public override PackageConfig GetPackageMeta()
     {
-        return new PackageConfig()
+        return new PackageConfig
         {
             ProjectConfigPath = Defaults.PROJECT_CONFIG_PATH,
             Namespace = "AuthorName",
@@ -30,7 +30,7 @@ class DefaultConfig : EmptyConfig
 
     public override InitConfig GetInitConfig()
     {
-        return new InitConfig()
+        return new InitConfig
         {
             Overwrite = false
         };
@@ -38,7 +38,7 @@ class DefaultConfig : EmptyConfig
 
     public override BuildConfig GetBuildConfig()
     {
-        return new BuildConfig()
+        return new BuildConfig
         {
             IconPath = "./icon.png",
             ReadmePath = "./README.md",
@@ -49,7 +49,7 @@ class DefaultConfig : EmptyConfig
 
     public override PublishConfig GetPublishConfig()
     {
-        return new PublishConfig()
+        return new PublishConfig
         {
             File = null
         };

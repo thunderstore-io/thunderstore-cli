@@ -8,7 +8,7 @@ class EnvironmentConfig : EmptyConfig
 
     public override AuthConfig GetAuthConfig()
     {
-        return new AuthConfig()
+        return new AuthConfig
         {
             AuthToken = ReadEnv(AUTH_TOKEN)
         };
