@@ -57,4 +57,12 @@ class DefaultConfig : EmptyConfig
             File = null
         };
     }
+
+    public override InstallConfig GetInstallConfig()
+    {
+        return new InstallConfig
+        {
+            InstallerDeclarations = new() { new InstallerDeclaration("foo-installer") }
+        };
+    }
 }
