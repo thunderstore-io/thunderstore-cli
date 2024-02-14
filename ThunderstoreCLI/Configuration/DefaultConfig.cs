@@ -43,10 +43,7 @@ class DefaultConfig : EmptyConfig
             IconPath = "./icon.png",
             ReadmePath = "./README.md",
             OutDir = "./build",
-            CopyPaths = new()
-            {
-                { new("./dist", "") }
-            }
+            CopyPaths = [new("./dist", "")]
         };
     }
 
@@ -62,7 +59,7 @@ class DefaultConfig : EmptyConfig
     {
         return new InstallConfig
         {
-            InstallerDeclarations = new() { new InstallerDeclaration("foo-installer") }
+            InstallerDeclarations = [new InstallerDeclaration("foo-installer")]
         };
     }
 }
