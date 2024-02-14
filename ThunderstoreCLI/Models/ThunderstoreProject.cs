@@ -161,5 +161,11 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
             Communities = config.PublishConfig.Communities!,
             Repository = config.GeneralConfig.Repository
         };
+        Install = new InstallData()
+        {
+            InstallerDeclarations = config.InstallConfig.InstallerDeclarations!
+                .Select(x => new InstallData.InstallerDeclaration { Identifier = x.Identifier })
+                .ToArray()
+        };
     }
 }
