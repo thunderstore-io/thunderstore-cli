@@ -155,7 +155,7 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
             Readme = config.GetPackageReadmePath(),
             CopyPaths = config.BuildConfig.CopyPaths!
                 .Select(x => new BuildData.CopyPath { Source = x.From, Target = x.To })
-                .ToArray()!
+                .ToArray()
         };
         Publish = new PublishData
         {
