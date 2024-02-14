@@ -23,8 +23,17 @@ public class PackageManifestV1 : BaseJson<PackageManifestV1>
     [JsonProperty("website_url")]
     public string? WebsiteUrl { get; set; }
 
+    [JsonProperty("installers")]
+    public InstallerDeclaration[]? Installers { get; set; }
+
     private string? fullName;
     public string FullName => fullName ??= $"{Namespace}-{Name}";
+
+    public class InstallerDeclaration
+    {
+        [JsonProperty("identifier")]
+        public string? Identifier { get; set; }
+    }
 
     public PackageManifestV1() { }
 
