@@ -136,6 +136,7 @@ public class Config
             Merge(result.InitConfig, provider.GetInitConfig(), false);
             Merge(result.BuildConfig, provider.GetBuildConfig(), false);
             Merge(result.PublishConfig, provider.GetPublishConfig(), false);
+            Merge(result.InstallConfig, provider.GetInstallConfig(), false);
             Merge(result.AuthConfig, provider.GetAuthConfig(), false);
             Merge(result.ModManagementConfig, provider.GetModManagementConfig(), false);
             Merge(result.GameImportConfig, provider.GetGameImportConfig(), false);
