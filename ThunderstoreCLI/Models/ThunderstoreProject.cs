@@ -112,6 +112,22 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
     [TomlProperty("publish")]
     public PublishData? Publish { get; set; }
 
+    [TomlDoNotInlineObject]
+    public class InstallData
+    {
+        [TomlDoNotInlineObject]
+        public class InstallerDeclaration
+        {
+            [TomlProperty("identifier")]
+            public string Identifier { get; set; } = "foo-installer";
+        }
+
+        [TomlProperty("installers")]
+        public InstallerDeclaration[] InstallerDeclarations { get; set; } = new InstallerDeclaration[] { new InstallerDeclaration() };
+    }
+    [TomlProperty("install")]
+    public InstallData? Install { get; set; }
+
     public ThunderstoreProject() { }
 
     public ThunderstoreProject(bool initialize)
