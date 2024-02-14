@@ -153,7 +153,7 @@ public static class SteamUtils
         return Path.Combine(steamDir, "steamapps");
     }
 
-    private static string? FindSteamDirectoryOsx()
+    private static string FindSteamDirectoryOsx()
     {
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),

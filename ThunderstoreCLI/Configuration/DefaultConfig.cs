@@ -2,7 +2,7 @@ namespace ThunderstoreCLI.Configuration;
 
 class DefaultConfig : EmptyConfig
 {
-    public override GeneralConfig? GetGeneralConfig()
+    public override GeneralConfig GetGeneralConfig()
     {
         return new GeneralConfig
         {

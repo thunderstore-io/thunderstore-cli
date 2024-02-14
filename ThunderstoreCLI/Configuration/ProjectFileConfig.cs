@@ -23,7 +23,7 @@ internal class ProjectFileConfig : EmptyConfig
         Project = ThunderstoreProject.Deserialize(File.ReadAllText(SourcePath))!;
     }
 
-    public override GeneralConfig? GetGeneralConfig()
+    public override GeneralConfig GetGeneralConfig()
     {
         return new GeneralConfig
         {
@@ -31,7 +31,7 @@ internal class ProjectFileConfig : EmptyConfig
         };
     }
 
-    public override PackageConfig? GetPackageMeta()
+    public override PackageConfig GetPackageMeta()
     {
         return new PackageConfig
         {
@@ -46,7 +46,7 @@ internal class ProjectFileConfig : EmptyConfig
         };
     }
 
-    public override BuildConfig? GetBuildConfig()
+    public override BuildConfig GetBuildConfig()
     {
         return new BuildConfig
         {
@@ -59,7 +59,7 @@ internal class ProjectFileConfig : EmptyConfig
         };
     }
 
-    public override PublishConfig? GetPublishConfig()
+    public override PublishConfig GetPublishConfig()
     {
         return new PublishConfig
         {
@@ -68,7 +68,7 @@ internal class ProjectFileConfig : EmptyConfig
         };
     }
 
-    public override InstallConfig? GetInstallConfig()
+    public override InstallConfig GetInstallConfig()
     {
         return new InstallConfig
         {

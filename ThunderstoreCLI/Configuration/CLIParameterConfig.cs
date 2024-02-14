@@ -82,7 +82,7 @@ public class ModManagementCommandConfig : BaseConfig<ModManagementOptions>
 {
     public ModManagementCommandConfig(ModManagementOptions options) : base(options) { }
 
-    public override ModManagementConfig? GetModManagementConfig()
+    public override ModManagementConfig GetModManagementConfig()
     {
         return new ModManagementConfig
         {
@@ -97,7 +97,7 @@ public class GameImportCommandConfig : BaseConfig<GameImportOptions>
 {
     public GameImportCommandConfig(GameImportOptions options) : base(options) { }
 
-    public override GameImportConfig? GetGameImportConfig()
+    public override GameImportConfig GetGameImportConfig()
     {
         return new GameImportConfig
         {
@@ -111,7 +111,7 @@ public class RunGameCommandConfig : BaseConfig<RunGameOptions>
 {
     public RunGameCommandConfig(RunGameOptions options) : base(options) { }
 
-    public override RunGameConfig? GetRunGameConfig()
+    public override RunGameConfig GetRunGameConfig()
     {
         return new RunGameConfig
         {
