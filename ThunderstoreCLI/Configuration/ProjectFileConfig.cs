@@ -67,6 +67,16 @@ internal class ProjectFileConfig : EmptyConfig
         };
     }
 
+    public override InstallConfig? GetInstallConfig()
+    {
+        return new InstallConfig
+        {
+            InstallerDeclarations = Project.Install?.InstallerDeclarations
+                .Select(static path => new InstallerDeclaration(path.Identifier))
+                .ToList()
+        };
+    }
+
     public static void Write(Config config, string path)
     {
         File.WriteAllText(path, new ThunderstoreProject(config).Serialize());
