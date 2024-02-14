@@ -13,6 +13,7 @@ public class Config
     public required InitConfig InitConfig { get; init; }
     public required BuildConfig BuildConfig { get; init; }
     public required PublishConfig PublishConfig { get; init; }
+    public required InstallConfig InstallConfig { get; init; }
     public required AuthConfig AuthConfig { get; init; }
     public required ModManagementConfig ModManagementConfig { get; init; }
     public required GameImportConfig GameImportConfig { get; init; }
@@ -121,6 +122,7 @@ public class Config
             InitConfig = new InitConfig(),
             BuildConfig = new BuildConfig(),
             PublishConfig = new PublishConfig(),
+            InstallConfig = new InstallConfig(),
             AuthConfig = new AuthConfig(),
             ModManagementConfig = new ModManagementConfig(),
             GameImportConfig = new GameImportConfig(),
