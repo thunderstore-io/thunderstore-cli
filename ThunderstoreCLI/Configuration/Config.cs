@@ -218,6 +218,21 @@ public class PublishConfig
     public Dictionary<string, string[]>? Categories { get; set; }
 }
 
+public struct InstallerDeclaration
+{
+    public readonly string Identifier;
+
+    public InstallerDeclaration(string identifier)
+    {
+        Identifier = identifier;
+    }
+}
+
+public class InstallConfig
+{
+    public List<InstallerDeclaration>? InstallerDeclarations { get; set; }
+}
+
 public class AuthConfig
 {
     public string? AuthToken { get; set; }
