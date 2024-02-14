@@ -1,6 +1,5 @@
 using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Game;
-using ThunderstoreCLI.Utils;
 
 namespace ThunderstoreCLI.Models;
 

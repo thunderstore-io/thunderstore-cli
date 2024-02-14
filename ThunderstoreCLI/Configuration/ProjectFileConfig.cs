@@ -1,5 +1,4 @@
 using ThunderstoreCLI.Models;
-using ThunderstoreCLI.Utils;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Configuration;
