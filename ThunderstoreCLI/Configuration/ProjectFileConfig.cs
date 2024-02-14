@@ -50,7 +50,9 @@ internal class ProjectFileConfig : EmptyConfig
     {
         return new BuildConfig()
         {
-            CopyPaths = Project.Build?.CopyPaths.Select(static path => new CopyPathMap(path.Source, path.Target)).ToList(),
+            CopyPaths = Project.Build?.CopyPaths
+                .Select(static path => new CopyPathMap(path.Source, path.Target))
+                .ToList(),
             IconPath = Project.Build?.Icon,
             OutDir = Project.Build?.OutDir,
             ReadmePath = Project.Build?.Readme

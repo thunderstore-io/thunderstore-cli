@@ -153,7 +153,9 @@ public class ThunderstoreProject : BaseToml<ThunderstoreProject>
             Icon = config.GetPackageIconPath(),
             OutDir = config.GetBuildOutputDir(),
             Readme = config.GetPackageReadmePath(),
-            CopyPaths = config.BuildConfig.CopyPaths!.Select(x => new BuildData.CopyPath { Source = x.From, Target = x.To }).ToArray()!
+            CopyPaths = config.BuildConfig.CopyPaths!
+                .Select(x => new BuildData.CopyPath { Source = x.From, Target = x.To })
+                .ToArray()!
         };
         Publish = new PublishData()
         {
