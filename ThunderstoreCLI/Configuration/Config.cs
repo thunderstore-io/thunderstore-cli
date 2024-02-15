@@ -31,6 +31,23 @@ public class Config
         api = new Lazy<ApiHelper>(() => new ApiHelper(this));
         cache = new Lazy<DownloadCache>(() => new DownloadCache(Path.Combine(GeneralConfig!.TcliConfig, "ModCache")));
     }
+
+    private static Config BlankConfig => new()
+    {
+        GeneralConfig = new GeneralConfig(),
+        PackageConfig = new PackageConfig(),
+        InitConfig = new InitConfig(),
+        BuildConfig = new BuildConfig(),
+        PublishConfig = new PublishConfig(),
+        InstallConfig = new InstallConfig(),
+        AuthConfig = new AuthConfig(),
+        ModManagementConfig = new ModManagementConfig(),
+        GameImportConfig = new GameImportConfig(),
+        RunGameConfig = new RunGameConfig(),
+    };
+
+    public static Config DefaultConfig => MergeConfigFromProvider(BlankConfig, new DefaultConfig(), true);
+
     public static Config FromCLI(IConfigProvider cliConfig)
     {
         List<IConfigProvider> providers = new();
@@ -115,19 +132,7 @@ public class Config
 
     public static Config Parse(IConfigProvider[] configProviders)
     {
-        Config result = new()
-        {
-            GeneralConfig = new GeneralConfig(),
-            PackageConfig = new PackageConfig(),
-            InitConfig = new InitConfig(),
-            BuildConfig = new BuildConfig(),
-            PublishConfig = new PublishConfig(),
-            InstallConfig = new InstallConfig(),
-            AuthConfig = new AuthConfig(),
-            ModManagementConfig = new ModManagementConfig(),
-            GameImportConfig = new GameImportConfig(),
-            RunGameConfig = new RunGameConfig(),
-        };
+        var result = BlankConfig;
         foreach (var provider in configProviders)
         {
             MergeConfigFromProvider(result, provider, false);
@@ -135,7 +140,7 @@ public class Config
         return result;
     }
 
-    public static void MergeConfigFromProvider(Config target, IConfigProvider provider, bool overwrite)
+    public static Config MergeConfigFromProvider(Config target, IConfigProvider provider, bool overwrite)
     {
         provider.Parse(target);
         Merge(target.GeneralConfig, provider.GetGeneralConfig(), overwrite);
@@ -148,6 +153,7 @@ public class Config
         Merge(target.ModManagementConfig, provider.GetModManagementConfig(), overwrite);
         Merge(target.GameImportConfig, provider.GetGameImportConfig(), overwrite);
         Merge(target.RunGameConfig, provider.GetRunGameConfig(), overwrite);
+        return target;
     }
 
     public static void Merge<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T target, T source, bool overwrite)
