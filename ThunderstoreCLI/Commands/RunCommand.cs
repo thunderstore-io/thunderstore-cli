@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
 using ThunderstoreCLI.Configuration;
 using ThunderstoreCLI.Game;
 using ThunderstoreCLI.Utils;

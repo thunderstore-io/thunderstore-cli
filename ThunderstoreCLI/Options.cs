@@ -30,7 +30,7 @@ public abstract class BaseOptions
     {
         if (!Directory.Exists(TcliDirectory))
         {
-            Directory.CreateDirectory(TcliDirectory!);
+            Directory.CreateDirectory(TcliDirectory);
         }
 
         return true;

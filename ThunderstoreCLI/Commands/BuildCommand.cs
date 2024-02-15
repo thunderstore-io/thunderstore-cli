@@ -294,14 +294,19 @@ public static class BuildCommand
     public static string SerializeManifest(Config config)
     {
         var dependencies = config.PackageConfig.Dependencies ?? new Dictionary<string, string>();
-        var manifest = new PackageManifestV1()
+        IEnumerable<InstallerDeclaration>? installerDeclarations = config.InstallConfig.InstallerDeclarations;
+        installerDeclarations ??= Array.Empty<InstallerDeclaration>();
+        var manifest = new PackageManifestV1
         {
             Namespace = config.PackageConfig.Namespace,
             Name = config.PackageConfig.Name,
             Description = config.PackageConfig.Description,
             VersionNumber = config.PackageConfig.VersionNumber,
             WebsiteUrl = config.PackageConfig.WebsiteUrl,
-            Dependencies = dependencies.Select(x => $"{x.Key}-{x.Value}").ToArray()
+            Dependencies = dependencies.Select(x => $"{x.Key}-{x.Value}").ToArray(),
+            Installers = installerDeclarations
+                .Select(x => new PackageManifestV1.InstallerDeclaration { Identifier = x.Identifier })
+                .ToArray()
         };
 
         return manifest.Serialize(BaseJson.IndentedSettings);

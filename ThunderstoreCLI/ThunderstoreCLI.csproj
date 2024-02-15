@@ -3,7 +3,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
-        <LangVersion>11</LangVersion>
+        <LangVersion>12</LangVersion>
         <RollForward>Major</RollForward>
         <RootNamespace>ThunderstoreCLI</RootNamespace>
         <AssemblyName>tcli</AssemblyName>

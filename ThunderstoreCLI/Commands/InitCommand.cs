@@ -38,7 +38,7 @@ public static class InitCommand
             {
                 Write.Line($"Project configuration already exists, overwriting");
             }
-            File.WriteAllText(path, new ThunderstoreProject(true).Serialize());
+            File.WriteAllText(path, new ThunderstoreProject(Config.DefaultConfig).Serialize());
 
             var iconPath = config.GetPackageIconPath();
             if (File.Exists(iconPath))
