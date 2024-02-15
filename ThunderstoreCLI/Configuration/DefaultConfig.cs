@@ -19,11 +19,11 @@ class DefaultConfig : EmptyConfig
             Name = "PackageName",
             VersionNumber = "0.0.1",
             Description = "Example mod description",
-            WebsiteUrl = "",
+            WebsiteUrl = "https://thunderstore.io",
             ContainsNsfwContent = false,
             Dependencies = new()
             {
-                { "Example-Dependency", "1.0.0" }
+                { "AuthorName-PackageName", "0.0.1" }
             }
         };
     }
@@ -51,7 +51,11 @@ class DefaultConfig : EmptyConfig
     {
         return new PublishConfig
         {
-            File = null
+            File = null,
+            Communities = ["riskofrain2"],
+            Categories = new Dictionary<string, string[]> {
+                { "riskofrain2", ["items", "skills", ] },
+            }
         };
     }
 
