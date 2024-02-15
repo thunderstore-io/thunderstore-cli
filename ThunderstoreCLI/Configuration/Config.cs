@@ -130,19 +130,24 @@ public class Config
         };
         foreach (var provider in configProviders)
         {
-            provider.Parse(result);
-            Merge(result.GeneralConfig, provider.GetGeneralConfig(), false);
-            Merge(result.PackageConfig, provider.GetPackageMeta(), false);
-            Merge(result.InitConfig, provider.GetInitConfig(), false);
-            Merge(result.BuildConfig, provider.GetBuildConfig(), false);
-            Merge(result.PublishConfig, provider.GetPublishConfig(), false);
-            Merge(result.InstallConfig, provider.GetInstallConfig(), false);
-            Merge(result.AuthConfig, provider.GetAuthConfig(), false);
-            Merge(result.ModManagementConfig, provider.GetModManagementConfig(), false);
-            Merge(result.GameImportConfig, provider.GetGameImportConfig(), false);
-            Merge(result.RunGameConfig, provider.GetRunGameConfig(), false);
+            MergeConfigFromProvider(result, provider, false);
         }
         return result;
+    }
+
+    public static void MergeConfigFromProvider(Config target, IConfigProvider provider, bool overwrite)
+    {
+        provider.Parse(target);
+        Merge(target.GeneralConfig, provider.GetGeneralConfig(), overwrite);
+        Merge(target.PackageConfig, provider.GetPackageMeta(), overwrite);
+        Merge(target.InitConfig, provider.GetInitConfig(), overwrite);
+        Merge(target.BuildConfig, provider.GetBuildConfig(), overwrite);
+        Merge(target.PublishConfig, provider.GetPublishConfig(), overwrite);
+        Merge(target.InstallConfig, provider.GetInstallConfig(), overwrite);
+        Merge(target.AuthConfig, provider.GetAuthConfig(), overwrite);
+        Merge(target.ModManagementConfig, provider.GetModManagementConfig(), overwrite);
+        Merge(target.GameImportConfig, provider.GetGameImportConfig(), overwrite);
+        Merge(target.RunGameConfig, provider.GetRunGameConfig(), overwrite);
     }
 
     public static void Merge<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T target, T source, bool overwrite)
