@@ -27,6 +27,7 @@ public class PackageManifestV1 : BaseJson<PackageManifestV1>
     public InstallerDeclaration[]? Installers { get; set; }
 
     private string? fullName;
+    [JsonIgnore]
     public string FullName => fullName ??= $"{Namespace}-{Name}";
 
     public class InstallerDeclaration
