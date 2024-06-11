@@ -104,7 +104,7 @@ public class PackageVersionV1
     public string? Uuid4 { get; set; }
 
     [JsonProperty("file_size")]
-    public int FileSize { get; set; }
+    public long FileSize { get; set; }
 
     [JsonIgnore]
     private GroupCollection? _fullNameParts;
