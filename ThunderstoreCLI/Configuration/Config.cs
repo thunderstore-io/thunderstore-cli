@@ -13,6 +13,7 @@ public class Config
     public required InitConfig InitConfig { get; init; }
     public required BuildConfig BuildConfig { get; init; }
     public required PublishConfig PublishConfig { get; init; }
+    public required InstallConfig InstallConfig { get; init; }
     public required AuthConfig AuthConfig { get; init; }
     public required ModManagementConfig ModManagementConfig { get; init; }
     public required GameImportConfig GameImportConfig { get; init; }
@@ -30,6 +31,23 @@ public class Config
         api = new Lazy<ApiHelper>(() => new ApiHelper(this));
         cache = new Lazy<DownloadCache>(() => new DownloadCache(Path.Combine(GeneralConfig!.TcliConfig, "ModCache")));
     }
+
+    private static Config BlankConfig => new()
+    {
+        GeneralConfig = new GeneralConfig(),
+        PackageConfig = new PackageConfig(),
+        InitConfig = new InitConfig(),
+        BuildConfig = new BuildConfig(),
+        PublishConfig = new PublishConfig(),
+        InstallConfig = new InstallConfig(),
+        AuthConfig = new AuthConfig(),
+        ModManagementConfig = new ModManagementConfig(),
+        GameImportConfig = new GameImportConfig(),
+        RunGameConfig = new RunGameConfig(),
+    };
+
+    public static Config DefaultConfig => MergeConfigFromProvider(BlankConfig, new DefaultConfig(), true);
+
     public static Config FromCLI(IConfigProvider cliConfig)
     {
         List<IConfigProvider> providers = new();
@@ -99,7 +117,7 @@ public class Config
 
     public PackageUploadMetadata GetUploadMetadata(string fileUuid)
     {
-        return new PackageUploadMetadata()
+        return new PackageUploadMetadata
         {
             AuthorName = PackageConfig.Namespace,
             Categories = PublishConfig.Categories!.GetOrDefault("") ?? Array.Empty<string>(),
@@ -114,32 +132,28 @@ public class Config
 
     public static Config Parse(IConfigProvider[] configProviders)
     {
-        Config result = new()
-        {
-            GeneralConfig = new GeneralConfig(),
-            PackageConfig = new PackageConfig(),
-            InitConfig = new InitConfig(),
-            BuildConfig = new BuildConfig(),
-            PublishConfig = new PublishConfig(),
-            AuthConfig = new AuthConfig(),
-            ModManagementConfig = new ModManagementConfig(),
-            GameImportConfig = new GameImportConfig(),
-            RunGameConfig = new RunGameConfig(),
-        };
+        var result = BlankConfig;
         foreach (var provider in configProviders)
         {
-            provider.Parse(result);
-            Merge(result.GeneralConfig, provider.GetGeneralConfig(), false);
-            Merge(result.PackageConfig, provider.GetPackageMeta(), false);
-            Merge(result.InitConfig, provider.GetInitConfig(), false);
-            Merge(result.BuildConfig, provider.GetBuildConfig(), false);
-            Merge(result.PublishConfig, provider.GetPublishConfig(), false);
-            Merge(result.AuthConfig, provider.GetAuthConfig(), false);
-            Merge(result.ModManagementConfig, provider.GetModManagementConfig(), false);
-            Merge(result.GameImportConfig, provider.GetGameImportConfig(), false);
-            Merge(result.RunGameConfig, provider.GetRunGameConfig(), false);
+            MergeConfigFromProvider(result, provider, false);
         }
         return result;
+    }
+
+    public static Config MergeConfigFromProvider(Config target, IConfigProvider provider, bool overwrite)
+    {
+        provider.Parse(target);
+        Merge(target.GeneralConfig, provider.GetGeneralConfig(), overwrite);
+        Merge(target.PackageConfig, provider.GetPackageMeta(), overwrite);
+        Merge(target.InitConfig, provider.GetInitConfig(), overwrite);
+        Merge(target.BuildConfig, provider.GetBuildConfig(), overwrite);
+        Merge(target.PublishConfig, provider.GetPublishConfig(), overwrite);
+        Merge(target.InstallConfig, provider.GetInstallConfig(), overwrite);
+        Merge(target.AuthConfig, provider.GetAuthConfig(), overwrite);
+        Merge(target.ModManagementConfig, provider.GetModManagementConfig(), overwrite);
+        Merge(target.GameImportConfig, provider.GetGameImportConfig(), overwrite);
+        Merge(target.RunGameConfig, provider.GetRunGameConfig(), overwrite);
+        return target;
     }
 
     public static void Merge<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(T target, T source, bool overwrite)
@@ -216,6 +230,21 @@ public class PublishConfig
     public string? File { get; set; }
     public string[]? Communities { get; set; }
     public Dictionary<string, string[]>? Categories { get; set; }
+}
+
+public struct InstallerDeclaration
+{
+    public readonly string Identifier;
+
+    public InstallerDeclaration(string identifier)
+    {
+        Identifier = identifier;
+    }
+}
+
+public class InstallConfig
+{
+    public List<InstallerDeclaration>? InstallerDeclarations { get; set; }
 }
 
 public class AuthConfig

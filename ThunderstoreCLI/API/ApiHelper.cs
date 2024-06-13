@@ -108,7 +108,7 @@ public class ApiHelper
 
     private static string SerializeFileData(string filePath)
     {
-        return new FileData()
+        return new FileData
         {
             Filename = Path.GetFileName(filePath),
             Filesize = new FileInfo(filePath).Length

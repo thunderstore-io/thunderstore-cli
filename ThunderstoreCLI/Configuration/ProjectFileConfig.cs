@@ -1,5 +1,4 @@
 using ThunderstoreCLI.Models;
-using ThunderstoreCLI.Utils;
 using static Crayon.Output;
 
 namespace ThunderstoreCLI.Configuration;
@@ -24,17 +23,17 @@ internal class ProjectFileConfig : EmptyConfig
         Project = ThunderstoreProject.Deserialize(File.ReadAllText(SourcePath))!;
     }
 
-    public override GeneralConfig? GetGeneralConfig()
+    public override GeneralConfig GetGeneralConfig()
     {
-        return new GeneralConfig()
+        return new GeneralConfig
         {
             Repository = Project.Publish?.Repository!
         };
     }
 
-    public override PackageConfig? GetPackageMeta()
+    public override PackageConfig GetPackageMeta()
     {
-        return new PackageConfig()
+        return new PackageConfig
         {
             Namespace = Project.Package?.Namespace,
             Name = Project.Package?.Name,
@@ -47,23 +46,35 @@ internal class ProjectFileConfig : EmptyConfig
         };
     }
 
-    public override BuildConfig? GetBuildConfig()
+    public override BuildConfig GetBuildConfig()
     {
-        return new BuildConfig()
+        return new BuildConfig
         {
-            CopyPaths = Project.Build?.CopyPaths.Select(static path => new CopyPathMap(path.Source, path.Target)).ToList(),
+            CopyPaths = Project.Build?.CopyPaths
+                .Select(static path => new CopyPathMap(path.Source, path.Target))
+                .ToList(),
             IconPath = Project.Build?.Icon,
             OutDir = Project.Build?.OutDir,
             ReadmePath = Project.Build?.Readme
         };
     }
 
-    public override PublishConfig? GetPublishConfig()
+    public override PublishConfig GetPublishConfig()
     {
-        return new PublishConfig()
+        return new PublishConfig
         {
             Categories = Project.Publish?.Categories.Categories,
             Communities = Project.Publish?.Communities
+        };
+    }
+
+    public override InstallConfig GetInstallConfig()
+    {
+        return new InstallConfig
+        {
+            InstallerDeclarations = Project.Install?.InstallerDeclarations
+                .Select(static path => new InstallerDeclaration(path.Identifier))
+                .ToList()
         };
     }
 

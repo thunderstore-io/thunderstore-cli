@@ -9,6 +9,7 @@ public interface IConfigProvider
     InitConfig? GetInitConfig();
     BuildConfig? GetBuildConfig();
     PublishConfig? GetPublishConfig();
+    InstallConfig? GetInstallConfig();
     AuthConfig? GetAuthConfig();
     ModManagementConfig? GetModManagementConfig();
     GameImportConfig? GetGameImportConfig();

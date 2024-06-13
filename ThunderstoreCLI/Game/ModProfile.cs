@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 using ThunderstoreCLI.Models;
 
 namespace ThunderstoreCLI.Game;

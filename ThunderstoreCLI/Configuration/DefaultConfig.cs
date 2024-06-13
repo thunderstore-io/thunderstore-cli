@@ -2,9 +2,9 @@ namespace ThunderstoreCLI.Configuration;
 
 class DefaultConfig : EmptyConfig
 {
-    public override GeneralConfig? GetGeneralConfig()
+    public override GeneralConfig GetGeneralConfig()
     {
-        return new GeneralConfig()
+        return new GeneralConfig
         {
             Repository = Defaults.REPOSITORY_URL
         };
@@ -12,25 +12,25 @@ class DefaultConfig : EmptyConfig
 
     public override PackageConfig GetPackageMeta()
     {
-        return new PackageConfig()
+        return new PackageConfig
         {
             ProjectConfigPath = Defaults.PROJECT_CONFIG_PATH,
             Namespace = "AuthorName",
             Name = "PackageName",
             VersionNumber = "0.0.1",
             Description = "Example mod description",
-            WebsiteUrl = "",
+            WebsiteUrl = "https://thunderstore.io",
             ContainsNsfwContent = false,
             Dependencies = new()
             {
-                { "Example-Dependency", "1.0.0" }
+                { "AuthorName-PackageName", "0.0.1" }
             }
         };
     }
 
     public override InitConfig GetInitConfig()
     {
-        return new InitConfig()
+        return new InitConfig
         {
             Overwrite = false
         };
@@ -38,23 +38,32 @@ class DefaultConfig : EmptyConfig
 
     public override BuildConfig GetBuildConfig()
     {
-        return new BuildConfig()
+        return new BuildConfig
         {
             IconPath = "./icon.png",
             ReadmePath = "./README.md",
             OutDir = "./build",
-            CopyPaths = new()
-            {
-                { new("./dist", "") }
-            }
+            CopyPaths = [new("./dist", "")]
         };
     }
 
     public override PublishConfig GetPublishConfig()
     {
-        return new PublishConfig()
+        return new PublishConfig
         {
-            File = null
+            File = null,
+            Communities = ["riskofrain2"],
+            Categories = new Dictionary<string, string[]> {
+                { "riskofrain2", ["items", "skills", ] },
+            }
+        };
+    }
+
+    public override InstallConfig GetInstallConfig()
+    {
+        return new InstallConfig
+        {
+            InstallerDeclarations = [new InstallerDeclaration("foo-installer")]
         };
     }
 }

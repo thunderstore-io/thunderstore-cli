@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Security.AccessControl;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
@@ -154,7 +153,7 @@ public static class SteamUtils
         return Path.Combine(steamDir, "steamapps");
     }
 
-    private static string? FindSteamDirectoryOsx()
+    private static string FindSteamDirectoryOsx()
     {
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),

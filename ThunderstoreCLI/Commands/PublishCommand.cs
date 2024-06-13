@@ -253,7 +253,7 @@ public static class PublishCommand
                 throw new PublishCommandException();
             }
 
-            return new CompletedUpload.CompletedPartData()
+            return new CompletedUpload.CompletedPartData
             {
                 ETag = response.Headers.ETag.Tag,
                 PartNumber = part.PartNumber
