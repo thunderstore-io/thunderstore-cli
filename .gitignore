@@ -366,3 +366,9 @@ FodyWeavers.xsd
 
 # Rider config directory
 .idea/
+
+# Environment files
+*.env
+*.env.*
+!*.env.template
+!*.env.*.template

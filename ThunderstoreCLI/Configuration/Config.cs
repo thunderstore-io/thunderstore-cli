@@ -32,6 +32,11 @@ public class Config
     }
     public static Config FromCLI(IConfigProvider cliConfig)
     {
+        var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+                          ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                          ?? Environment.GetEnvironmentVariable("ENVIRONMENT");
+        DotEnv.LoadAll(environment);
+
         List<IConfigProvider> providers = new();
         providers.Add(cliConfig);
         providers.Add(new EnvironmentConfig());
