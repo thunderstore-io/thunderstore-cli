@@ -225,7 +225,7 @@ public static class BuildCommand
 
             foreach (string filename in Directory.EnumerateFiles(basePath, "*.*", SearchOption.AllDirectories))
             {
-                var targetPath = FormatArchivePath($"{destDirectory}{filename[(basePath.Length + 1)..]}");
+                var targetPath = FormatArchivePath($"{destDirectory}{Path.GetRelativePath(basePath, filename)}");
                 plan.AddPlan(targetPath, () => File.ReadAllBytes(filename));
             }
             return true;
