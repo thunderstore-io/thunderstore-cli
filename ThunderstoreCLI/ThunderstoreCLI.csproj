@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
+        <TargetFramework>net8.0</TargetFramework>
         <LangVersion>11</LangVersion>
         <RollForward>Major</RollForward>
         <RootNamespace>ThunderstoreCLI</RootNamespace>
