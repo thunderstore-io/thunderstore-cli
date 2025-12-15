@@ -26,13 +26,13 @@ jobs:
           python-version: '3.8'
 
       - name: Install pre-commit framework
-        run: curl https://pre-commit.com/install-local.py | python -
+        run: python -m pip install pre-commit
 
       - name: Install dotnet-format
         run: dotnet tool install -g dotnet-format
 
       - name: Run pre-commit
-        run: ~/bin/pre-commit run --show-diff-on-failure --color=always --all-files
+        run: pre-commit run --show-diff-on-failure --color=always --all-files
 
   build-and-test:
     name: Build and test ${{ matrix.os }}
