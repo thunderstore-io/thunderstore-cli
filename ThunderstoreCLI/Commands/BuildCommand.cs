@@ -196,7 +196,7 @@ public static class BuildCommand
 
         plan.AddPlan("icon.png", new EntryData.FromFile(iconPath));
         plan.AddPlan("README.md", new EntryData.FromFile(readmePath));
-        plan.AddPlan("manifest.json", new EntryData.FromMemory(Encoding.UTF8.GetBytes(SerializeManifest(config)), (UnixFileMode)0b110_110_100)); // rw-rw-r--
+        plan.AddPlan("manifest.json", new EntryData.FromMemory(Encoding.UTF8.GetBytes(SerializeManifest(config)), (UnixFileMode) 0b110_110_100)); // rw-rw-r--
 
         if (config.BuildConfig.CopyPaths is not null)
         {
@@ -230,7 +230,7 @@ public static class BuildCommand
                     if (!OperatingSystem.IsWindows())
                     {
                         // windows-created archives do not use these bits as unix file mode, so we should not set them there
-                        archiveEntry.ExternalAttributes |= (int)entry.Value.GetUnixFileMode() << 16;
+                        archiveEntry.ExternalAttributes |= (int) entry.Value.GetUnixFileMode() << 16;
                     }
 
                     using var entryStream = archiveEntry.Open();
