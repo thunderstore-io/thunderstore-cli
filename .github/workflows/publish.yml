@@ -4,6 +4,9 @@ on:
   release:
     types: [ published ]
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For setup-rust
+
 jobs:
   nuget:
     name: Publish NuGet Package
