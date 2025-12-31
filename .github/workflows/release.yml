@@ -5,6 +5,9 @@ on:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For setup-rust
+
 jobs:
   # Validate tag with proper regex since the check above is very limited.
   validate-tag:
@@ -57,7 +60,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '7'
+          dotnet-version: '8'
 
       - name: Install dependencies
         run: dotnet restore
@@ -69,7 +72,7 @@ jobs:
         shell: bash
         run: |
           release_name="tcli-${{ needs.validate-tag.outputs.tag }}-${{ matrix.target }}"
-          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" --self-contained true -f net7.0 -o "${release_name}"
+          dotnet publish ThunderstoreCLI/ThunderstoreCLI.csproj -c Release -r "${{ matrix.target }}" --self-contained true -f net8.0 -o "${release_name}"
 
           if [ "${{ matrix.target }}" == "win-x64" ]; then
             7z a -tzip "${release_name}.zip" "./${release_name}"
@@ -100,7 +103,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '7'
+          dotnet-version: '8'
 
       - name: Install dependencies
         run: dotnet restore
